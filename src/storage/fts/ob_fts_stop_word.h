@@ -82,7 +82,9 @@ public:
 
 private:
   static const int64_t DEFAULT_STOPWORD_BUCKET_NUM = 37L;
-  typedef common::hash::ObHashSet<storage::ObFTWord> StopWordSet;
+  // Built once before worker startup and destroyed after workers stop.
+  // Lookups never insert, erase, resize, or update this shared immutable set.
+  typedef common::hash::ObHashSet<storage::ObFTWord, common::hash::NoPthreadDefendMode> StopWordSet;
 
   StopWordSet stopword_set_;
   ObObjMeta stopword_type_;

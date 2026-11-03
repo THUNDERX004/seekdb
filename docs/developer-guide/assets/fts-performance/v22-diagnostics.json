@@ -1,0 +1,225 @@
+{
+  "purpose": "Auxiliary parser and coarse IP diagnostics, not scoring data",
+  "checkpoint": {
+    "ik": {
+      "mean_ms": 0.026339676000352485,
+      "samples_ms": [
+        0.026197920000413433,
+        0.026377990000037245,
+        0.026485260000481504,
+        0.026456750000215835,
+        0.026180460000614404
+      ]
+    },
+    "beng": {
+      "mean_ms": 0.006526566000247839,
+      "samples_ms": [
+        0.006306559999939054,
+        0.006374050000158604,
+        0.007049340000230586,
+        0.006408460000238847,
+        0.006494420000672107
+      ]
+    }
+  },
+  "candidate": {
+    "ik": {
+      "mean_ms": 0.026534002000116744,
+      "samples_ms": [
+        0.026394060000166066,
+        0.026721990000078223,
+        0.0266364800001611,
+        0.026436850000027334,
+        0.026480630000150995
+      ]
+    },
+    "beng": {
+      "mean_ms": 0.0062414160002663265,
+      "samples_ms": [
+        0.0062505300003977025,
+        0.006349390000104904,
+        0.00619832000011229,
+        0.0061981400001968725,
+        0.006210700000519864
+      ]
+    }
+  },
+  "build_ip_sampling": {
+    "wall_seconds": 7.950983199996699,
+    "cpu_seconds": 6.6875,
+    "samples": [
+      [
+        "outside-server",
+        77
+      ],
+      [
+        "?get_charset@ObCharset@common@oceanbase@@SAPEBUObCharsetInfo@@W4ObCollationType@23@@Z",
+        5
+      ],
+      [
+        "?get_next_batch@ObOperator@sql@oceanbase@@UEAAH_JAEAPEBUObBatchRows@23@@Z",
+        4
+      ],
+      [
+        "?groupby_word@ObAddWord@storage@oceanbase@@AEAAHAEBVObFTWord@23@_J@Z",
+        3
+      ],
+      [
+        "?cmp@?$ObNullSafeDatumStrCmp@$0CN@$0A@$00@common@oceanbase@@SAHAEBUObDatum@23@0AEAHPEBUObDatumAccessContext@23@@Z",
+        3
+      ],
+      [
+        "ZSTD_decompressSequences",
+        3
+      ],
+      [
+        "?is_argument_valid@ObCharset@common@oceanbase@@CA_NAEBW4ObCollationType@23@PEBD_J12@Z",
+        3
+      ],
+      [
+        "??RCompare@ObSortOpImpl@sql@oceanbase@@QEAA_NPEBUStoredRow@ObChunkDatumStore@23@0@Z",
+        3
+      ],
+      [
+        "?at@?$ObIArrayWrap@_K@common@oceanbase@@QEBAAEB_K_J@Z",
+        2
+      ],
+      [
+        "?ob_strnncollsp_utf8mb4@@YAHPEBUObCharsetInfo@@PEBE_K12_N@Z",
+        2
+      ],
+      [
+        "__security_check_cookie",
+        2
+      ],
+      [
+        "?ensure_write@ObCompactBlockWriter@sql@oceanbase@@IEAAHAEBUStoredRow@ObChunkDatumStore@23@@Z",
+        2
+      ],
+      [
+        "?copy_cell@ObMicroBlockEncoder@blocksstable@oceanbase@@AEAAHAEBUObColDesc@schema@share@3@AEBUObStorageDatum@23@AEAUObDatum@common@3@AEA_JAEA_N4@Z",
+        2
+      ],
+      [
+        "??0ObTxExecResultImpl@transaction@oceanbase@@QEAA@XZ",
+        1
+      ],
+      [
+        "?strcmp@ObCharset@common@oceanbase@@SAHW4ObCollationType@23@AEBVObString@23@1@Z",
+        1
+      ],
+      [
+        "?get_refactored@?$ObHashTable@_KU?$HashMapPair@_KPEAVObDMLStmt@sql@oceanbase@@@hash@common@oceanbase@@U?$hash_func@_K@234@U?$equal_to@_K@234@U?$pair_first@U?$HashMapPair@_KPEAVObDMLStmt@sql@oceanbase@@@hash@common@oceanbase@@@234@V?$SimpleAllocer@U?$ObHashTableNode@U?$HashMapPair@_KPEAVObDMLStmt@sql@oceanbase@@@hash@common@oceanbase@@@hash@common@oceanbase@@$0GM@USpinMutexDefendMode@234@UDefaultSimpleAllocerAllocator@234@@234@ULatchReadWriteDefendMode@234@UNormalPointer@234@VObMalloc@34@$00@hash@common@oceanbase@@QEAAHAEB_KAEAU?$HashMapPair@_KPEAVObDMLStmt@sql@oceanbase@@@234@_J@Z",
+        1
+      ],
+      [
+        "?advance@BlockBuffer@ObChunkDatumStore@sql@oceanbase@@QEAAH_J@Z",
+        1
+      ],
+      [
+        "?get_charset_uninit@ObCharset@common@oceanbase@@CAPEBUObCharsetInfo@@W4ObCollationType@23@@Z",
+        1
+      ],
+      [
+        "?strcmpsp@ObCharset@common@oceanbase@@SAHW4ObCollationType@23@PEBD_J12_N@Z",
+        1
+      ],
+      [
+        "?ob_mb_wc_utf8mb4@@YAHPEBUObCharsetInfo@@PEAKPEBE2@Z",
+        1
+      ],
+      [
+        "?ob_hash_sort_utf8mb4@@YAXPEBUObCharsetInfo@@PEBE_KPEA_K3_NP6A_KPEBX22@Z@Z",
+        1
+      ],
+      [
+        "?crc64_sse42@common@oceanbase@@YA_K_KPEBD_J@Z",
+        1
+      ],
+      [
+        "?get_next_row@ObBatchRowIter@sql@oceanbase@@QEAAHAEAUObEvalCtx@23@AEBVObOpSpec@23@@Z",
+        1
+      ],
+      [
+        "?convert_to_storage_row@ObDDLStorageUtil@storage@oceanbase@@SAHAEBVObTabletID@common@3@_JAEBUObWriteMacroParam@23@AEAPEAVObLobMacroBlockWriter@23@AEAVObArenaAllocator@53@AEAUObDatumRow@blocksstable@3@@Z",
+        1
+      ],
+      [
+        "te_event_trigger",
+        1
+      ],
+      [
+        "?at@?$ObIArrayWrap@_K@common@oceanbase@@QEAAAEA_K_J@Z",
+        1
+      ],
+      [
+        "?classify_first_char@ObFTCharUtil@storage@oceanbase@@SAHW4ObCollationType@common@3@PEBDEAEAW4CharType@123@@Z",
+        1
+      ],
+      [
+        "?process_english_letter@ObIKLetterProcessor@storage@oceanbase@@AEAAHAEAVTokenizeContext@23@PEBDEW4CharType@ObFTCharUtil@23@@Z",
+        1
+      ],
+      [
+        "?block_on_increase_size@ObDtlBasicChannel@dtl@sql@oceanbase@@QEAAH_J@Z",
+        1
+      ],
+      [
+        "?ob_strnncoll_mb_bin@@YAHPEBUObCharsetInfo@@PEBE_K12_N@Z",
+        1
+      ],
+      [
+        "?find@ObArrayHashMap@storage@oceanbase@@QEBAHAEBUObFTSingleWord@23@AEAH@Z",
+        1
+      ],
+      [
+        "memcpy",
+        1
+      ],
+      [
+        "?append_row@BlockBufferWrap@ObChunkDatumStore@sql@oceanbase@@QEAAHAEBV?$ObIArray@PEAUObExpr@sql@oceanbase@@@common@4@PEAUObEvalCtx@34@_J@Z",
+        1
+      ],
+      [
+        "?after_add_row@ObSortOpImpl@sql@oceanbase@@IEAAHPEAUStoredRow@ObChunkDatumStore@23@@Z",
+        1
+      ],
+      [
+        "??$inner_process_datum@G@ObCompactBlockWriter@sql@oceanbase@@AEAAHAEBUObDatum@common@2@_JAEBUChunkRowMeta@12@AEAUCurRowInfo@012@@Z",
+        1
+      ],
+      [
+        "?at@?$ObIArrayWrap@W4RuntimeFilterType@sql@oceanbase@@@common@oceanbase@@QEBAAEBW4RuntimeFilterType@sql@3@_J@Z",
+        1
+      ],
+      [
+        "?get_next_row@ObOperator@sql@oceanbase@@UEAAHXZ",
+        1
+      ],
+      [
+        "?check_order@ObMacroBlockWriter@blocksstable@oceanbase@@AEAAHAEBUObDatumRow@23@@Z",
+        1
+      ],
+      [
+        "?append_row@ObMicroBlockEncoder@blocksstable@oceanbase@@UEAAHAEBUObDatumRow@23@@Z",
+        1
+      ],
+      [
+        "?at@?$ObIArrayWrap@VObTransID@transaction@oceanbase@@@common@oceanbase@@QEAAAEAVObTransID@transaction@3@_J@Z",
+        1
+      ],
+      [
+        "witnesses_cleanup",
+        1
+      ],
+      [
+        "?free_large_pages@?$PageArena@DUModulePageAllocator@common@oceanbase@@@common@oceanbase@@AEAAXXZ",
+        1
+      ],
+      [
+        "?rdlock@MemtableMgrLock@storage@oceanbase@@QEAAHXZ",
+        1
+      ]
+    ]
+  }
+}

@@ -1,0 +1,2 @@
+PASS: complete token/frequency/doc-length and ranked MATCH results match baseline
+Covered 408 token cases, 144 ranked queries, 920 predicate query results, and 144 concurrent parses

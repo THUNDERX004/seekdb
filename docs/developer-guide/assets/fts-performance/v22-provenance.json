@@ -1,0 +1,61 @@
+{
+  "base_revision": "e3c04befd2c9b6559f0005c4bf72c62e244cf06c",
+  "checkpoint_revision": "7ba84fd78aea735a7cfb73ce91e07fbe13b0bb9d",
+  "baseline_binary_sha256": "e6ac29a9653941049d3b4982899b7ff7c4abea490a5ec827c3c21cf834e28429",
+  "candidate_binary_sha256": "3b0265d960838504f08fa0c5aa75d8882d7b84f5851caf7e635a58d0c406cbaf",
+  "checkpoint_binary_sha256": "3e1b144c5f8b243936c408270fd5b6f65994896bd0b89bd8b896af2724ce69a6",
+  "build_method": "replay exact cached Bazel C++20 O2 unity compilation and final link actions",
+  "tested_kernel_diff_sha256": "1f5f600ea165a5e0e3f60a2fc80ab173f271d59cd7a4c08aa2778e12cc6e94fc",
+  "recompiled_units": [
+    "storage_runtime_ob_storage_fts_0.unity",
+    "storage_runtime_ob_storage_ik_0.unity",
+    "storage_runtime_ob_storage_rebase_0.unity"
+  ],
+  "readonly_set_audit": [
+    "ObStopWordChecker::init populates private set before worker startup",
+    "Only init and destroy mutate the set; there is no runtime mutation API",
+    "exist_refactored uses zero-timeout lookup and does not insert missing/fake nodes",
+    "Hash and comparison read immutable ObFTWord keys; MProtectGuard is a no-op",
+    "ObServer::destroy calls deinit_fts only after has_stopped_; no users remain"
+  ],
+  "local_wrapper_failures": [
+    "Initial auxiliary wrapper invocation used the workspace directory, so Bash could not find the official script. No samples/report were produced. Preserved failure log and set the wrapper working directory explicitly."
+  ],
+  "regressions": {
+    "configuration_cases": 768,
+    "token_cases": 408,
+    "ranked_queries": 144,
+    "predicate_results": 920,
+    "concurrent_parses": 144,
+    "concurrent_map_checks": 1440,
+    "independent_stopword_checks": 510,
+    "prefix_outputs": 810,
+    "match_batch_cases": 280,
+    "rows_per_batch_table": 2051,
+    "collation_cases": 27,
+    "collation_result_rows": 52963,
+    "normal_driver_cycles": 2,
+    "lifecycle_test_seconds": 3.884
+  },
+  "formal_ci_result": false,
+  "restarted_original_recheck": {
+    "binary_sha256": "e6ac29a9653941049d3b4982899b7ff7c4abea490a5ec827c3c21cf834e28429",
+    "independent_stopword_checks": 510,
+    "exact_prefix_outputs": 810,
+    "passed": true
+  },
+  "test_sha256": {
+    "collation_expected.json": "3b90f0a560d7772170df019c64055cd42ec5164ae60937866254d1f313b40ebc",
+    "dictionary_prefixes_expected.json": "f35d367445abe0db8713b001301ed5b15957b96bac08cbc019b9f63edd449d6f",
+    "hot_path_expected.json": "e32d88b74bfca0af55e0eb3a263d47bf7f3ccfbf1b4e2c3a57a62191981bf77b",
+    "test_collation.py": "d2c9f48cb5e8b0f0520087d16bff9ff046901bbb14fbb95f556bec4ee7172acd",
+    "test_dictionary_lifecycle.py": "c79d8bcfe8817e9e29dcbe4a4a641136585b2d0e645a2df8f29c318c4b026886",
+    "test_dictionary_prefixes.py": "57d7469f6f0a215364378a913b0b94e9aaa57afe3e38dc3a943d0027926fec07",
+    "test_hot_path.py": "b813447ed0517305174912ac88922219a68f23491c300f4e3b221e80420db9c9",
+    "test_map_concurrency.py": "38fdc9e3312fec681cc70d7aeacf6ba105f9a65b5848f61a8e33026d99a0fd1a",
+    "test_match_batches.py": "e9a385d67fa5996c2283e51dc23b4405e431930271ad883735d0ea34a4be647b",
+    "test_stopword_concurrency.py": "af80a6bd674f09673376411c8e4b2a12e492c4a9977f34939d26b3537568e29c",
+    "test_tokenize_config.py": "b19ae37dde8f51d62abebcbb5f67faefba1280c8613d6276ec6215e0c1ed5e36",
+    "tokenize_config_expected.json": "0c820f4147b0c6c746d4f034a03bb3ec0794bc6a33cbe01488cdaddc0723ef76"
+  }
+}
