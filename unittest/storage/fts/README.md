@@ -49,3 +49,23 @@ python unittest/storage/fts/test_dictionary_lifecycle.py -v
 
 These tests are invoked explicitly; they are not registered as hermetic Bazel
 tests because they require a running database or the installed Windows driver.
+
+## Native local benchmark client (Windows)
+
+The optional native_batch_client.cpp is an auxiliary batch SQL client for the
+unchanged benchmark's MYSQL command override. It connects only to the
+passwordless dedicated endpoint 127.0.0.1:2891. It supports the protocol and
+flags used by this benchmark; use an ordinary MySQL client for general use.
+Every statement is sent to the database and every result is consumed.
+
+From a Visual Studio developer shell in the repository root:
+
+~~~powershell
+New-Item -ItemType Directory -Force build/fts-native-client | Out-Null
+cl.exe /nologo /std:c++17 /O2 /MD /EHsc /DNOMINMAX /D_CRT_SECURE_NO_WARNINGS unittest/storage/fts/native_batch_client.cpp /Fobuild/fts-native-client/client.obj /Febuild/fts-native-client/mysql-native.exe /link ws2_32.lib
+~~~
+
+Set MYSQL and MYSQL_VERBOSE to that executable plus the usual -N -s -A
+--default-character-set=utf8mb4 flags. Use exactly the same client binary for
+the original and candidate. The native comparison is retained separately from
+the PyMySQL-client comparison; it does not establish a formal CI score.

@@ -142,6 +142,56 @@ environment. The nine metrics were not averaged directly.
 The raw reports, category comparison and benchmark hashes are under
 [the results directory](../assets/fts-performance/).
 
+
+## Additional native-client control
+
+A subsequent original-binary control (baseline-after) still measured the LIMIT
+query at 2.5435 ms with the Python client. A longer direct-connection probe
+measured about 1.667 ms for that same query, motivating a separate client
+overhead check rather than attributing all differences to the kernel.
+
+The standalone Windows native batch client is retained with the test
+instructions for reproducibility. It sends every statement and consumes every
+result through the MySQL protocol; it contains no benchmark data, result
+shortcuts or timing code. It is restricted to the dedicated passwordless
+127.0.0.1:2891 test endpoint. Chinese input, quoting/comments, NULL, TOKENIZE
+results and counts were compared with the existing client; result contents
+matched (line endings differed). The official benchmark files stayed
+byte-identical and all fixed parameters, SQL, repetitions and timer logic
+were retained.
+
+Two more complete original runs and two more complete candidate runs used
+that same native client. These are a separate comparison; their times are
+not averaged with the Python-client reports.
+
+| Metric | Original native mean | Candidate native mean | Time reduction |
+| --- | ---: | ---: | ---: |
+| build_ik_all_sec | 7.58800 | 7.45900 | 1.70% |
+| build_ik_content_sec | 6.04750 | 6.25200 | -3.38% |
+| build_beng_en_sec | 3.61000 | 3.38650 | 6.19% |
+| tokenize_ik_avg_ms | 0.13175 | 0.12785 | 2.96% |
+| tokenize_beng_avg_ms | 0.08795 | 0.09250 | -5.17% |
+| query_cn_avg_ms | 1.46700 | 1.15210 | 21.47% |
+| query_beng_avg_ms | 2.06545 | 1.55965 | 24.49% |
+| query_mixed_avg_ms | 1.64315 | 1.24600 | 24.17% |
+| query_limit_avg_ms | 1.97755 | 1.90485 | 3.68% |
+
+Native-client category reductions are build 1.50%, tokenize -1.11%
+and query 18.45%; the category-equal mean is 6.28%. Negative metrics,
+including the second candidate IK-content build and BENG tokenization, were
+retained. The LIMIT result is sensitive to client/sampling conditions: this
+native pair does not show the Python pair's regression. A robust LIMIT
+improvement is not claimed. These data reinforce the ordinary-query benefit
+but still do not demonstrate 50% overall reduction. Both original and
+candidate again cap the fixed CI reference score locally; formal CI remains
+unverified.
+
+An additional per-document IK charset metadata cache passed the full result
+regressions but changed the adjacent parser microbenchmark by only about 1%,
+inside its sample spread. That experiment was rejected; the committed kernel
+and candidate executable were restored exactly to the checkpoint hash.
+Raw samples and the rejection decision are retained with the results.
+
 ## Reproduction
 
 Use a dedicated instance. With an ordinary MySQL-compatible client and the
