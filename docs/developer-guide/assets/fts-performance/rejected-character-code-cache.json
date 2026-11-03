@@ -1,0 +1,103 @@
+{
+  "decision": "Rejected; no full scoring run, no benefit in adjacent parser diagnostics",
+  "scope": "Per-character IK dictionary-code cache; both previous-prefix-only and new-prefix-inclusive variants",
+  "diagnostic_only": true,
+  "measurements": {
+    "checkpoint-v20-before-v21": {
+      "ik": {
+        "mean_ms": 0.026366873999795645,
+        "samples_ms": [
+          0.02618207999985316,
+          0.02656425000022864,
+          0.026080769999680342,
+          0.026431749999755994,
+          0.026575519999460083
+        ]
+      },
+      "beng": {
+        "mean_ms": 0.006487703999882796,
+        "samples_ms": [
+          0.006585800000175368,
+          0.006472379999468103,
+          0.006399479999527102,
+          0.006422759999986738,
+          0.006558100000256672
+        ]
+      }
+    },
+    "candidate-v21": {
+      "ik": {
+        "mean_ms": 0.026661549999844283,
+        "samples_ms": [
+          0.026447009999537842,
+          0.027079869999579387,
+          0.02679811999987578,
+          0.026228730000002542,
+          0.026754020000225864
+        ]
+      },
+      "beng": {
+        "mean_ms": 0.006455599999899277,
+        "samples_ms": [
+          0.006587630000285572,
+          0.006490959999791812,
+          0.006391750000329921,
+          0.006368699999438831,
+          0.006438959999650251
+        ]
+      }
+    },
+    "candidate-v21-full": {
+      "ik": {
+        "mean_ms": 0.026922252000076696,
+        "samples_ms": [
+          0.027126919999864184,
+          0.02670362999997451,
+          0.026897530000132973,
+          0.02719379000045592,
+          0.026689389999955893
+        ]
+      },
+      "beng": {
+        "mean_ms": 0.0064815599999565165,
+        "samples_ms": [
+          0.006381320000218693,
+          0.006767569999647094,
+          0.0065375700003642125,
+          0.006338110000069719,
+          0.006383229999482864
+        ]
+      }
+    },
+    "checkpoint-v20-after-v21": {
+      "ik": {
+        "mean_ms": 0.026339676000352485,
+        "samples_ms": [
+          0.026197920000413433,
+          0.026377990000037245,
+          0.026485260000481504,
+          0.026456750000215835,
+          0.026180460000614404
+        ]
+      },
+      "beng": {
+        "mean_ms": 0.006526566000247839,
+        "samples_ms": [
+          0.006306559999939054,
+          0.006374050000158604,
+          0.007049340000230586,
+          0.006408460000238847,
+          0.006494420000672107
+        ]
+      }
+    }
+  },
+  "regressions_passed": [
+    "810 complete IK prefix outputs including four concurrent sessions",
+    "408 tokens, 144 ranked MATCH, 920 predicates, 144 concurrent parses",
+    "768 complete configuration cases on initial variant"
+  ],
+  "original_fixture_binary_sha256": "e6ac29a9653941049d3b4982899b7ff7c4abea490a5ec827c3c21cf834e28429",
+  "restored_binary_sha256": "3e1b144c5f8b243936c408270fd5b6f65994896bd0b89bd8b896af2724ce69a6",
+  "rejected_kernel_patch_sha256": "7ce9faeef7794ee2c41159bb5fbe56ba9169f9d91c7055dfddaa259efd28ea0f"
+}

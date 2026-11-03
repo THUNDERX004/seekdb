@@ -1,12 +1,11 @@
 # Full-text performance optimization
 
-The latest local Windows native-client control measures a 10.18% category-equal
-time reduction: build 4.48%, tokenization 8.21% and query 17.85%. The Chinese,
-English and mixed COUNT queries improve 25.08%, 22.81% and 25.42%; the LIMIT
-query regresses 1.93%. Both binaries ran the same complete fixed-parameter
-benchmark twice in alternating order. Earlier Python/native-client controls
-are retained below as separate experiments. The 50% overall reduction target
-and a formal VLDB CI result have not been demonstrated.
+The final v22 local Windows native-client control measures a 9.65%
+category-equal time reduction: build 7.42%, tokenization 5.54% and query
+15.98%. All three complete runs of each binary are included, with negative
+metrics retained. One original IK-all build was unusually slow (10.638 s), so
+build improvement is uncertain. The earlier v20 control measured 10.18% overall.
+The 50% overall reduction target and formal VLDB CI remain unverified.
 
 ## Bottlenecks and changes
 
@@ -333,6 +332,80 @@ The v20 files in [the results directory](../assets/fts-performance/) retain
 all raw reports, sample logs, score calculations, diagnostics, the five-call-site
 ownership audit and exact binary/source hashes. The final native binary hash is
 3e1b144c5f8b243936c408270fd5b6f65994896bd0b89bd8b896af2724ce69a6.
+
+## Immutable stopword lookups and final control
+
+The built-in stopword set is private and populated only during parser-data
+initialization before query workers can use it. Shutdown destroys it after
+workers stop. There is no runtime mutation API. The ordinary zero-timeout
+exist_refactored lookup only reads nodes; it does not insert fake/missing
+entries. Its key hash/comparison functions read immutable keys, and the
+MProtectGuard is a no-op. The set now uses the existing NoPthreadDefendMode.
+Only this immutable set changes; dictionary initialization/publication keeps
+its synchronization and mutable maps remain scoped to their evaluations.
+All three affected native units were rebuilt.
+
+A new independent regression checks 510 complete stopword token/frequency/
+document-length outputs across BENG/whitespace parsing, three collations and
+eight concurrent sessions. Every built-in stopword, mixed case, repeated
+retained words, short tokens, empty/stopword-only input and lookup misses are
+covered. The other final regressions also passed: 768 configurations,
+408 token cases, 144 rankings, 920 predicates, 144 concurrent parses,
+1,440 concurrent map checks, 280 batch cases and 52,963 collation result rows.
+Normal driver open/close passed twice in 3.884 seconds. The added IK-prefix
+fixture, recorded and rechecked only on the original, adds 810 exact output
+checks including four concurrent sessions.
+
+An experimental per-character IK dictionary-code cache was rejected. The
+adjacent checkpoint IK micro timings were 0.026367 and 0.026340 ms; the
+existing-prefix and full-prefix variants measured 0.026662 and 0.026922 ms.
+Both variants passed their complete-result regressions, but neither showed
+benefit. The kernel changes were reverted and the tested v20 executable was
+restored before the stopword experiment. Rejection diagnostics are retained.
+The final stopword-only diagnostic measured BENG 0.006241 ms against checkpoint
+0.006527 ms; IK was essentially unchanged. These diagnostics are not scoring
+measurements. A corrected PE-image-range build sample still observed charset,
+comparison and sort work, with only sparse in-image samples; exact CPU
+percentages or a large build-speed claim cannot be inferred from it.
+
+Six complete official-parameter native-client reports ran in alternating order
+candidate/original three times. The third pair was added after original IK-all
+build times differed (7.590 and 10.638 seconds). Every completed run and slow
+sample is retained. No profiler, compiler or regression ran during measurement.
+The auxiliary wrapper initially used the wrong working directory and failed
+before producing any samples/report. Its failure log is retained; the wrapper
+then set its source directory explicitly. Official scripts were unchanged.
+
+Build values are seconds; tokenization and query values are milliseconds.
+Each column averages all three complete runs.
+
+| Metric | Original mean | v22 candidate mean | Time reduction |
+| --- | ---: | ---: | ---: |
+| build_ik_all_sec | 8.64433 | 7.44433 | 13.88% |
+| build_ik_content_sec | 6.03767 | 5.92433 | 1.88% |
+| build_beng_en_sec | 3.54333 | 3.31267 | 6.51% |
+| tokenize_ik_avg_ms | 0.12480 | 0.11960 | 4.17% |
+| tokenize_beng_avg_ms | 0.08730 | 0.08127 | 6.91% |
+| query_cn_avg_ms | 1.43063 | 1.13347 | 20.77% |
+| query_beng_avg_ms | 2.03850 | 1.54887 | 24.02% |
+| query_mixed_avg_ms | 1.62913 | 1.23677 | 24.08% |
+| query_limit_avg_ms | 1.84913 | 1.94107 | -4.97% |
+
+The category reductions are 7.4230%, 5.5389% and 15.9759%; their
+equal-weight mean is 9.6459%. The unchanged formula against this separate
+local control gives 19.29/100. The observed LIMIT change is
+-4.97% and remains in the calculation. The one slow original build
+makes the estimated build/category total sensitive to machine/instance
+variation. The more stable v20 series remains separately reported above;
+these series are not mixed or used to select faster samples.
+
+All six reports cap the fixed CI reference locally, including all originals.
+This is not a formal contest score or evidence that the patch earns 100/100.
+A clean standard Bazel/Linux CI build and a 50% overall reduction remain
+unverified. Candidate SHA-256: 3b0265d960838504f08fa0c5aa75d8882d7b84f5851caf7e635a58d0c406cbaf.
+The v22 raw reports, every sample log, category calculation, lifecycle audit
+and source/binary provenance are retained in
+[the results directory](../assets/fts-performance/).
 
 ## Reproduction
 

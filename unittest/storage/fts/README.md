@@ -12,11 +12,14 @@ python3 unittest/storage/fts/test_hot_path.py --port 2891 --check-plans
 python3 unittest/storage/fts/test_collation.py --port 2891
 python3 unittest/storage/fts/test_match_batches.py --port 2891
 python3 unittest/storage/fts/test_map_concurrency.py --port 2891
+python3 unittest/storage/fts/test_stopword_concurrency.py --port 2891
+python3 unittest/storage/fts/test_dictionary_prefixes.py --port 2891
 ~~~
 
 The hot-path suite checks complete token text, frequencies, document lengths,
 document IDs, relevance scores and result order. It covers Unicode boundaries,
-six encodings, invalid UTF-8, smart/max-word IK, BENG, the whitespace parser,
+six input-encoding conversions and their original error behavior, invalid
+UTF-8, smart/max-word IK, BENG, the whitespace parser,
 concurrent first-use initialization, three index builds, mutations, rollback,
 zero/nonzero and prepared score thresholds, boolean queries, nested statements,
 functional lookups, and the long-token-list TaaT fallback. Score comparisons
@@ -39,14 +42,26 @@ eight independent sessions. Expected IDs come from 127 input documents;
 complete ranking results are compared with sequential executions. Different
 query terms exercise the optimizer and both scored/score-free retrieval paths.
 
+The stopword suite derives all token frequencies and document lengths from
+literal ASCII inputs independently. It checks 510 complete BENG/whitespace
+outputs across general-ci, Unicode-ci and binary input collations and eight
+concurrent sessions, including every built-in stopword, mixed case, misses,
+short tokens, repeated words, empty text and stopword-only text.
+
+The IK-prefix suite checks 162 exact smart/max-word outputs against an original
+fixture, then repeats them in four concurrent sessions (810 complete checks).
+It covers overlapping prefixes, disjoint initial-character ranges, unknown
+characters, punctuation/reset boundaries and long repeated input. The fixture
+was recorded and rechecked on the independently verified original binary.
+
 The collation suite covers complete pairwise comparison matrices, full sorting,
 top-N sorting, grouping, distinct values and index access under
 utf8mb4_general_ci, utf8mb4_unicode_ci and utf8mb4_bin. Its SHA-256 fixtures
 cover every result cell and ordering, not just hit counts.
 
-All three fixtures were independently recorded on unmodified source
+All four fixtures were independently recorded on unmodified source
 e3c04befd2c9b6559f0005c4bf72c62e244cf06c, with baseline executable SHA-256
-e6ac29a9653941049d3b4982899b7ff7c4abae490a5ec827c3c21cf834e28429.
+e6ac29a9653941049d3b4982899b7ff7c4abea490a5ec827c3c21cf834e28429.
 Use --record PATH only when deliberately recording an independently verified
 baseline. A candidate must be checked against the baseline fixtures.
 
