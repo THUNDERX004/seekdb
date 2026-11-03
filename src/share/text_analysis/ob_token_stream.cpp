@@ -98,7 +98,11 @@ int ObTextWhitespaceTokenizer::get_next(ObDatum &next_token, int64_t &token_freq
     int64_t token_len = 0;
     // to next non-whitespace pos
     while (OB_SUCC(ret) && found_delimiter()) {
-      const int64_t c_len = ob_mbcharlen_ptr(cs_, doc + trav_pos_, doc + doc_len);
+      // ASCII bytes are complete characters in the supported single-byte-min
+      // encodings. Keep the charset decoder for multibyte and UTF-16 input.
+      const int64_t c_len = 1 == cs_->mbminlen
+          && static_cast<unsigned char>(doc[trav_pos_]) < 0x80
+          ? 1 : ob_mbcharlen_ptr(cs_, doc + trav_pos_, doc + doc_len);
       trav_pos_ += c_len;
       if (trav_pos_ >= doc_len || 0 == c_len) {// if char is invalid, just skip the rest of document
         iter_end_ = true;
@@ -112,7 +116,11 @@ int ObTextWhitespaceTokenizer::get_next(ObDatum &next_token, int64_t &token_freq
 
     // to next whitespace pos
     while (OB_SUCC(ret) && !found_delimiter()) {
-      const int64_t c_len = ob_mbcharlen_ptr(cs_, doc + trav_pos_, doc + doc_len);
+      // ASCII bytes are complete characters in the supported single-byte-min
+      // encodings. Keep the charset decoder for multibyte and UTF-16 input.
+      const int64_t c_len = 1 == cs_->mbminlen
+          && static_cast<unsigned char>(doc[trav_pos_]) < 0x80
+          ? 1 : ob_mbcharlen_ptr(cs_, doc + trav_pos_, doc + doc_len);
       trav_pos_ += c_len;
       token_len += c_len;
       if (trav_pos_ >= doc_len || 0 == c_len) {
@@ -136,10 +144,10 @@ int ObTextWhitespaceTokenizer::get_next(ObDatum &next_token, int64_t &token_freq
 
 bool ObTextWhitespaceTokenizer::found_delimiter()
 {
-  bool found = false;
-  const char *curr_char = input_doc_->ptr_ + trav_pos_;
-  found = ob_isspace(cs_, *curr_char) || ob_iscntrl(cs_, *curr_char) || ob_ispunct(cs_, *curr_char);
-  return found;
+  const unsigned char curr_char = static_cast<unsigned char>(input_doc_->ptr_[trav_pos_]);
+  // These three character classes share the same charset classification table.
+  return nullptr != cs_->ctype
+      && 0 != (cs_->ctype[curr_char + 1] & (_MY_SPC | _MY_CTR | _MY_PNT));
 }
 
 ObTokenNormalizer::ObTokenNormalizer()
@@ -218,9 +226,10 @@ int ObTokenStopWordNormalizer::filter_special_marks(const ObDatum &check_token, 
   return ret;
 }
 
-ObBasicEnglishNormalizer::ObBasicEnglishNormalizer()
+ObBasicEnglishNormalizer::ObBasicEnglishNormalizer(ObIAllocator *output_allocator)
   : ObTokenNormalizer(),
-    norm_allocator_("TxtTokGrpFilter", OB_MALLOC_NORMAL_BLOCK_SIZE)
+    norm_allocator_("TxtTokGrpFilter", OB_MALLOC_NORMAL_BLOCK_SIZE),
+    output_allocator_(output_allocator)
 {
 }
 
@@ -244,7 +253,9 @@ int ObBasicEnglishNormalizer::get_next(ObDatum &next_token, int64_t &token_freq)
   } else {
     next_token.reset();
     token_freq = 0;
-    norm_allocator_.reuse();
+    if (nullptr == output_allocator_) {
+      norm_allocator_.reuse();
+    }
     ObDatum tmp_datum;
     bool found_alnum = false;
     uint32_t norm_token_len = 0;
@@ -295,7 +306,8 @@ int ObBasicEnglishNormalizer::get_next(ObDatum &next_token, int64_t &token_freq)
     } else {
       ObString norm_alnum_token(norm_token_len, norm_token_ptr);
       ObString norm_lower_token;
-      if (OB_FAIL(ObCharset::tolower(cs_, norm_alnum_token, norm_lower_token, norm_allocator_))) {
+      if (OB_FAIL(ObCharset::tolower(cs_, norm_alnum_token, norm_lower_token,
+              nullptr == output_allocator_ ? norm_allocator_ : *output_allocator_))) {
       } else {
         next_token.set_string(norm_lower_token);
       }
