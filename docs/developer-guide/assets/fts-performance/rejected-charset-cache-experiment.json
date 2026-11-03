@@ -1,0 +1,51 @@
+{
+  "experiment": "IK per-document charset metadata caching",
+  "retained": false,
+  "reason": "About 1% IK microbenchmark difference overlaps the sample spread; no convincing incremental benefit.",
+  "control": {
+    "ik": {
+      "mean_ms": 0.032336554000066825,
+      "samples_ms": [
+        0.032428690000233476,
+        0.03209800999975414,
+        0.031921280000096884,
+        0.03283739999969839,
+        0.03239739000055124
+      ]
+    },
+    "beng": {
+      "mean_ms": 0.009405109999934212,
+      "samples_ms": [
+        0.009320819999993546,
+        0.00918244999993476,
+        0.00917704999956186,
+        0.009456820000195876,
+        0.009888409999985016
+      ]
+    }
+  },
+  "experimental": {
+    "ik": {
+      "mean_ms": 0.032012033999926644,
+      "samples_ms": [
+        0.03204545999979018,
+        0.03145827000043937,
+        0.031847779999952766,
+        0.032344469999952705,
+        0.032364189999498194
+      ]
+    },
+    "beng": {
+      "mean_ms": 0.009423934000078588,
+      "samples_ms": [
+        0.009314150000136578,
+        0.0093173499997647,
+        0.00967354999957024,
+        0.009507000000303379,
+        0.009307620000618045
+      ]
+    }
+  },
+  "experimental_binary_sha256": "8e3f5323c0e17bfc4a425f339c9dafbc5d29c40dc9c752074a73eb110ef15933",
+  "restored_checkpoint_binary_sha256": "9a817bd6f8f3ab3b8b187320d749141d1d4becfeedac8a02b621dacb8d3423a8"
+}

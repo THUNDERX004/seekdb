@@ -1,0 +1,98 @@
+{
+  "client": "native_batch_client.cpp",
+  "control_reports": [
+    "baseline-native-report.txt",
+    "baseline-native-repeat-report.txt"
+  ],
+  "candidate_reports": [
+    "candidate-native-report.txt",
+    "candidate-native-repeat-report.txt"
+  ],
+  "local_comparison": {
+    "score": 12.564473610041244,
+    "mean_improvement": 0.06282236805020622,
+    "full_score_improvement": 0.5,
+    "categories": {
+      "build": {
+        "improvement": 0.015032086065664278,
+        "metrics": [
+          {
+            "metric": "build_ik_all_sec",
+            "baseline": 7.588,
+            "current": 7.459,
+            "improvement": 0.017000527148128684
+          },
+          {
+            "metric": "build_ik_content_sec",
+            "baseline": 6.047499999999999,
+            "current": 6.252,
+            "improvement": -0.0338156262918562
+          },
+          {
+            "metric": "build_beng_en_sec",
+            "baseline": 3.6100000000000003,
+            "current": 3.3865,
+            "improvement": 0.06191135734072035
+          }
+        ]
+      },
+      "tokenize": {
+        "improvement": -0.011066210855961194,
+        "metrics": [
+          {
+            "metric": "tokenize_ik_avg_ms",
+            "baseline": 0.13174999999999998,
+            "current": 0.12785,
+            "improvement": 0.029601518026565368
+          },
+          {
+            "metric": "tokenize_beng_avg_ms",
+            "baseline": 0.08795,
+            "current": 0.0925,
+            "improvement": -0.05173393973848776
+          }
+        ]
+      },
+      "query": {
+        "improvement": 0.18450122894091556,
+        "metrics": [
+          {
+            "metric": "query_cn_avg_ms",
+            "baseline": 1.467,
+            "current": 1.1521,
+            "improvement": 0.21465576005453318
+          },
+          {
+            "metric": "query_beng_avg_ms",
+            "baseline": 2.06545,
+            "current": 1.55965,
+            "improvement": 0.24488610230216168
+          },
+          {
+            "metric": "query_mixed_avg_ms",
+            "baseline": 1.6431499999999999,
+            "current": 1.246,
+            "improvement": 0.2417003925387213
+          },
+          {
+            "metric": "query_limit_avg_ms",
+            "baseline": 1.97755,
+            "current": 1.90485,
+            "improvement": 0.036762660868246054
+          }
+        ]
+      }
+    }
+  },
+  "fixed_ci_reference_scores": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+  ],
+  "client_binary_sha256": "da3692bc7f5e4ae199e5007d9dca90aa1e849a626c4db6d0d9d860120b3f0a3c",
+  "client_source_sha256": "364d12ab86de3f574c132e3064dc65bb8d3a51669cb7d6b377aea3a03d4752f9",
+  "baseline_binary_sha256": "e6ac29a9653941049d3b4982899b7ff7c4abea490a5ec827c3c21cf834e28429",
+  "candidate_binary_sha256": "9a817bd6f8f3ab3b8b187320d749141d1d4becfeedac8a02b621dacb8d3423a8",
+  "client_build": "MSVC 19.44, C++17, O2, MD; Windows SDK ws2_32.lib"
+}
