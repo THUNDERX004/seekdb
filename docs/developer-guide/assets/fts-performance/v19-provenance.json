@@ -1,0 +1,20 @@
+{
+  "base_revision": "e3c04befd2c9b6559f0005c4bf72c62e244cf06c",
+  "checkpoint_revision": "d601e64294b96e195e5bd907a16e102deaa6588d",
+  "baseline_binary_sha256": "e6ac29a9653941049d3b4982899b7ff7c4abea490a5ec827c3c21cf834e28429",
+  "candidate_binary_sha256": "dee9a1fddd9e7fd26ba5ca6914261330bde05a8ad8b0219c884828b7aed22e5d",
+  "checkpoint_binary_sha256": "9a817bd6f8f3ab3b8b187320d749141d1d4becfeedac8a02b621dacb8d3423a8",
+  "candidate_source_diff_sha256": "b7f02af63872cc478a6db68b06b4a115a786e355cacc245660a680eb44c888a0",
+  "build_method": "replay exact cached Bazel C++20 O2 unity compilation and final link actions",
+  "recompiled_units": [
+    "sql_runtime_ob_sql_engine_expr_5.unity",
+    "storage_runtime_ob_storage_fts_0.unity",
+    "storage_runtime_ob_storage_rebase_0.unity"
+  ],
+  "new_fixture_source": "independently verified original executable; recorded and rechecked on original",
+  "fixture_sha256": "0c820f4147b0c6c746d4f034a03bb3ec0794bc6a33cbe01488cdaddc0723ef76",
+  "initial_attempt_failure": "Generator stdout used the Windows non-UTF8 default: Incorrect string value at raw load. No complete report; reran with PYTHONUTF8=1 and PYTHONIOENCODING=utf-8 for all four runs.",
+  "intermediate_regression": "New config regression exposed last-spelling replacement for collation-equivalent keys. Fixed callback to replace the key as well as the frequency before collecting complete runs.",
+  "formal_ci_result": false,
+  "tested_kernel_diff_sha256": "fddce54ff2a2fcbc1a9d8139e5370aa377269a6b6fb8d0fa1f9eef2de2b48ab1"
+}
