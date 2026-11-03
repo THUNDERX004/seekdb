@@ -1,10 +1,12 @@
 # Full-text performance optimization
 
-The measured benefit is a 4.45% category-equal reduction on the local Windows
-control, with 16.55%, 16.96% and 19.16% reductions for the Chinese, English and
-mixed COUNT queries. Build and tokenization changes are small relative to
-run-to-run noise; the LIMIT query regressed 5.06% in the two-run mean.
-The 50% overall reduction target has not been demonstrated.
+The latest local Windows native-client control measures an 8.88% category-equal
+time reduction: build 2.83%, tokenization 6.07% and query 17.75%. The Chinese,
+English and mixed COUNT queries improve 24.08%, 24.65% and 25.79%; the LIMIT
+query regresses 3.53%. Both binaries ran the same complete fixed-parameter
+benchmark twice in alternating order. Earlier Python/native-client controls
+are retained below as separate experiments. The 50% overall reduction target
+and a formal VLDB CI result have not been demonstrated.
 
 ## Bottlenecks and changes
 
@@ -191,6 +193,80 @@ regressions but changed the adjacent parser microbenchmark by only about 1%,
 inside its sample spread. That experiment was rejected; the committed kernel
 and candidate executable were restored exactly to the checkpoint hash.
 Raw samples and the rejection decision are retained with the results.
+
+## Further word aggregation and TOKENIZE configuration optimization
+
+The word aggregation hot path called get_refactored followed by an overwriting
+set_refactored for each word. This hashed and looked up the same word twice;
+the overwrite also allocated a replacement hash node for repeated words.
+It now uses the existing set_or_update operation. An in-place callback updates
+both the frequency and key, retaining the established initial-count convention
+and the latest spelling for collation-equivalent words.
+
+TOKENIZE previously rebuilt/validated its parser properties, serialized that
+JSON tree, and immediately parsed the serialization again when initializing
+the parse helper. It now materializes the same properties directly from the
+validated tree and passes the parsed parser identity/configuration to the
+helper. Stored index configurations still use the existing string entry point.
+That path and the typed entry point share property decoding and initialization;
+the difference between an absent stored string and a nonempty JSON object
+remains explicit. All argument, parser and property validation still runs.
+
+A new regression records 768 complete configuration, grouping and error cases
+on the independently verified original executable. It covers all five built-in
+parsers, default/explicit output, custom and invalid settings, dynamic row
+parameters, prepared execution, case/accent-equivalent keys and repeated words.
+Exact outputs, including retained word spelling, are compared with the fixture.
+It exposed that preserving the first spelling was incompatible: the original
+overwriting hash insertion retained the latest spelling. The callback was
+corrected before final performance runs. The new fixture was also rechecked
+after restarting the original binary. The final candidate passed this suite,
+the existing hot-path and batch suites, all 27 collation cases/52,963 result
+rows, and two normal driver open/close cycles (3.877 seconds).
+
+The complete benchmark ran in order candidate, original, candidate, original
+with the same native client and the same CPU/memory/data-directory configuration
+described above. Every run used SKIP_LOAD=0 and all fixed official parameters.
+The initial attempt stopped at raw data load because the Windows Python
+generator's default stdout encoding was not UTF-8; it produced no complete
+report. PYTHONUTF8=1 and PYTHONIOENCODING=utf-8 were then set for all four
+complete runs. Official scripts, SQL and data generation were unchanged and
+their Git blob hashes were rechecked. No complete run or slow sample was
+excluded, and no compilation or profiling ran alongside the measurements.
+
+Build values are seconds; all other values are milliseconds. Each column is
+the arithmetic mean of two complete runs.
+
+| Metric | Original native mean | Latest candidate mean | Time reduction |
+| --- | ---: | ---: | ---: |
+| build_ik_all_sec | 7.71200 | 7.47150 | 3.12% |
+| build_ik_content_sec | 6.04250 | 5.92550 | 1.94% |
+| build_beng_en_sec | 3.47850 | 3.35850 | 3.45% |
+| tokenize_ik_avg_ms | 0.12805 | 0.12220 | 4.57% |
+| tokenize_beng_avg_ms | 0.09115 | 0.08425 | 7.57% |
+| query_cn_avg_ms | 1.44500 | 1.09700 | 24.08% |
+| query_beng_avg_ms | 2.02215 | 1.52375 | 24.65% |
+| query_mixed_avg_ms | 1.64125 | 1.21790 | 25.79% |
+| query_limit_avg_ms | 1.85320 | 1.91865 | -3.53% |
+
+The three category reductions are 2.83%, 6.07% and 17.75%; the category-equal
+mean is 8.8841%. The unchanged scoring function gives 17.77/100 when supplied
+the local original means as an analytical control. This derived comparison
+does not replace the checked-in CI baseline. All four reports independently
+cap the fixed CI reference score locally, including both originals; that
+100/100 reference cannot be attributed to this patch. LIMIT regression and
+run-to-run variation remain visible in the calculation. Hit counts remain
+8001, 11000, 7332 and 20; the separate complete-result regressions establish
+correctness.
+
+Adjacent auxiliary parser diagnostics measured the previous checkpoint at
+0.031966/0.009313 ms for IK/BENG and the final candidate at 0.029756/0.008069 ms.
+These diagnostics support reduced parser overhead, but are not scoring data.
+Intermediate diagnostic results, including a slower intermediate sample, are
+also retained. The final native binary hash is
+dee9a1fddd9e7fd26ba5ca6914261330bde05a8ad8b0219c884828b7aed22e5d.
+Raw reports, sample logs, category calculations, diagnostics and provenance
+are the v19 files in [the results directory](../assets/fts-performance/).
 
 ## Reproduction
 

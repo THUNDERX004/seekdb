@@ -27,7 +27,7 @@ namespace oceanbase
 namespace storage
 {
 
-class ObFTParserProperty;
+struct ObFTParserProperty;
 
 #define FTS_STOP_WORD_MAX_LENGTH 10
 

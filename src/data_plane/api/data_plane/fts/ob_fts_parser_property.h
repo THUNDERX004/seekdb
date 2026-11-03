@@ -137,6 +137,11 @@ public:
   ObFTParserProperty();
   ~ObFTParserProperty() = default;
   int parse_for_parser_helper(const ObFTParser &parser, const ObString &json_str);
+  // Consume the validated configuration directly, without a JSON round trip.
+  // use_defaults distinguishes an absent stored string from a nonempty JSON object.
+  int parse_for_parser_helper(const ObFTParser &parser,
+                              const ObFTParserJsonProps &props,
+                              const bool use_defaults = false);
 
   bool is_equal(const ObFTParserProperty &other) const
   {
