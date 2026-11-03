@@ -124,7 +124,9 @@ private:
 class ObBasicEnglishNormalizer final : public ObTokenNormalizer
 {
 public:
-  ObBasicEnglishNormalizer();
+  // An optional caller-owned allocator keeps normalized tokens alive after
+  // this stream is destroyed. The default retains the per-token scratch arena.
+  explicit ObBasicEnglishNormalizer(ObIAllocator *output_allocator = nullptr);
   virtual ~ObBasicEnglishNormalizer() {};
 
   virtual void reset() override;
@@ -132,6 +134,7 @@ public:
   virtual int get_next(ObDatum &next_token, int64_t &token_freq) override;
 private:
   ObArenaAllocator norm_allocator_;
+  ObIAllocator *output_allocator_;
 };
 
 // group (deduplicate) and count

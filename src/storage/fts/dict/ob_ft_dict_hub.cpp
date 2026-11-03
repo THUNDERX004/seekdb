@@ -28,6 +28,79 @@ namespace oceanbase
 {
 namespace storage
 {
+class ObFTDictHub::BuiltinDict
+{
+public:
+  explicit BuiltinDict(const ObFTDictDesc &desc)
+      : allocator_(lib::ObMemAttr("FTSharedDict")),
+        cache_(allocator_),
+        reader_(allocator_, &cache_, desc)
+  {}
+
+  // Destruction order matters: drop readers before releasing the DAT pins.
+  ObArenaAllocator allocator_;
+  ObFTCacheRangeContainer cache_;
+  ObFTRangeDict reader_;
+};
+
+ObFTDictHub::ObFTDictHub()
+    : is_inited_(false), dict_map_(), rw_dict_lock_(), builtin_dicts_(), builtin_dict_mutex_()
+{
+  for (int64_t i = 0; i < BUILTIN_DICT_COUNT; ++i) {
+    builtin_dicts_[i].store(nullptr, std::memory_order_relaxed);
+  }
+}
+
+ObFTDictHub::~ObFTDictHub()
+{
+  destroy();
+}
+
+int ObFTDictHub::get_builtin_ik_dict(ObFTDictType type, const ObIFTDict *&dict)
+{
+  int ret = OB_SUCCESS;
+  dict = nullptr;
+  const int64_t index = static_cast<int64_t>(type) - 1;
+  if (!is_inited_) {
+    ret = OB_NOT_INIT;
+  } else if (index < 0 || index >= BUILTIN_DICT_COUNT) {
+    ret = OB_INVALID_ARGUMENT;
+  } else {
+    BuiltinDict *cached = builtin_dicts_[index].load(std::memory_order_acquire);
+    if (nullptr == cached) {
+      // Only cold initialization takes a lock. Failed initialization is never
+      // published, so a later call can retry the existing cache-build path.
+      lib::ObMutexGuard guard(builtin_dict_mutex_);
+      cached = builtin_dicts_[index].load(std::memory_order_acquire);
+      if (nullptr == cached) {
+        static const char *const NAMES[] = {"main_dict", "quan_dict", "stopword"};
+        const ObFTDictDesc desc(NAMES[index], type, CHARSET_UTF8MB4, CS_TYPE_UTF8MB4_BIN);
+        if (OB_ISNULL(cached = OB_NEW(BuiltinDict, "FTSharedDict", desc))) {
+          ret = OB_ALLOCATE_MEMORY_FAILED;
+        } else {
+          ret = load_cache(desc, cached->cache_);
+          if (OB_ENTRY_NOT_EXIST == ret) {
+            ret = build_cache(desc, cached->cache_);
+          }
+          if (OB_SUCC(ret)) {
+            ret = cached->reader_.init();
+          }
+          if (OB_SUCC(ret)) {
+            builtin_dicts_[index].store(cached, std::memory_order_release);
+          } else {
+            OB_DELETE(BuiltinDict, "FTSharedDict", cached);
+            cached = nullptr;
+          }
+        }
+      }
+    }
+    if (OB_SUCC(ret)) {
+      dict = &cached->reader_;
+    }
+  }
+  return ret;
+}
+
 int ObFTDictHub::init()
 {
   static constexpr int K_MAX_DICT_BUCKET = 128; // for now, only built-in dicts.
@@ -43,7 +116,14 @@ int ObFTDictHub::init()
 int ObFTDictHub::destroy()
 {
   int ret = OB_SUCCESS;
+  lib::ObMutexGuard guard(builtin_dict_mutex_);
   is_inited_ = false;
+  for (int64_t i = 0; i < BUILTIN_DICT_COUNT; ++i) {
+    BuiltinDict *cached = builtin_dicts_[i].exchange(nullptr, std::memory_order_acq_rel);
+    if (nullptr != cached) {
+      OB_DELETE(BuiltinDict, "FTSharedDict", cached);
+    }
+  }
   return ret;
 }
 int ObFTDictHub::build_cache(const ObFTDictDesc &desc, ObFTCacheRangeContainer &container)

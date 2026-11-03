@@ -21,6 +21,9 @@
 #include "lib/lock/ob_bucket_lock.h"
 #include "storage/fts/dict/ob_ft_dict_def.h"
 
+#include <atomic>
+#include "lib/lock/ob_mutex.h"
+
 namespace oceanbase
 {
 namespace storage
@@ -93,11 +96,12 @@ private:
 };
 
 class ObFTCacheRangeContainer;
+class ObIFTDict;
 class ObFTDictHub
 {
 public:
-  ObFTDictHub() : is_inited_(false), dict_map_(), rw_dict_lock_() {}
-  ~ObFTDictHub() {}
+  ObFTDictHub();
+  ~ObFTDictHub();
 
   int init();
 
@@ -106,6 +110,10 @@ public:
   int build_cache(const ObFTDictDesc &desc, ObFTCacheRangeContainer &container);
 
   int load_cache(const ObFTDictDesc &desc, ObFTCacheRangeContainer &container);
+
+  // Built-in IK dictionaries are immutable. The hub owns their readers and
+  // cache pins until all parser users have stopped during server teardown.
+  int get_builtin_ik_dict(ObFTDictType type, const ObIFTDict *&dict);
 
 private:
   int get_dict_info(const ObFTDictInfoKey &key, ObFTDictInfo &info);
@@ -118,6 +126,10 @@ private:
   // holds info of dict
   hash::ObHashMap<ObFTDictInfoKey, ObFTDictInfo> dict_map_;
   ObBucketLock rw_dict_lock_;
+  class BuiltinDict;
+  static constexpr int64_t BUILTIN_DICT_COUNT = 3;
+  std::atomic<BuiltinDict *> builtin_dicts_[BUILTIN_DICT_COUNT];
+  lib::ObMutex builtin_dict_mutex_;
 };
 
 } //  namespace storage

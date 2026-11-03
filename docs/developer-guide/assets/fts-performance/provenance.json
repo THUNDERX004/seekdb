@@ -1,0 +1,9 @@
+{
+  "base_revision": "e3c04befd2c9b6559f0005c4bf72c62e244cf06c",
+  "candidate_binary_sha256": "9a817bd6f8f3ab3b8b187320d749141d1d4becfeedac8a02b621dacb8d3423a8",
+  "baseline_binary_sha256": "e6ac29a9653941049d3b4982899b7ff7c4abea490a5ec827c3c21cf834e28429",
+  "build_method": "replay exact cached Bazel C++20 O2 unity compilation and final link actions",
+  "tested_source_diff_sha256": "3002c82f42ccda8eea7adf854f14c718e6c35874a6a8fd9944be82c2cae94c81",
+  "benchmark_source_revision": "5bce9e06d",
+  "fixed_ci_reference_is_official_result": false
+}

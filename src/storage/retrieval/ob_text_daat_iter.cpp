@@ -30,7 +30,8 @@ int ObTextDaaTIter::init(const ObTextDaaTParam &param)
     ret = OB_INVALID_ARGUMENT;
   } else if (OB_FAIL(ObSRDaaTIterImpl::init(*param.base_param_, *param.dim_iters_,
                                             *param.allocator_, *param.relevance_collector_))) {
-  } else if (OB_FAIL(bm25_param_estimator_.init(param.bm25_param_est_ctx_))) {
+  } else if (nullptr != param.base_param_->relevance_expr_
+             && OB_FAIL(bm25_param_estimator_.init(param.bm25_param_est_ctx_))) {
   } else {
     mode_flag_ = param.mode_flag_;
     function_lookup_mode_ = param.function_lookup_mode_;
@@ -72,6 +73,41 @@ int ObTextDaaTIter::pre_process()
     ret = OB_ITER_END;
   } else if (iter_param_->need_project_relevance()) {
     if (OB_FAIL(bm25_param_estimator_.do_estimation(*iter_param_->eval_ctx_))) {
+    }
+  }
+  return ret;
+}
+
+int ObTextDaaTIter::do_one_merge_round(int64_t &count)
+{
+  int ret = OB_SUCCESS;
+  if (iter_param_->need_project_relevance() || iter_param_->need_filter()
+      || mode_flag_ != sql::ObMatchAgainstMode::NATURAL_LANGUAGE_MODE
+      || function_lookup_mode_) {
+    ret = ObSRDaaTIterImpl::do_one_merge_round(count);
+  } else if (OB_FAIL(fill_merge_heap())) {
+  } else {
+    // Natural-language existence predicates need only the union of document
+    // IDs. Drain equal IDs without collecting a score for every posting and
+    // without constructing a filter evaluation scope for every result.
+    const ObSRMergeItem *item = nullptr;
+    int64_t iter_idx = 0;
+    bool doc_end = false;
+    while (OB_SUCC(ret) && !merge_heap_->empty() && !doc_end) {
+      doc_end = merge_heap_->is_unique_champion();
+      if (OB_FAIL(merge_heap_->top(item))) {
+      } else if (FALSE_IT(iter_idx = item->iter_idx_)) {
+      } else if (OB_FAIL(merge_heap_->pop())) {
+      } else {
+        next_round_iter_idxes_[next_round_cnt_++] = iter_idx;
+      }
+    }
+    if (OB_SUCC(ret)) {
+      if (OB_ISNULL(iter_domain_ids_[iter_idx])) {
+        ret = OB_ERR_UNEXPECTED;
+      } else {
+        ret = cache_result(count, *iter_domain_ids_[iter_idx], 1.0);
+      }
     }
   }
   return ret;

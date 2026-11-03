@@ -1879,6 +1879,12 @@ public:
   static int check_contain_correlated_json_table(const ObDMLStmt *stmt, bool &is_contain);
   static int check_contain_lost_deterministic_expr(const ObIArray<ObRawExpr*> &exprs,
                                                    bool &is_contain);
+  // Check every semantic expression root before eliding natural-language scores.
+  static int check_need_calc_match_score(ObExecContext *exec_ctx,
+                                        const ObDMLStmt *stmt,
+                                        ObMatchFunRawExpr *match_expr,
+                                        bool &need_calc,
+                                        ObIArray<ObExprConstraint> &constraints);
   // check whether the score calculated by match expr is actually utilized
   static int check_expr_eq_zero(ObExecContext *ctx,
                                 ObRawExpr *expr, 

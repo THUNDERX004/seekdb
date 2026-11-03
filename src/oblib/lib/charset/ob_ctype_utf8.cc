@@ -377,13 +377,21 @@ static int ob_strnncollsp_utf8mb4(const ObCharsetInfo *cs,
                        const unsigned char *dst, size_t dstlen,
                        bool diff_if_only_endspace_difference)
 {
+  // Repeated sort keys need no decoding or collation-weight lookups.
+  if (srclen == dstlen && (srclen == 0 || src == dst || memcmp(src, dst, srclen) == 0)) {
+    return 0;
+  }
   int res;
   ob_wc_t src_wc = 0, dst_wc = 0;
   const unsigned char *se= src + srclen, *te= dst + dstlen;
   ObUnicaseInfo *uni_plane= cs->caseinfo;
   while ( src < se && dst < te ) {
-    int s_res= ob_mb_wc_utf8mb4(cs, &src_wc, src, se);
-    int t_res= ob_mb_wc_utf8mb4(cs, &dst_wc, dst, te);
+    // The loop bounds already guarantee one readable byte. Keep multibyte
+    // validation and the weight mapping below identical to the general path.
+    src_wc = *src;
+    dst_wc = *dst;
+    int s_res = src_wc < 0x80 ? 1 : ob_mb_wc_utf8mb4(cs, &src_wc, src, se);
+    int t_res = dst_wc < 0x80 ? 1 : ob_mb_wc_utf8mb4(cs, &dst_wc, dst, te);
     if ( s_res <= 0 || t_res <= 0 ) {
       return bincmp_utf8mb4(src, se, dst, te);
     }

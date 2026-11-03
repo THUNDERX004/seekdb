@@ -12804,6 +12804,55 @@ bool ObTransformUtils::is_full_group_by(ObSelectStmt& stmt, ObSQLMode mode)
   return !stmt.has_order_by() && is_only_full_group_by_on(mode);
 }
 
+int ObTransformUtils::check_need_calc_match_score(ObExecContext *exec_ctx,
+                                                   const ObDMLStmt *stmt,
+                                                   ObMatchFunRawExpr *match_expr,
+                                                   bool &need_calc,
+                                                   ObIArray<ObExprConstraint> &constraints)
+{
+  int ret = OB_SUCCESS;
+  int64_t child_count = 0;
+  ObSEArray<ObRawExpr *, 16> exprs;
+  need_calc = true;
+  if (OB_ISNULL(exec_ctx) || OB_ISNULL(stmt) || OB_ISNULL(match_expr)) {
+    ret = OB_INVALID_ARGUMENT;
+  } else if (!stmt->is_select_stmt()
+             || stmt->get_condition_exprs().count() != 1
+             || stmt->has_limit()
+             || match_expr->get_expr_type() != T_FUN_MATCH_AGAINST
+             || match_expr->get_mode_flag() != NATURAL_LANGUAGE_MODE
+             || !match_expr->get_columns_boosts().empty()) {
+    // Boolean operators and column boosts can produce non-positive scores.
+    // Keep LIMIT/OFFSET on the established scored path, including its top-N
+    // runtime filters and result projection across retrieval batches.
+  } else if (OB_FAIL(stmt->get_child_stmt_size(child_count))) {
+  } else if (child_count != 0) {
+    // Keep scores when nested statements may consume them through correlations.
+  } else if (OB_FAIL(stmt->get_relation_exprs(exprs))) {
+  } else if (!exprs.empty()) {
+    // Natural-language BM25 contributions are strictly positive for a hit.
+    // Elide scores only for a standalone positive WHERE conjunct. In
+    // particular, boolean projection and OR/function lookup still need the
+    // MATCH value. Keep all non-WHERE consumers on the scored path.
+    need_calc = false;
+    for (int64_t i = 0; OB_SUCC(ret) && !need_calc && i < exprs.count(); ++i) {
+      ObRawExpr *expr = exprs.at(i);
+      bool contains_match = false;
+      if (OB_FAIL(ObRawExprUtils::find_expr(expr, match_expr, contains_match))) {
+      } else if (!contains_match) {
+      } else if (!ObRawExprUtils::find_expr(stmt->get_condition_exprs(), expr)
+                 || (expr->get_expr_type() != T_OP_BOOL
+                     && expr->get_expr_type() != T_OP_GT
+                     && expr->get_expr_type() != T_OP_LT)) {
+        need_calc = true;
+      } else if (OB_FAIL(inner_check_need_calc_match_score(exec_ctx, expr,
+                                                          match_expr, need_calc, constraints))) {
+      }
+    }
+  }
+  return ret;
+}
+
 int ObTransformUtils::inner_check_need_calc_match_score(ObExecContext *exec_ctx,
                                                         ObRawExpr* expr, 
                                                         ObRawExpr* match_expr, 
