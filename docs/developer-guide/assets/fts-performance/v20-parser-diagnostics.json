@@ -1,0 +1,146 @@
+{
+  "purpose": "Auxiliary parser diagnostics; IP samples are coarse and not exact percentages or scoring data",
+  "checkpoint": {
+    "ik": {
+      "mean_ms": 0.02971633400011342,
+      "samples_ms": [
+        0.029599379999854136,
+        0.02960315000018454,
+        0.029351320000569104,
+        0.030494129999715368,
+        0.029533690000243952
+      ]
+    },
+    "beng": {
+      "mean_ms": 0.007967843999940669,
+      "samples_ms": [
+        0.008018469999660738,
+        0.008091679999779444,
+        0.007931909999751952,
+        0.007842220000020462,
+        0.00795494000049075
+      ]
+    }
+  },
+  "candidate": {
+    "ik": {
+      "mean_ms": 0.027222896000021136,
+      "samples_ms": [
+        0.02815956000049482,
+        0.02734822999991593,
+        0.026422359999560285,
+        0.026473519999854034,
+        0.027710810000280618
+      ]
+    },
+    "beng": {
+      "mean_ms": 0.006438692000083393,
+      "samples_ms": [
+        0.0064041300000099,
+        0.0065062300003773995,
+        0.006431100000190782,
+        0.006399519999831682,
+        0.006452480000007199
+      ]
+    }
+  },
+  "checkpoint_beng_ip_samples": {
+    "purpose": "Coarse instruction-pointer diagnostic, not scoring or reliable exact percentages",
+    "parser": "beng",
+    "rounds": 500000,
+    "sample_count": 73,
+    "image_size": 121884672,
+    "wall_seconds_with_sampling": 4.562658900002134,
+    "cpu_seconds_with_sampling": 4.53125,
+    "symbols": [
+      [
+        "outside-server",
+        33
+      ],
+      [
+        "?unlock@ObLatch@common@oceanbase@@QEAAHPEBI@Z",
+        7
+      ],
+      [
+        "?wrlock@ObLatch@common@oceanbase@@QEAAHI_JPEBI@Z",
+        6
+      ],
+      [
+        "?check_stopword@ObStopWordChecker@storage@oceanbase@@QEAAHAEBVObFTWord@23@AEA_N@Z",
+        3
+      ],
+      [
+        "?ob_hash_sort_utf8mb4@@YAXPEBUObCharsetInfo@@PEBE_KPEA_K3_NP6A_KPEBX22@Z@Z",
+        3
+      ],
+      [
+        "?get_refactored@?$ObHashTable@VObFTWord@storage@oceanbase@@U?$HashMapPair@VObFTWord@storage@oceanbase@@UHashNullObj@hash@common@3@@hash@common@3@U?$hash_func@VObFTWord@storage@oceanbase@@@563@U?$equal_to@VObFTWord@storage@oceanbase@@@563@U?$pair_first@U?$HashMapPair@VObFTWord@storage@oceanbase@@UHashNullObj@hash@common@3@@hash@common@oceanbase@@@563@V?$SimpleAllocer@U?$ObHashTableNode@U?$HashMapPair@VObFTWord@storage@oceanbase@@UHashNullObj@hash@common@3@@hash@common@oceanbase@@@hash@common@oceanbase@@$0GM@USpinMutexDefendMode@234@UDefaultSimpleAllocerAllocator@234@@563@UReadWriteDefendMode@563@UNormalPointer@563@VObMalloc@63@$00@hash@common@oceanbase@@QEAAHAEBVObFTWord@storage@4@AEAU?$HashMapPair@VObFTWord@storage@oceanbase@@UHashNullObj@hash@common@3@@234@_J@Z",
+        2
+      ],
+      [
+        "?append@ObStringBuffer@common@oceanbase@@QEAAHPEBD_KC@Z",
+        2
+      ],
+      [
+        "?charset_convert@ObCharset@common@oceanbase@@SAHAEAVObIAllocator@23@AEBVObString@23@W4ObCollationType@23@2AEAV523@_JPEA_J@Z",
+        2
+      ],
+      [
+        "?serialize_json_string@ObJsonBinSerializer@common@oceanbase@@SAHW4ObJBVerType@23@AEBVObString@23@AEAVObStringBuffer@23@@Z",
+        2
+      ],
+      [
+        "?element_count@ObJsonArray@common@oceanbase@@UEBA_KXZ",
+        1
+      ],
+      [
+        "??0ObFTParserName@storage@oceanbase@@QEAA@PEBD@Z",
+        1
+      ],
+      [
+        "?set_length@ObStringBuffer@common@oceanbase@@QEAAH_K@Z",
+        1
+      ],
+      [
+        "?groupby_word@ObAddWord@storage@oceanbase@@AEAAHAEBVObFTWord@23@_J@Z",
+        1
+      ],
+      [
+        "?make_token_array_json@ObFTParseHelper@storage@oceanbase@@QEAAHAEBV?$ObHashMap@VObFTWord@storage@oceanbase@@_JULatchReadWriteDefendMode@hash@common@3@U?$hash_func@VObFTWord@storage@oceanbase@@@563@U?$equal_to@VObFTWord@storage@oceanbase@@@563@V?$SimpleAllocer@U?$ObHashTableNode@U?$HashMapPair@VObFTWord@storage@oceanbase@@_J@hash@common@oceanbase@@@hash@common@oceanbase@@$0GB@USpinMutexDefendMode@234@UDefaultSimpleAllocerAllocator@234@@563@UNormalPointer@563@VObMalloc@63@$00@hash@common@3@AEAPEAVObIJsonBase@63@@Z",
+        1
+      ],
+      [
+        "?reserve@?$ObSEArrayImpl@VObJsonObjectPair@common@oceanbase@@$0A@UModulePageAllocator@23@$0A@@common@oceanbase@@UEAAH_J@Z",
+        1
+      ],
+      [
+        "?ob_strnncollsp_utf8mb4@@YAHPEBUObCharsetInfo@@PEBE_K12_N@Z",
+        1
+      ],
+      [
+        "?tokenize_fulltext@ObExprTokenize@sql@oceanbase@@CAHAEBUTokenizeParam@123@W4OUTPUT_MODE@4123@AEAVObIAllocator@common@3@AEAPEAVObIJsonBase@73@@Z",
+        1
+      ],
+      [
+        "?mult_and_add@@YAPEAU_bigint@@PEAU1@HHPEAUObStackAllocator@@@Z",
+        1
+      ],
+      [
+        "strcmp",
+        1
+      ],
+      [
+        "__security_check_cookie",
+        1
+      ],
+      [
+        "?ob_casedn_utf8mb4@@YA_KPEBUObCharsetInfo@@PEAD_K12@Z",
+        1
+      ],
+      [
+        "?append@ObJsonArray@common@oceanbase@@QEAAHPEAVObJsonNode@23@@Z",
+        1
+      ]
+    ]
+  }
+}

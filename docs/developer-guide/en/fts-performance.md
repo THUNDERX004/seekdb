@@ -1,9 +1,9 @@
 # Full-text performance optimization
 
-The latest local Windows native-client control measures an 8.88% category-equal
-time reduction: build 2.83%, tokenization 6.07% and query 17.75%. The Chinese,
-English and mixed COUNT queries improve 24.08%, 24.65% and 25.79%; the LIMIT
-query regresses 3.53%. Both binaries ran the same complete fixed-parameter
+The latest local Windows native-client control measures a 10.18% category-equal
+time reduction: build 4.48%, tokenization 8.21% and query 17.85%. The Chinese,
+English and mixed COUNT queries improve 25.08%, 22.81% and 25.42%; the LIMIT
+query regresses 1.93%. Both binaries ran the same complete fixed-parameter
 benchmark twice in alternating order. Earlier Python/native-client controls
 are retained below as separate experiments. The 50% overall reduction target
 and a formal VLDB CI result have not been demonstrated.
@@ -237,7 +237,7 @@ excluded, and no compilation or profiling ran alongside the measurements.
 Build values are seconds; all other values are milliseconds. Each column is
 the arithmetic mean of two complete runs.
 
-| Metric | Original native mean | Latest candidate mean | Time reduction |
+| Metric | Original native mean | v19 candidate mean | Time reduction |
 | --- | ---: | ---: | ---: |
 | build_ik_all_sec | 7.71200 | 7.47150 | 3.12% |
 | build_ik_content_sec | 6.04250 | 5.92550 | 1.94% |
@@ -267,6 +267,72 @@ also retained. The final native binary hash is
 dee9a1fddd9e7fd26ba5ca6914261330bde05a8ad8b0219c884828b7aed22e5d.
 Raw reports, sample logs, category calculations, diagnostics and provenance
 are the v19 files in [the results directory](../assets/fts-performance/).
+
+## Per-evaluation word maps without bucket locks
+
+An auxiliary BENG instruction-pointer sample on the v19 checkpoint observed
+word-map latch lock/unlock functions, alongside stopword checks, charset/hash
+work and JSON output. There were only 73 samples, with 33 outside the server
+image; this is directional evidence, not an exact CPU percentage. Source
+inspection found every mutable word-map instance on the stack of one
+synchronous document or query evaluation: TOKENIZE, domain-index row generation,
+optimizer query parsing and both legacy/current query iterators.
+
+ObFTWordMap now selects the existing NoPthreadDefendMode. The three query
+callers that previously spelled out the locked template use the same alias.
+No mutable word map is shared across evaluations; reusable parser helpers do
+not own these maps. Shared dictionaries and the stopword set retain their
+existing synchronization. All seven affected native compilation units were
+rebuilt, including the optimizer and both query iteration implementations.
+
+The adjacent parser diagnostic changed IK 0.029716 -> 0.027223 ms and BENG
+0.007968 -> 0.006439 ms, approximately 8.39% and 19.19% reductions from v19.
+An additional concurrent regression derives expected IDs independently from
+127 input documents, records sequential full rankings, and verifies 1,440
+complete ID/ranking/token results across eight independent sessions. This
+checks that concurrent query parsing and document parsing remain isolated.
+The final candidate passed it, all 768 configuration cases, the existing
+408-token/144-ranking/920-predicate/144-concurrent-parse suite, all 280 batch
+cases, and all 27 collation cases/52,963 result rows. Two normal driver
+open/close cycles also passed in 4.114 seconds.
+
+Two more complete original runs and two complete v20 runs used the same
+unmodified native client, official fixed parameters and resource settings.
+The order was candidate, original, candidate, original. A local wrapper initially
+selected Windows PowerShell 5 and treated normal benchmark stderr progress as
+an error before measurement. After switching to PowerShell 7, the first
+candidate run completed; a stale Windows TCP listener snapshot then delayed
+the next process switch. The port was verified free before resuming at the
+next original run. No completed run was repeated, overwritten or excluded.
+All samples, including slow English-query samples in both versions, remain
+in the arithmetic means below. No compiler or profiler ran during timing.
+
+Build values are seconds; tokenization and query values are milliseconds.
+
+| Metric | Original native mean | v20 candidate mean | Time reduction |
+| --- | ---: | ---: | ---: |
+| build_ik_all_sec | 7.68950 | 7.52200 | 2.18% |
+| build_ik_content_sec | 6.03900 | 5.82500 | 3.54% |
+| build_beng_en_sec | 3.59750 | 3.32000 | 7.71% |
+| tokenize_ik_avg_ms | 0.12710 | 0.11645 | 8.38% |
+| tokenize_beng_avg_ms | 0.08820 | 0.08110 | 8.05% |
+| query_cn_avg_ms | 1.43010 | 1.07140 | 25.08% |
+| query_beng_avg_ms | 2.08385 | 1.60845 | 22.81% |
+| query_mixed_avg_ms | 1.63120 | 1.21660 | 25.42% |
+| query_limit_avg_ms | 1.85730 | 1.89315 | -1.93% |
+
+The category improvements are build 4.4785%, tokenize 8.2146% and query
+17.8456%; their equal-weight mean is 10.1796%. Applying the unchanged formula
+to this separate local control gives 20.36/100. Against the fixed CI reference,
+all four local reports again cap at 100/100, including the originals. Formal
+CI and a 50% overall reduction remain unproven. The native-client series are
+kept separate from earlier experiments; the coarse profiles and micro timings
+are not included in scoring.
+
+The v20 files in [the results directory](../assets/fts-performance/) retain
+all raw reports, sample logs, score calculations, diagnostics, the five-call-site
+ownership audit and exact binary/source hashes. The final native binary hash is
+3e1b144c5f8b243936c408270fd5b6f65994896bd0b89bd8b896af2724ce69a6.
 
 ## Reproduction
 

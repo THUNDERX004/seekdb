@@ -1,0 +1,30 @@
+{
+  "base_revision": "e3c04befd2c9b6559f0005c4bf72c62e244cf06c",
+  "checkpoint_revision": "346177012826d3baa4d46ffa245bc1870f0b347c",
+  "baseline_binary_sha256": "e6ac29a9653941049d3b4982899b7ff7c4abea490a5ec827c3c21cf834e28429",
+  "candidate_binary_sha256": "3e1b144c5f8b243936c408270fd5b6f65994896bd0b89bd8b896af2724ce69a6",
+  "checkpoint_binary_sha256": "dee9a1fddd9e7fd26ba5ca6914261330bde05a8ad8b0219c884828b7aed22e5d",
+  "build_method": "replay exact cached Bazel C++20 O2 unity compilation and final link actions",
+  "tested_kernel_diff_sha256": "b17866a551311b0a4943acbea3104861f7b6dd5e71b0fd5af439f1cdb59f19b2",
+  "recompiled_units": [
+    "storage_runtime_ob_storage_fts_0.unity",
+    "storage_runtime_ob_storage_rebase_0.unity",
+    "sql_runtime_ob_sql_engine_expr_5.unity",
+    "sql_runtime_ob_sql_das_0.unity",
+    "sql_runtime_ob_sql_das_1.unity",
+    "observer_retrieval_composition_ob_retrieval_composition_0.unity",
+    "optimizer_ob_sql_optimizer_join_order.unity"
+  ],
+  "local_wrapper_failures": [
+    "The first attempt used Windows PowerShell 5, which treated normal benchmark stderr progress as an error before measurement. No complete report.",
+    "After the first successful candidate report, a stale Windows TCP listener snapshot prevented switching. Verified port had cleared and resumed at the next original run; no completed report was overwritten or excluded."
+  ],
+  "ownership_audit": [
+    "ObExprTokenize::tokenize_fulltext: synchronous stack map",
+    "ObDASDomainUtils::generate_fulltext_word_rows: synchronous stack map",
+    "ObJoinOrder::get_query_tokens: synchronous stack map",
+    "ObDASTextRetrievalMergeIter::build_query_tokens: synchronous stack map",
+    "ObDASLegacyTRMergeIter::build_query_tokens: synchronous stack map"
+  ],
+  "formal_ci_result": false
+}

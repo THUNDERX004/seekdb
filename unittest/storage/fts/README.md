@@ -1,8 +1,8 @@
 # Full-text hot-path regressions
 
 These integration tests require Python 3, PyMySQL, and a dedicated running
-seekdb instance. They create and drop only fts_hot_path_regression and
-fts_collation_regression. The default SQL endpoint is 127.0.0.1:2891;
+seekdb instance. The suites create/drop only fts_hot_path_regression,
+fts_collation_regression, fts_match_batches and fts_map_concurrency_regression. The default SQL endpoint is 127.0.0.1:2891;
 override --host, --port, or --user as needed. Read the password from
 SEEKDB_TEST_PASSWORD; do not put it in a command line or fixture.
 
@@ -11,6 +11,7 @@ python3 unittest/storage/fts/test_tokenize_config.py --port 2891
 python3 unittest/storage/fts/test_hot_path.py --port 2891 --check-plans
 python3 unittest/storage/fts/test_collation.py --port 2891
 python3 unittest/storage/fts/test_match_batches.py --port 2891
+python3 unittest/storage/fts/test_map_concurrency.py --port 2891
 ~~~
 
 The hot-path suite checks complete token text, frequencies, document lengths,
@@ -32,6 +33,11 @@ The batch suite independently derives the complete expected document-ID sets
 from 2,051 input documents per table. It checks simple/composite primary keys,
 overlapping posting lists, long token lists, OFFSET crossing batch boundaries,
 updates, deletes, transactions and rollback.
+
+The concurrency suite checks 1,440 complete ID/ranking/token results across
+eight independent sessions. Expected IDs come from 127 input documents;
+complete ranking results are compared with sequential executions. Different
+query terms exercise the optimizer and both scored/score-free retrieval paths.
 
 The collation suite covers complete pairwise comparison matrices, full sorting,
 top-N sorting, grouping, distinct values and index access under
