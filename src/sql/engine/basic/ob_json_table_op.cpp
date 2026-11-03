@@ -21,6 +21,8 @@
 #include "sql/engine/expr/ob_expr_json_query.h"
 #include "common/xml/ob_binary_aggregate.h"
 #include "sql/engine/expr/ob_array_expr_utils.h"
+#include "sql/resolver/ob_resolver_utils.h"
+#include "common/timezone/ob_time_convert.h"
 
 namespace oceanbase
 {
@@ -314,7 +316,32 @@ OB_DEF_SERIALIZE(ObJsonTableSpec)
 {
   INIT_SUCC(ret);
   BASE_SER((ObJsonTableSpec, ObOpSpec));
-  OB_UNIS_ENCODE(value_exprs_.at(0));
+  OB_UNIS_ENCODE(table_type_);
+  const bool is_file_table =
+      MulModeTableType::OB_FILE_CSV_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_JSON_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_PARQUET_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_GLOB_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_CSV_DESCRIBE_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_JSON_DESCRIBE_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_PARQUET_DESCRIBE_TABLE_TYPE == table_type_;
+  if (is_file_table) {
+    OB_UNIS_ENCODE(file_path_);
+    OB_UNIS_ENCODE(file_options_.header_);
+    OB_UNIS_ENCODE(file_options_.newline_delimited_);
+    OB_UNIS_ENCODE(file_options_.sample_size_);
+    OB_UNIS_ENCODE(file_options_.delimiter_);
+    OB_UNIS_ENCODE(file_options_.quote_);
+    OB_UNIS_ENCODE(file_options_.escape_);
+    ObString null_string(static_cast<int32_t>(file_options_.null_string_.size()),
+                         file_options_.null_string_.data());
+    OB_UNIS_ENCODE(null_string);
+    OB_UNIS_ENCODE(file_stat_.size_);
+    OB_UNIS_ENCODE(file_stat_.modify_time_);
+    OB_UNIS_ENCODE(file_row_count_);
+  } else {
+    OB_UNIS_ENCODE(value_exprs_.at(0));
+  }
   OB_UNIS_ENCODE(column_exprs_);
   OB_UNIS_ENCODE(emp_default_exprs_);
   OB_UNIS_ENCODE(err_default_exprs_);
@@ -327,7 +354,6 @@ OB_DEF_SERIALIZE(ObJsonTableSpec)
   }
   if (OB_FAIL(ret)) {
   } else if (table_type_ == MulModeTableType::OB_UNNEST_TABLE_TYPE) {
-    OB_UNIS_ENCODE(table_type_);
     int32_t value_exprs_count = value_exprs_.count() - 1;
     OB_UNIS_ENCODE(value_exprs_count);
     for (size_t i = 1; OB_SUCC(ret) && i < value_exprs_.count(); ++i) {
@@ -342,7 +368,32 @@ OB_DEF_SERIALIZE_SIZE(ObJsonTableSpec)
 {
   int64_t len = 0;
   BASE_ADD_LEN((ObJsonTableSpec, ObOpSpec));
-  OB_UNIS_ADD_LEN(value_exprs_.at(0));
+  OB_UNIS_ADD_LEN(table_type_);
+  const bool is_file_table =
+      MulModeTableType::OB_FILE_CSV_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_JSON_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_PARQUET_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_GLOB_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_CSV_DESCRIBE_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_JSON_DESCRIBE_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_PARQUET_DESCRIBE_TABLE_TYPE == table_type_;
+  if (is_file_table) {
+    OB_UNIS_ADD_LEN(file_path_);
+    OB_UNIS_ADD_LEN(file_options_.header_);
+    OB_UNIS_ADD_LEN(file_options_.newline_delimited_);
+    OB_UNIS_ADD_LEN(file_options_.sample_size_);
+    OB_UNIS_ADD_LEN(file_options_.delimiter_);
+    OB_UNIS_ADD_LEN(file_options_.quote_);
+    OB_UNIS_ADD_LEN(file_options_.escape_);
+    ObString null_string(static_cast<int32_t>(file_options_.null_string_.size()),
+                         file_options_.null_string_.data());
+    OB_UNIS_ADD_LEN(null_string);
+    OB_UNIS_ADD_LEN(file_stat_.size_);
+    OB_UNIS_ADD_LEN(file_stat_.modify_time_);
+    OB_UNIS_ADD_LEN(file_row_count_);
+  } else {
+    OB_UNIS_ADD_LEN(value_exprs_.at(0));
+  }
   OB_UNIS_ADD_LEN(column_exprs_);
   OB_UNIS_ADD_LEN(emp_default_exprs_);
   OB_UNIS_ADD_LEN(err_default_exprs_);
@@ -355,7 +406,6 @@ OB_DEF_SERIALIZE_SIZE(ObJsonTableSpec)
     OB_UNIS_ADD_LEN(info);
   }
   if (table_type_ == MulModeTableType::OB_UNNEST_TABLE_TYPE) {
-    OB_UNIS_ADD_LEN(table_type_);
     int32_t value_exprs_count = value_exprs_.count() - 1;
     OB_UNIS_ADD_LEN(value_exprs_count);
     for (size_t i = 1; i < value_exprs_.count(); ++i) {
@@ -370,14 +420,40 @@ OB_DEF_DESERIALIZE(ObJsonTableSpec)
   INIT_SUCC(ret);
   BASE_DESER((ObJsonTableSpec, ObOpSpec));
   ObExpr* value_expr = NULL;
-  OB_UNIS_DECODE(value_expr);
+  OB_UNIS_DECODE(table_type_);
+  const bool is_file_table =
+      MulModeTableType::OB_FILE_CSV_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_JSON_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_PARQUET_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_GLOB_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_CSV_DESCRIBE_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_JSON_DESCRIBE_TABLE_TYPE == table_type_
+      || MulModeTableType::OB_FILE_PARQUET_DESCRIBE_TABLE_TYPE == table_type_;
+  if (is_file_table) {
+    OB_UNIS_DECODE(file_path_);
+    OB_UNIS_DECODE(file_options_.header_);
+    OB_UNIS_DECODE(file_options_.newline_delimited_);
+    OB_UNIS_DECODE(file_options_.sample_size_);
+    OB_UNIS_DECODE(file_options_.delimiter_);
+    OB_UNIS_DECODE(file_options_.quote_);
+    OB_UNIS_DECODE(file_options_.escape_);
+    ObString null_string;
+    OB_UNIS_DECODE(null_string);
+    if (OB_SUCC(ret)) {
+      file_options_.null_string_.assign(null_string.ptr(), null_string.length());
+    }
+    OB_UNIS_DECODE(file_stat_.size_);
+    OB_UNIS_DECODE(file_stat_.modify_time_);
+    OB_UNIS_DECODE(file_row_count_);
+  } else {
+    OB_UNIS_DECODE(value_expr);
+  }
   OB_UNIS_DECODE(column_exprs_);
   OB_UNIS_DECODE(emp_default_exprs_);
   OB_UNIS_DECODE(err_default_exprs_);
   OB_UNIS_DECODE(has_correlated_expr_);
   
   int32_t column_count = 0;
-  int8_t table_type_flag = OB_JSON_TABLE;
   OB_UNIS_DECODE(column_count);
   
   if (OB_SUCC(ret) && OB_FAIL(cols_def_.init(column_count))) {
@@ -393,15 +469,12 @@ OB_DEF_DESERIALIZE(ObJsonTableSpec)
       OB_UNIS_DECODE(tmp_col_info);
       *col_info = tmp_col_info;
       if (OB_FAIL(cols_def_.push_back(col_info))) {
-      } else if (col_info->col_type_ == COL_TYPE_UNNEST) {
-        table_type_flag = OB_UNNEST_TABLE;
       }
     }
   }
 
   if (OB_FAIL(ret)) {
-  } else if (table_type_flag == OB_UNNEST_TABLE) {
-    OB_UNIS_DECODE(table_type_);
+  } else if (table_type_ == MulModeTableType::OB_UNNEST_TABLE_TYPE) {
     int32_t value_exprs_count = 0;
     OB_UNIS_DECODE(value_exprs_count);
     if (OB_FAIL(ret)) {
@@ -413,6 +486,8 @@ OB_DEF_DESERIALIZE(ObJsonTableSpec)
       if (OB_SUCC(ret) && OB_FAIL(value_exprs_.push_back(value_expr))) {
       }
     }
+  } else if (is_file_table) {
+    // File table operators do not carry a JSON document expression.
   } else if (OB_FAIL(value_exprs_.init(1))) {
   } else if (OB_FAIL(value_exprs_.push_back(value_expr))) {
   }
@@ -581,10 +656,131 @@ int ObJsonTableOp::generate_column_trees(JtColTreeNode*& root)
   return ret;
 }
 
+bool ObJsonTableOp::is_file_table_func() const
+{
+  const ObJsonTableSpec &spec = static_cast<const ObJsonTableSpec &>(spec_);
+  return MulModeTableType::OB_FILE_CSV_TABLE_TYPE == spec.table_type_
+      || MulModeTableType::OB_FILE_JSON_TABLE_TYPE == spec.table_type_
+      || MulModeTableType::OB_FILE_PARQUET_TABLE_TYPE == spec.table_type_
+      || MulModeTableType::OB_FILE_GLOB_TABLE_TYPE == spec.table_type_
+      || MulModeTableType::OB_FILE_CSV_DESCRIBE_TABLE_TYPE == spec.table_type_
+      || MulModeTableType::OB_FILE_JSON_DESCRIBE_TABLE_TYPE == spec.table_type_
+      || MulModeTableType::OB_FILE_PARQUET_DESCRIBE_TABLE_TYPE == spec.table_type_;
+}
+
+int ObJsonTableOp::init_file_scan()
+{
+  int ret = OB_SUCCESS;
+  const ObJsonTableSpec &spec = static_cast<const ObJsonTableSpec &>(spec_);
+  const ObSQLSessionInfo *session = get_exec_ctx().get_my_session();
+  file_sql::FileFormat format = file_sql::FileFormat::INVALID;
+  file_sql::TableSchema schema;
+  file_projection_.clear();
+  file_output_indexes_.clear();
+  if (OB_ISNULL(session)) {
+    ret = OB_ERR_UNEXPECTED;
+  } else if (MulModeTableType::OB_FILE_CSV_TABLE_TYPE == spec.table_type_) {
+    format = file_sql::FileFormat::CSV;
+  } else if (MulModeTableType::OB_FILE_JSON_TABLE_TYPE == spec.table_type_) {
+    format = file_sql::FileFormat::JSON;
+  } else if (MulModeTableType::OB_FILE_PARQUET_TABLE_TYPE == spec.table_type_) {
+    format = file_sql::FileFormat::PARQUET;
+  } else if (MulModeTableType::OB_FILE_GLOB_TABLE_TYPE == spec.table_type_) {
+    format = file_sql::FileFormat::GLOB;
+  } else if (MulModeTableType::OB_FILE_CSV_DESCRIBE_TABLE_TYPE == spec.table_type_) {
+    format = file_sql::FileFormat::CSV_DESCRIBE;
+  } else if (MulModeTableType::OB_FILE_JSON_DESCRIBE_TABLE_TYPE == spec.table_type_) {
+    format = file_sql::FileFormat::JSON_DESCRIBE;
+  } else if (MulModeTableType::OB_FILE_PARQUET_DESCRIBE_TABLE_TYPE == spec.table_type_) {
+    format = file_sql::FileFormat::PARQUET_DESCRIBE;
+  } else {
+    ret = OB_ERR_UNEXPECTED;
+  }
+  if (OB_SUCC(ret) && file_sql::FileFormat::GLOB != format) {
+    file_sql::FileStat current_stat;
+    if (OB_FAIL(file_sql::get_file_stat(std::string(spec.file_path_.ptr(),
+                                                   spec.file_path_.length()),
+                                        current_stat))) {
+    } else if (current_stat.size_ != spec.file_stat_.size_
+               || current_stat.modify_time_ != spec.file_stat_.modify_time_) {
+      ret = OB_ERR_UNEXPECTED;
+      LOG_WARN("file sql input changed after schema inference", K(ret),
+               K(spec.file_path_), K(current_stat.size_), K(spec.file_stat_.size_));
+    }
+  }
+  if (OB_SUCC(ret)) {
+    ObString secure_file_priv;
+    ObString path = spec.file_path_;
+    if (OB_FAIL(session->get_secure_file_priv(secure_file_priv))) {
+    } else if (OB_FAIL(ObResolverUtils::check_secure_path(secure_file_priv, path))) {
+      LOG_WARN("file sql path is no longer allowed by secure_file_priv", K(ret), K(path));
+    }
+  }
+  if (OB_SUCC(ret)) {
+    for (size_t i = 0; i < spec.cols_def_.count(); ++i) {
+      const ObJtColInfo *info = spec.cols_def_.at(i);
+      if (OB_ISNULL(info)) {
+        ret = OB_ERR_UNEXPECTED;
+        break;
+      }
+      file_sql::ColumnSchema column;
+      column.name_.assign(info->col_name_.ptr(), info->col_name_.length());
+      column.nullable_ = true;
+      switch (info->data_type_.get_obj_type()) {
+        case ObIntType:
+          column.type_ = file_sql::ColumnType::BIGINT;
+          break;
+        case ObDoubleType:
+        case ObFloatType:
+          column.type_ = file_sql::ColumnType::DOUBLE;
+          break;
+        case ObTinyIntType:
+        case ObInt32Type:
+        case ObUInt64Type:
+          column.type_ = file_sql::ColumnType::BOOLEAN;
+          break;
+        case ObDateType:
+          column.type_ = file_sql::ColumnType::DATE;
+          break;
+        case ObDateTimeType:
+          column.type_ = file_sql::ColumnType::DATETIME;
+          break;
+        default:
+          column.type_ = file_sql::ColumnType::VARCHAR;
+          break;
+      }
+      schema.columns_.push_back(column);
+    }
+    schema.row_count_ = spec.file_row_count_;
+    schema.stat_ = spec.file_stat_;
+  }
+  if (OB_SUCC(ret)) {
+    for (size_t i = 0; OB_SUCC(ret) && i < spec.cols_def_.count(); ++i) {
+      const ObJtColInfo *info = spec.cols_def_.at(i);
+      if (info->output_column_idx_ >= 0) {
+        if (info->output_column_idx_ >= spec.column_exprs_.count()) {
+          ret = OB_ERR_UNEXPECTED;
+        } else {
+          file_projection_.push_back(static_cast<int64_t>(i));
+          file_output_indexes_.push_back(info->output_column_idx_);
+        }
+      }
+    }
+  }
+  if (OB_SUCC(ret)) {
+    const std::string path(spec.file_path_.ptr(), spec.file_path_.length());
+    ret = file_sql::create_file_reader(path, format, spec.file_options_,
+                                       schema, file_projection_, file_reader_);
+  }
+  return ret;
+}
+
 int ObJsonTableOp::inner_open()
 {
   INIT_SUCC(ret);
-  if (OB_FAIL(init())) {
+  if (is_file_table_func()) {
+    ret = init_file_scan();
+  } else if (OB_FAIL(init())) {
   } else if (MY_SPEC.value_exprs_.empty()) {
     ret = OB_ERR_UNEXPECTED;
   } else if (OB_FAIL(root_->open(&jt_ctx_))) {
@@ -599,11 +795,15 @@ int ObJsonTableOp::inner_rescan()
 {
   int ret = OB_SUCCESS;
   if (OB_FAIL(ObOperator::inner_rescan())) {
+  } else if (is_file_table_func()) {
+    file_row_alloc_.reuse();
+    if (OB_NOT_NULL(file_reader_.get()) && OB_FAIL(file_reader_->rescan())) {
+    }
   } else {
     jt_ctx_.row_alloc_.reuse();
-  }
-  if (OB_FAIL(ret)) {
-  } else if (OB_FAIL(reset_variable())) {
+    if (OB_FAIL(ret)) {
+    } else if (OB_FAIL(reset_variable())) {
+    }
   }
   return ret;
 }
@@ -685,7 +885,9 @@ int ObJsonTableOp::init()
 int ObJsonTableOp::inner_close()
 {
   INIT_SUCC(ret);
-  if (OB_NOT_NULL(root_)) {
+  if (is_file_table_func()) {
+    file_reader_.reset();
+  } else if (OB_NOT_NULL(root_)) {
     if (OB_FAIL(root_->reset(&jt_ctx_))) {
     }
     root_->destroy();
@@ -722,7 +924,115 @@ void ScanNode::reset_reg_columns(JtScanCtx* ctx)
 
 void ObJsonTableOp::destroy()
 {
+  file_reader_.reset();
   ObOperator::destroy();
+}
+
+int ObJsonTableOp::inner_get_next_row_file()
+{
+  int ret = OB_SUCCESS;
+  const ObJsonTableSpec &spec = static_cast<const ObJsonTableSpec &>(spec_);
+  const ObSQLSessionInfo *session = get_exec_ctx().get_my_session();
+  clear_evaluated_flag();
+  file_row_alloc_.reuse();
+  if (OB_ISNULL(file_reader_.get()) || OB_ISNULL(session)) {
+    ret = OB_NOT_INIT;
+  } else if (OB_FAIL(file_reader_->get_next_row(file_row_))) {
+  } else {
+    for (size_t i = 0; OB_SUCC(ret) && i < file_projection_.size(); ++i) {
+      const int64_t column_idx = file_projection_[i];
+      const int64_t output_idx = file_output_indexes_[i];
+      if (column_idx < 0 || column_idx >= static_cast<int64_t>(file_row_.size())
+          || output_idx < 0 || output_idx >= spec.column_exprs_.count()) {
+        ret = OB_ERR_UNEXPECTED;
+      } else {
+        ObExpr *expr = spec.column_exprs_.at(output_idx);
+        ObDatum &datum = expr->locate_datum_for_write(eval_ctx_);
+        const file_sql::ScalarValue &value = file_row_[static_cast<size_t>(column_idx)];
+        if (value.is_null_) {
+          datum.set_null();
+        } else {
+          ObObj obj;
+          int64_t int_value = 0;
+          double double_value = 0;
+          switch (expr->datum_meta_.type_) {
+            case ObIntType: {
+              char *end = NULL;
+              errno = 0;
+              int_value = strtoll(value.text_.c_str(), &end, 10);
+              if (errno != 0 || end != value.text_.c_str() + value.text_.size()) {
+                ret = OB_INVALID_ARGUMENT;
+              } else {
+                obj.set_int(int_value);
+              }
+              break;
+            }
+            case ObDoubleType:
+            case ObFloatType: {
+              char *end = NULL;
+              errno = 0;
+              double_value = strtod(value.text_.c_str(), &end);
+              if (errno != 0 || end != value.text_.c_str() + value.text_.size()) {
+                ret = OB_INVALID_ARGUMENT;
+              } else {
+                obj.set_double(expr->datum_meta_.type_, double_value);
+              }
+              break;
+            }
+            case ObTinyIntType:
+              obj.set_bool(0 == ObString(static_cast<int32_t>(value.text_.size()),
+                                         value.text_.data()).case_compare("true")
+                           || value.text_ == "1");
+              break;
+            case ObDateType: {
+              int32_t date_value = 0;
+              if (OB_FAIL(ObTimeConverter::str_to_date(
+                    ObString(static_cast<int32_t>(value.text_.size()), value.text_.data()),
+                    date_value))) {
+              } else {
+                obj.set_date(date_value);
+              }
+              break;
+            }
+            case ObDateTimeType: {
+              int64_t datetime_value = 0;
+              ObTimeConvertCtx convert_ctx(session->get_timezone_info(), false, false);
+              if (OB_FAIL(ObTimeConverter::str_to_datetime(
+                    ObString(static_cast<int32_t>(value.text_.size()), value.text_.data()),
+                    convert_ctx, datetime_value))) {
+              } else {
+                obj.set_datetime(datetime_value);
+              }
+              break;
+            }
+            default: {
+              if (value.text_.empty()) {
+                obj.set_varchar("", 0);
+                obj.set_collation_type(expr->datum_meta_.cs_type_);
+              } else {
+                char *string_buf = static_cast<char *>(
+                    file_row_alloc_.alloc(static_cast<int64_t>(value.text_.size())));
+                if (OB_ISNULL(string_buf)) {
+                  ret = OB_ALLOCATE_MEMORY_FAILED;
+                } else {
+                  MEMCPY(string_buf, value.text_.data(), value.text_.size());
+                  obj.set_varchar(string_buf, static_cast<int32_t>(value.text_.size()));
+                  obj.set_collation_type(expr->datum_meta_.cs_type_);
+                }
+              }
+              break;
+            }
+          }
+          if (OB_SUCC(ret) && OB_FAIL(datum.from_obj(obj, expr->obj_datum_map_))) {
+          }
+        }
+        if (OB_SUCC(ret)) {
+          expr->set_evaluated_projected(eval_ctx_);
+        }
+      }
+    }
+  }
+  return ret;
 }
 
 int RegularCol::check_item_method_json(ObRegCol &col_node, JtScanCtx* ctx)
@@ -1402,7 +1712,9 @@ int ObJsonTableOp::inner_get_next_row()
 {
   INIT_SUCC(ret);
   bool is_root_null = false;
-  if (!(jt_ctx_.is_json_table_func()
+  if (is_file_table_func()) {
+    ret = inner_get_next_row_file();
+  } else if (!(jt_ctx_.is_json_table_func()
         || jt_ctx_.is_unnest_table_func())) {
     ret = OB_ERR_UNEXPECTED;
   } else if (is_evaled_) {

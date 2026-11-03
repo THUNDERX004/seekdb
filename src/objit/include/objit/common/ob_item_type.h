@@ -2161,7 +2161,7 @@ typedef enum ObItemType
   T_LOAD_TIME_ZONE_INFO = 4764,
 
   // item type ids 4765-4771 are reserved after removing Oracle wrapped PL units.
-  T_RESERVED_4765 = 4765,
+  T_FILE_SQL_EXPRESSION = 4765,
   T_RESERVED_4766 = 4766,
   T_RESERVED_4767 = 4767,
   T_RESERVED_4768 = 4768,

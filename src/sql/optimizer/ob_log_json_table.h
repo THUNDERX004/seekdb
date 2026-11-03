@@ -17,6 +17,7 @@
 #ifndef _OB_LOG_JSON_TABLE_H
 #define _OB_LOG_JSON_TABLE_H
 #include "sql/optimizer/ob_logical_operator.h"
+#include "sql/engine/basic/ob_file_scan_utils.h"
 
 namespace oceanbase
 {
@@ -33,7 +34,11 @@ public:
         access_exprs_(),
         all_cols_def_(),
         table_type_(MulModeTableType::INVALID_TABLE_TYPE),
-        namespace_arr_() {}
+        namespace_arr_(),
+        file_path_(),
+        file_options_(),
+        file_stat_(),
+        file_row_count_(0) {}
 
   virtual ~ObLogJsonTable() {}
   int add_values_expr(ObIArray<ObRawExpr*> &exprs) { return append(value_exprs_, exprs); }
@@ -62,6 +67,30 @@ public:
   int64_t get_column_param_default_size() { return column_param_default_exprs_.count(); }
   int set_column_param_default_arr(ObIArray<ObColumnDefault> &column_param_default_exprs);
   ObColumnDefault* get_column_param_default_val(int64_t index);
+  void set_file_table_info(const common::ObString &path,
+                           const file_sql::FileOptions &options,
+                           const file_sql::FileStat &stat,
+                           const int64_t row_count)
+  {
+    file_path_ = path;
+    file_options_ = options;
+    file_stat_ = stat;
+    file_row_count_ = row_count;
+  }
+  const common::ObString &get_file_path() const { return file_path_; }
+  const file_sql::FileOptions &get_file_options() const { return file_options_; }
+  const file_sql::FileStat &get_file_stat() const { return file_stat_; }
+  int64_t get_file_row_count() const { return file_row_count_; }
+  bool is_file_table_path() const
+  {
+    return MulModeTableType::OB_FILE_CSV_TABLE_TYPE == table_type_
+        || MulModeTableType::OB_FILE_JSON_TABLE_TYPE == table_type_
+        || MulModeTableType::OB_FILE_PARQUET_TABLE_TYPE == table_type_
+        || MulModeTableType::OB_FILE_GLOB_TABLE_TYPE == table_type_
+        || MulModeTableType::OB_FILE_CSV_DESCRIBE_TABLE_TYPE == table_type_
+        || MulModeTableType::OB_FILE_JSON_DESCRIBE_TABLE_TYPE == table_type_
+        || MulModeTableType::OB_FILE_PARQUET_DESCRIBE_TABLE_TYPE == table_type_;
+  }
 private:
   uint64_t table_id_;
   common::ObSEArray<ObRawExpr*, 1, common::ModulePageAllocator, true> value_exprs_;
@@ -75,6 +104,10 @@ private:
   common::ObSEArray<ObString, 16, common::ModulePageAllocator, true> namespace_arr_;
   // default value array
   common::ObSEArray<ObColumnDefault, 1, common::ModulePageAllocator, true> column_param_default_exprs_;
+  common::ObString file_path_;
+  file_sql::FileOptions file_options_;
+  file_sql::FileStat file_stat_;
+  int64_t file_row_count_;
 
   DISALLOW_COPY_AND_ASSIGN(ObLogJsonTable);
 };

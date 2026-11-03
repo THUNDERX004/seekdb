@@ -8331,7 +8331,7 @@ int ObJoinOrder::init_base_join_order(const TableItem *table_item)
       set_type(FAKE_CTE_TABLE_ACCESS);
     } else if (table_item->is_function_table()) {
       set_type(FUNCTION_TABLE_ACCESS);
-    } else if (table_item->is_json_table()) {
+    } else if (table_item->is_json_table() || table_item->is_file_table()) {
       set_type(JSON_TABLE_ACCESS);
     } else if (table_item->is_values_table()) {
       set_type(VALUES_TABLE_ACCESS);
@@ -8412,21 +8412,27 @@ int ObJoinOrder::generate_json_table_paths()
     ObRawExpr* default_expr = NULL;
     ObArray<ColumnItem> column_items;
     // magic number ? todo refine this
-    output_rows_ = 199;
-    output_row_size_ = 199;
+    output_rows_ = table_item->is_file_table()
+        ? MAX(1, table_item->json_table_def_->file_row_count_) : 199;
+    output_row_size_ = output_rows_;
     json_path->strong_sharding_ = get_plan()->get_optimizer_context().get_match_all_sharding();
     if (OB_FAIL(json_path->set_parallel_info_for_match_all())) {
     } else if (OB_FAIL(ObOptimizerUtil::classify_subquery_exprs(get_restrict_infos(),
                                                                 json_path->subquery_exprs_,
                                                                 json_path->filter_,
                                                                 false /* with_onetime */ ))) {
-    } else if (table_item->json_table_def_->doc_exprs_.empty()) {
+    } else if (table_item->is_json_table()
+               && table_item->json_table_def_->doc_exprs_.empty()) {
       ret = OB_ERR_UNEXPECTED;
-    } else if (OB_FAIL(param_json_table_expr(table_item->json_table_def_->doc_exprs_,
+    } else if (table_item->is_json_table()
+               && OB_FAIL(param_json_table_expr(table_item->json_table_def_->doc_exprs_,
                                              nl_params,
                                              json_path->subquery_exprs_))) {
-    } else if (OB_FAIL(json_path->nl_params_.assign(nl_params))) {
-    } else if (OB_FAIL(append(json_path->value_exprs_, table_item->json_table_def_->doc_exprs_))) {
+    } else if (table_item->is_json_table()
+               && OB_FAIL(json_path->nl_params_.assign(nl_params))) {
+    } else if (table_item->is_json_table()
+               && OB_FAIL(append(json_path->value_exprs_,
+                                 table_item->json_table_def_->doc_exprs_))) {
     }
     // deal non_const default value
     if (OB_FAIL(ret)) {

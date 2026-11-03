@@ -28,6 +28,7 @@
 #include "sql/engine/expr/ob_expr.h"
 #include "sql/engine/expr/ob_json_param_type.h"
 #include "sql/engine/expr/ob_expr_json_utils.h"
+#include "sql/engine/basic/ob_file_scan_utils.h"
 
 namespace oceanbase
 {
@@ -130,7 +131,11 @@ public:
       alloc_(&alloc),
       cols_def_(alloc),
       table_type_(MulModeTableType::OB_ORA_JSON_TABLE_TYPE),
-      namespace_def_(alloc) {}
+      namespace_def_(alloc),
+      file_path_(),
+      file_options_(),
+      file_stat_(),
+      file_row_count_(0) {}
 
   int dup_origin_column_defs(common::ObIArray<ObJtColBaseInfo*>& columns);
   int construct_tree(common::ObArray<ObMultiModeTableNode*> all_nodes, JoinNode* parent);
@@ -145,6 +150,10 @@ public:
   common::ObFixedArray<ObJtColInfo*, common::ObIAllocator> cols_def_;
   MulModeTableType table_type_;
   common::ObFixedArray<ObString, common::ObIAllocator> namespace_def_;
+  ObString file_path_;
+  file_sql::FileOptions file_options_;
+  file_sql::FileStat file_stat_;
+  int64_t file_row_count_;
 };
 
 class ObJsonTableOp;
@@ -197,7 +206,12 @@ public:
       input_(nullptr),
       j_null_(),
       j_arr_(allocator_),
-      j_obj_(allocator_)
+        j_obj_(allocator_),
+        file_reader_(),
+        file_projection_(),
+        file_output_indexes_(),
+        file_row_(),
+        file_row_alloc_()
   {
     const ObJsonTableSpec* spec_ptr = reinterpret_cast<const ObJsonTableSpec*>(&spec);
     col_count_ = spec_ptr->column_exprs_.count();
@@ -228,6 +242,9 @@ private:
   int generate_table_exec_tree(ObIAllocator* allocator, const JtColTreeNode& orig_col,
                                JoinNode*& join_col);
   int inner_get_next_row_jt();  // json table function inner
+  bool is_file_table_func() const;
+  int init_file_scan();
+  int inner_get_next_row_file();
 
 private:
   JtColTreeNode* def_root_;
@@ -246,6 +263,11 @@ private:
   ObJsonNull j_null_;
   ObJsonArray j_arr_;
   ObJsonObject j_obj_;
+  std::unique_ptr<file_sql::IFileReader> file_reader_;
+  std::vector<int64_t> file_projection_;
+  std::vector<int64_t> file_output_indexes_;
+  std::vector<file_sql::ScalarValue> file_row_;
+  common::ObArenaAllocator file_row_alloc_;
 };
 
 class MulModeTableFunc {

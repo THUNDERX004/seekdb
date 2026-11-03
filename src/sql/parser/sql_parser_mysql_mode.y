@@ -498,6 +498,7 @@ END_P SET_VAR DELIMITER
 %type <node> skip_index_type opt_skip_index_type_list
 %type <node> vec_index_params vec_index_param vec_index_param_value opt_with_vector_index_parameters
 %type <node> json_table_expr unnest_expr mock_jt_on_error_on_empty jt_column_list json_table_column_def
+%type <node> file_sql_expr opt_file_sql_named_arg_list file_sql_named_arg_list file_sql_named_arg
 %type <node> json_table_ordinality_column_def json_table_exists_column_def json_table_value_column_def json_table_nested_column_def
 %type <node> opt_value_on_empty_or_error_or_mismatch opt_on_mismatch
 %type <node> table_values_clause table_values_clause_with_order_by_and_limit values_row_list row_value
@@ -10835,6 +10836,10 @@ tbl_name
 {
   $$ = $1;
 }
+| file_sql_expr
+{
+  $$ = $1;
+}
 | '(' table_references ')'
 {
   $$ = $2;
@@ -16651,6 +16656,56 @@ JSON_TABLE '(' simple_expr ',' literal mock_jt_on_error_on_empty COLUMNS '(' jt_
   if (result->pl_parse_info_.is_pl_parse_ && !result->pl_parse_info_.is_pl_parse_expr_) {
     result->pl_parse_info_.is_forbid_pl_fp_ = true;
   }
+}
+;
+
+file_sql_expr:
+NAME_OB '(' complex_string_literal opt_file_sql_named_arg_list ')'
+{
+  ParseNode *args = NULL;
+  merge_nodes(args, result, T_EXPR_LIST, $4);
+  malloc_non_terminal_node($$, result->malloc_pool_, T_FILE_SQL_EXPRESSION, 4, $1, $3, args, NULL);
+}
+| NAME_OB '(' complex_string_literal opt_file_sql_named_arg_list ')' relation_name
+{
+  ParseNode *args = NULL;
+  merge_nodes(args, result, T_EXPR_LIST, $4);
+  malloc_non_terminal_node($$, result->malloc_pool_, T_FILE_SQL_EXPRESSION, 4, $1, $3, args, $6);
+}
+| NAME_OB '(' complex_string_literal opt_file_sql_named_arg_list ')' AS relation_name
+{
+  ParseNode *args = NULL;
+  merge_nodes(args, result, T_EXPR_LIST, $4);
+  malloc_non_terminal_node($$, result->malloc_pool_, T_FILE_SQL_EXPRESSION, 4, $1, $3, args, $7);
+}
+;
+
+opt_file_sql_named_arg_list:
+/* EMPTY */
+{
+  $$ = NULL;
+}
+| ',' file_sql_named_arg_list
+{
+  $$ = $2;
+}
+;
+
+file_sql_named_arg_list:
+file_sql_named_arg
+{
+  $$ = $1;
+}
+| file_sql_named_arg_list ',' file_sql_named_arg
+{
+  malloc_non_terminal_node($$, result->malloc_pool_, T_LINK_NODE, 2, $1, $3);
+}
+;
+
+file_sql_named_arg:
+relation_name COMP_EQ simple_expr
+{
+  malloc_non_terminal_node($$, result->malloc_pool_, T_LINK_NODE, 2, $1, $3);
 }
 ;
 

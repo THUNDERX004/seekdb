@@ -97,12 +97,16 @@ int ObLogJsonTable::get_plan_item_info(PlanText &plan_text,
 {
   int ret = OB_SUCCESS;
   if (OB_FAIL(ObLogicalOperator::get_plan_item_info(plan_text, plan_item))) {
-  } else if (get_value_expr().empty()) {
+  } else if (get_value_expr().empty() && !is_file_table_path()) {
     ret = OB_ERR_UNEXPECTED;
   } else {
     BEGIN_BUF_PRINT;
-    const ObIArray<ObRawExpr*> &value =  get_value_expr();
-    EXPLAIN_PRINT_EXPRS(value, type);
+    if (is_file_table_path()) {
+      ret = BUF_PRINTF("%.*s", static_cast<int32_t>(file_path_.length()), file_path_.ptr());
+    } else {
+      const ObIArray<ObRawExpr*> &value =  get_value_expr();
+      EXPLAIN_PRINT_EXPRS(value, type);
+    }
     END_BUF_PRINT(plan_item.special_predicates_,
                   plan_item.special_predicates_len_);
   }
@@ -112,7 +116,7 @@ int ObLogJsonTable::get_plan_item_info(PlanText &plan_text,
                      name.length(), 
                      plan_item.object_alias_, 
                      plan_item.object_alias_len_);
-    BUF_PRINT_STR("JSON_TABLE",
+    BUF_PRINT_STR(is_file_table_path() ? "FILE_TABLE" : "JSON_TABLE",
                   plan_item.object_type_,
                   plan_item.object_type_len_);
   }
@@ -122,6 +126,21 @@ int ObLogJsonTable::get_plan_item_info(PlanText &plan_text,
 uint64_t ObLogJsonTable::hash(uint64_t seed) const
 {
   seed = do_hash(table_name_, seed);
+  if (is_file_table_path()) {
+    seed = do_hash(file_path_, seed);
+    seed = do_hash(file_options_.header_, seed);
+    seed = do_hash(file_options_.newline_delimited_, seed);
+    seed = do_hash(file_options_.sample_size_, seed);
+    seed = do_hash(file_options_.delimiter_, seed);
+    seed = do_hash(file_options_.quote_, seed);
+    seed = do_hash(file_options_.escape_, seed);
+    seed = do_hash(ObString(static_cast<int32_t>(file_options_.null_string_.size()),
+                            file_options_.null_string_.data()),
+                   seed);
+    seed = do_hash(file_stat_.size_, seed);
+    seed = do_hash(file_stat_.modify_time_, seed);
+    seed = do_hash(file_row_count_, seed);
+  }
   seed = ObLogicalOperator::hash(seed);
   return seed;
 }
