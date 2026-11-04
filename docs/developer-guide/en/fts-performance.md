@@ -1,5 +1,27 @@
 # Full-text performance optimization
 
+## Round-12 checkpoint (2026-11-04)
+
+Decision: **reject** the derived ASCII stopword shortcut. Three full adjacent parent/candidate comparisons show **-4.0261%** equal-category time reduction: build 0.5244%, tokenize -7.0180%, query -5.5846%. These are local incremental results; there is no new formal score and no demonstrated full marks.
+
+The candidate derives fixed membership keys from the unchanged built-in list and actual GENERAL_CI weights. Only letter-only inputs in the three supported UTF8 collations use the shortcut. Nonletters, non-ASCII and all other charsets retain the original conversion and hash set. The generic set remains initialized. No input, parser rule or benchmark changes are made.
+
+The official-original SQL recording covers 2,064 complete ordered result/error cases (1,458 successes, 576 original invalid-option errors, 30 original unsupported-charset errors). The actual production checker also passes 37,948 direct comparisons, including case variants, byte boundaries, trailing spaces/NUL, conversions and init/destroy/reinit. Candidate-1 passes query-materialization, casecopy, BMP, ranked, key types and all seven established suites. All failed original-recording attempts and the initial fixture are retained.
+
+| Metric | Parent mean | Candidate mean | Reduction |
+| --- | ---: | ---: | ---: |
+| `build_ik_all_sec` | 6.572667 | 6.707000 | -2.0438% |
+| `build_ik_content_sec` | 5.423333 | 5.015333 | 7.5230% |
+| `build_beng_en_sec` | 2.824667 | 2.935000 | -3.9061% |
+| `tokenize_ik_avg_ms` | 0.145600 | 0.151400 | -3.9835% |
+| `tokenize_beng_avg_ms` | 0.101467 | 0.111667 | -10.0526% |
+| `query_cn_avg_ms` | 0.967933 | 1.063633 | -9.8870% |
+| `query_beng_avg_ms` | 1.217000 | 1.368767 | -12.4706% |
+| `query_mixed_avg_ms` | 1.049067 | 1.105167 | -5.3476% |
+| `query_limit_avg_ms` | 2.461967 | 2.329833 | 5.3670% |
+
+All runs, negative metrics, exact patches, build logs, production-link receipt, test drivers and fixtures are in the [round-12 manifest](../assets/fts-performance/competition-round12/manifest.json). Every gzip member preserves raw bytes and has both archive and raw SHA256. Performance is serialized and uses the unchanged full workload (20,000 rows, load enabled). The first candidate sample is noisy and retained. The direct check and correctness suites run outside timed samples. No Windows result establishes clean Linux CI.
+
 ## Round-11 checkpoint (2026-11-04)
 
 Retain this only as a **small correctness-validated checkpoint**. Three adjacent parent/candidate pairs in `round11-three-pair-comparison.json` show an equal-category time reduction of **0.25310035648%**: build **1.2031%**, query **2.8238%**, and **tokenization 3.2676% slower**. A stable incremental benefit or full marks is not established. There is **no new formal platform score**; the earlier reported 21.099/100 raw, approximately 10.550/50 weighted, remains historical. These are local incremental measurements against the round-10 materializing parent, not a new official-original cumulative comparison. Do not add this percentage to round-10's separate result.

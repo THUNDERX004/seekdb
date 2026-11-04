@@ -233,3 +233,32 @@ The final patch is `round11-trace-source.patch` on parent
 historical. Three adjacent pairs show only 0.25310035648% overall reduction,
 with tokenization 3.2676% slower. This is a small checkpoint, not stable full
 marks or a new formal platform score. All negative metrics are retained.
+
+## Stopword membership regression (round 12)
+
+```sh
+python3 unittest/storage/fts/test_stopword_ascii.py --port 2891
+```
+
+The default stopword_ascii_expected.json contains 2,064 independent
+original-binary cases. It preserves complete ordered result bytes (including
+malformed UTF8), token spellings/frequencies/lengths and original errors.
+It covers built-in case variants, misses, repeated groups, three UTF8
+collations, min/max options, whitespace/NUL, non-ASCII and conversion paths.
+1,458 cases succeed; 576 preserve invalid-option errors and 30 preserve
+unsupported-charset errors. Those errors do not prove conversion contents.
+Recording requires the official commit and independently verified executable
+SHA256 and refuses to overwrite. The initial 1,488-case fixture is retained
+inside the round-12 evidence rather than used by the expanded test.
+
+The direct test_stopword_ascii_checker.cpp uses the actual production checker,
+charset conversion, generic hash set and collation functions. Its standalone
+main was linked with the normal production libraries through the archived
+Windows helper and passed 37,948 comparisons. This is not an algorithm-only
+stub. Run it outside performance intervals; no build/CI files were changed.
+It additionally tests tail spaces/NUL, byte boundaries, errors and lifecycle.
+
+The ASCII shortcut itself was rejected and both production files restored:
+three complete paired samples show 4.0261% overall regression. Retain these
+regressions and all evidence without claiming the rejected path is active.
+See [round-12 evidence](../../../docs/developer-guide/assets/fts-performance/competition-round12/manifest.json).
