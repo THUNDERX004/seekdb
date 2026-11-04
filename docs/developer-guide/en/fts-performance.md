@@ -1,5 +1,32 @@
 # Full-text performance optimization
 
+## Round 29 IK output decode — REJECTED and restored (2026-11-05)
+
+**REJECTED; no production or unit-test promotion.** Two complete immediate local pairs against accepted C7 show build -0.589519%, tokenize -3.241825%, query +4.269743%, equal-category overall +0.146133% time reduction. Target IK tokenize time reduction is -1.977212%. Small overall variation and unrelated query gains do not establish useful causal benefit. This is not a cumulative result, formal score, full score or statistical significance claim.
+
+The one-hunk proposal attempts positive UTF8 decode/classification at later outer arbitration offsets, preserving offset-zero charset initialization, nonpositive-decode fallback and the inner gap loop. Exact original CPP restoration and its rebuild/link passed. The native TU remains archive-only.
+
+| Metric | Control mean | Rejected mean | Time reduction |
+| --- | ---: | ---: | ---: |
+| build_ik_all_sec | 8.115000 | 8.063500 | +0.634627% |
+| build_ik_content_sec | 6.201000 | 6.535500 | -5.394291% |
+| build_beng_en_sec | 3.711000 | 3.600000 | +2.991108% |
+| tokenize_ik_avg_ms | 0.149200 | 0.152150 | -1.977212% |
+| tokenize_beng_avg_ms | 0.116500 | 0.121750 | -4.506438% |
+| query_cn_avg_ms | 0.996400 | 0.961600 | +3.492573% |
+| query_beng_avg_ms | 1.260700 | 1.194100 | +5.282779% |
+| query_mixed_avg_ms | 1.110050 | 1.022500 | +7.887032% |
+| query_limit_avg_ms | 2.388450 | 2.378500 | +0.416588% |
+
+
+Actual production-linked original and candidate both PASS 5,304 cases with byte-identical complete stdout (SHA256 7134ac2b0fa16f8ca2fb0594df0a30625aa17debcc443c5d9c0b83b51e17c64b), empty stderr and 19,662 T records. Identical TU SHA256: 808f48820c97281559347e5f66e4690abc97949e658ff646e3865ece48925e2e. Public APIs, independent generic no-chain expectations, whole-token assertions and complete differential chain/gap records cover three retained collations and both modes. This finite Windows matrix does not prove Linux, sanitizer, all allocation failures or all public states.
+
+Candidate SQL PASS: case-copy 16,359 (including 924 SQL errors), BMP 2,488 and all seven existing suites. All four timing runs retain fresh directories, WARN, verified affinity 15, parameters 20000/500/3000/200/3/30/SKIP_LOAD=0 and hits 8001/11000/7332/20. Negative values and both pairs are retained without sample removal or timing correction. Hit counts do not replace semantic checks.
+
+Control source label f56ddd03e66826919d8d9192bc4c0afece8843dd, binary c7fcc8676875246a38bc4135f29e6f52b85a9d29a9563679003d5b6140666b01; candidate label c110239a7+round29-arbitrator, binary be1782650efcb51604b170ad8420f7070cb487751662d180292399ca243b4def. Actual source snapshots and compile/link receipts govern identity; raw report checkout labels are not binary-source attestation.
+
+The [exact-byte archive](../assets/fts-performance/competition-round29-arbitrator/manifest.json) preserves proposal, native TU/helpers/full streams, SQL logs, all timings, immutable summaries and restoration records. Historical restoration JSON still says rebuild pending; the later successful build log is separate. Binary products, runtime/data, secrets, earlier measurements and other candidates are excluded. Official evaluation files remain unchanged.
+
 ## Round 28 ASCII-span experiment — REJECTED and restored (2026-11-05)
 
 **REJECTED; no production or established-unit-suite promotion.** The parent restored the exact original `src/share/text_analysis/ob_token_stream.cpp` (SHA256 `0fce1e910e786b24f4d5fbaa48e39bf2c4fb357bd20f3f6560ff0181c86a3a58`) and confirmed the source rebuild/link PASS. Three complete local pairs against C7 record mean-time reductions of **build +0.232597%, tokenize −7.601984%, query −6.137460%, equal-category overall −4.502282%**; the target BENG tokenize reduction is **−10.969084%**. **Pair1 crossed a user pause between its control and candidate runs** (report timestamps November 4 22:21:30 / November 5 00:00:43). Its raw values remain included, without timing correction or removal; the observed degradation is **not attributed causally to this patch**. Pair2/3 also do not establish reliable causal target benefit. There is no formal/full score, cumulative gain, stability or statistical significance claim.

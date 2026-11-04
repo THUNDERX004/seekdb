@@ -1,0 +1,695 @@
+{
+  "experiment": "round29-arbitrator-decode-rejected",
+  "decision": "REJECTED_RESTORED_EXACT",
+  "completed_pairs": 2,
+  "files": [
+    {
+      "source": "r29-arbitrator-candidate-a1-benchmark.log",
+      "path": "files/r29-arbitrator-candidate-a1-benchmark.log.gz",
+      "raw_bytes": 3812,
+      "raw_sha256": "e02083c800d0e87d1f57f85b447d2d13cfb29528d9734c01ad7a89ab064479fc",
+      "packed_bytes": 1199,
+      "packed_sha256": "200caa639774aa462fe4e3caf031e67fada4dbb7bdb6710225181aaf2b4a656b"
+    },
+    {
+      "source": "r29-arbitrator-candidate-a1-experiment.json",
+      "path": "files/r29-arbitrator-candidate-a1-experiment.json.gz",
+      "raw_bytes": 942,
+      "raw_sha256": "629358eb26728480a423f7afc301956415f1ed6dedc308f3c9569df289eb0a5d",
+      "packed_bytes": 485,
+      "packed_sha256": "2fb592e4dabfeee97258af2398ca60d73eda43777e32e8cb2dcc423dcb862b7b"
+    },
+    {
+      "source": "r29-arbitrator-candidate-a1-input-validation.log",
+      "path": "files/r29-arbitrator-candidate-a1-input-validation.log.gz",
+      "raw_bytes": 895,
+      "raw_sha256": "f9ff3fa396c479a0d8eacc2631c67d99398550fce2d4f6272f462f70cae24c66",
+      "packed_bytes": 364,
+      "packed_sha256": "dbd48071eb07cde4fd0ade663af0eccfcdc6999cfb61487e9bf37083f159c3db"
+    },
+    {
+      "source": "r29-arbitrator-candidate-a1-report.txt",
+      "path": "files/r29-arbitrator-candidate-a1-report.txt.gz",
+      "raw_bytes": 1417,
+      "raw_sha256": "b326b49a456a1350351ae6f66d7e1aeb0f4a5a451c79a95ca9b496e6a653345c",
+      "packed_bytes": 472,
+      "packed_sha256": "81a7baf5844c3faaf785c20b67b6de5cfa7e6e2ef142fd11a478e070e7b89f97"
+    },
+    {
+      "source": "r29-arbitrator-candidate-a1-server.log",
+      "path": "files/r29-arbitrator-candidate-a1-server.log.gz",
+      "raw_bytes": 326,
+      "raw_sha256": "d84d6bbd0bb240ecfdf098698ebf5fb62cab9653e619e3c7121e4c05ae86f2ab",
+      "packed_bytes": 228,
+      "packed_sha256": "aeab78482885193b5fef536f7b5fc888c5273e0d3800f40e08ea9cabb19159bf"
+    },
+    {
+      "source": "r29-arbitrator-candidate-a2-benchmark.log",
+      "path": "files/r29-arbitrator-candidate-a2-benchmark.log.gz",
+      "raw_bytes": 3812,
+      "raw_sha256": "ae2d34007bd151d08a89e1735514f037a708488e85f9e41bdbad114a6e40956f",
+      "packed_bytes": 1201,
+      "packed_sha256": "da28b1da592f58558a2bfcd2b43fc0a6f091240e6d189f0f65b7b92f307b127c"
+    },
+    {
+      "source": "r29-arbitrator-candidate-a2-experiment.json",
+      "path": "files/r29-arbitrator-candidate-a2-experiment.json.gz",
+      "raw_bytes": 940,
+      "raw_sha256": "663d7f85a87543cb9a10d9d14a5826468f5dadfa464a3406df8b14818332aef0",
+      "packed_bytes": 483,
+      "packed_sha256": "f376ad82ae57988f814e7acadfddd8c0141f74e9c4c03238192ae3c1846be435"
+    },
+    {
+      "source": "r29-arbitrator-candidate-a2-input-validation.log",
+      "path": "files/r29-arbitrator-candidate-a2-input-validation.log.gz",
+      "raw_bytes": 896,
+      "raw_sha256": "2ea3e8152ddbeb0cdfb086a2d39f948b1824f340c3c732dd0b58defc9d3c2fe9",
+      "packed_bytes": 362,
+      "packed_sha256": "d06a0d41b767b7d6aafceae684f9a368494ad30ca68e213460ba4c081718e294"
+    },
+    {
+      "source": "r29-arbitrator-candidate-a2-report.txt",
+      "path": "files/r29-arbitrator-candidate-a2-report.txt.gz",
+      "raw_bytes": 1417,
+      "raw_sha256": "c798318222d9233a0c0bad4f203c998981d87803b737307b48d81367e27a4c92",
+      "packed_bytes": 471,
+      "packed_sha256": "02c34c249e7b6bf9bbf44dac4cb5d869316cb9b3f1ab311131676bfa378f7891"
+    },
+    {
+      "source": "r29-arbitrator-candidate-a2-server.log",
+      "path": "files/r29-arbitrator-candidate-a2-server.log.gz",
+      "raw_bytes": 326,
+      "raw_sha256": "474eb0f8415cf02d83ebf70749262a242de85cd9786a334cb63af7f40761fc77",
+      "packed_bytes": 228,
+      "packed_sha256": "92fe52e2824f977cfe6c350d090209f4e7aa3a8a7bacbba0676946999f887ac5"
+    },
+    {
+      "source": "r29-arbitrator-candidate-regression-a1-bmp.log",
+      "path": "files/r29-arbitrator-candidate-regression-a1-bmp.log.gz",
+      "raw_bytes": 78,
+      "raw_sha256": "bd1179d754626e089fd99f041d3a8114d8cc265fd858d5fd10efb3ac2ed2f29f",
+      "packed_bytes": 95,
+      "packed_sha256": "6aa0997882f8d51904c289b9b9b35d405483574809511527014ea7e3119f1c81"
+    },
+    {
+      "source": "r29-arbitrator-candidate-regression-a1-casecopy.log",
+      "path": "files/r29-arbitrator-candidate-regression-a1-casecopy.log.gz",
+      "raw_bytes": 124,
+      "raw_sha256": "f8c82dc64b6c9f47a1dceca64d548d6d93c1c8ca61d488ae75b97276c42493f2",
+      "packed_bytes": 133,
+      "packed_sha256": "2178b57e470c2abb7ec6f17ca8a2c01856a9eb5fc9079caa4fe67b53699d7242"
+    },
+    {
+      "source": "r29-arbitrator-candidate-regression-a1-experiment.json",
+      "path": "files/r29-arbitrator-candidate-regression-a1-experiment.json.gz",
+      "raw_bytes": 1647,
+      "raw_sha256": "2e91837c53c7291233e5863d82924d2b35b6a2d9d7ff366ee77794f1fe311d88",
+      "packed_bytes": 595,
+      "packed_sha256": "38ea59945d7b50ca513ee95ab39fe75dfc3e5decd9454b74d84d0b4ecb65668e"
+    },
+    {
+      "source": "r29-arbitrator-candidate-regression-a1-server.log",
+      "path": "files/r29-arbitrator-candidate-regression-a1-server.log.gz",
+      "raw_bytes": 348,
+      "raw_sha256": "3d2f1a9a6821690586ce9e06083420c2f0a345988b1a00124ea5082e4d2abe07",
+      "packed_bytes": 234,
+      "packed_sha256": "937c10b782c42c806f5ad1f8cee5b6c4177aec883e162c02c84a710a8678fe07"
+    },
+    {
+      "source": "r29-arbitrator-candidate-regression-a1-test_collation.py.log",
+      "path": "files/r29-arbitrator-candidate-regression-a1-test_collation.py.log.gz",
+      "raw_bytes": 53,
+      "raw_sha256": "ff3b2caa535981d84518d4486caec79bd86f0574dfe964685fb0b848aefe5c33",
+      "packed_bytes": 72,
+      "packed_sha256": "e807bcf959531947cd7723ce154f35377dfa06b929fc18ff5e9e05f673beb029"
+    },
+    {
+      "source": "r29-arbitrator-candidate-regression-a1-test_dictionary_prefixes.py.log",
+      "path": "files/r29-arbitrator-candidate-regression-a1-test_dictionary_prefixes.py.log.gz",
+      "raw_bytes": 74,
+      "raw_sha256": "4f1013cbdc0f2ce96a7194cf61937f531d81d789d5ad7ac0d1c0eb169575ee4b",
+      "packed_bytes": 93,
+      "packed_sha256": "f9cbf4e18749c6a890bf69373554d73aa76f5f49d64ddc7cd6bbdecff09a8790"
+    },
+    {
+      "source": "r29-arbitrator-candidate-regression-a1-test_hot_path.py.log",
+      "path": "files/r29-arbitrator-candidate-regression-a1-test_hot_path.py.log.gz",
+      "raw_bytes": 184,
+      "raw_sha256": "0d204ab8da768dc581aee6577549bec46145254aaf1a8bcb5c8e0eae3663cf9d",
+      "packed_bytes": 162,
+      "packed_sha256": "e7c8a3ff76440b29f1fdeed40cf7932090cb102129cc1609004243635cbb6f8f"
+    },
+    {
+      "source": "r29-arbitrator-candidate-regression-a1-test_map_concurrency.py.log",
+      "path": "files/r29-arbitrator-candidate-regression-a1-test_map_concurrency.py.log.gz",
+      "raw_bytes": 74,
+      "raw_sha256": "b12ea9937f8cc3b29b86ca2fb578e71e47afa9302ccddd24fa30538b50ed228d",
+      "packed_bytes": 92,
+      "packed_sha256": "f381bd5610ca8b8fe667da1fdaac2191706bf2ec11e10f25326ccce7cc76023d"
+    },
+    {
+      "source": "r29-arbitrator-candidate-regression-a1-test_match_batches.py.log",
+      "path": "files/r29-arbitrator-candidate-regression-a1-test_match_batches.py.log.gz",
+      "raw_bytes": 83,
+      "raw_sha256": "d2d99a68d4ad2bfbc2924a50abeec9360c1acc93c647194f788bef0e6d43d688",
+      "packed_bytes": 103,
+      "packed_sha256": "0a7c9974ccb627588ec7550d80f6c03605b910e03114e4f4a334cfa33905f3fb"
+    },
+    {
+      "source": "r29-arbitrator-candidate-regression-a1-test_stopword_concurrency.py.log",
+      "path": "files/r29-arbitrator-candidate-regression-a1-test_stopword_concurrency.py.log.gz",
+      "raw_bytes": 106,
+      "raw_sha256": "c2c3398fb81fc8a289f0a715cf90eb21889482819f821553124014a400173f15",
+      "packed_bytes": 116,
+      "packed_sha256": "d4ab57539671da868ad387bde38a37f99adc38dddc572c73a1dc72686688fc6c"
+    },
+    {
+      "source": "r29-arbitrator-candidate-regression-a1-test_tokenize_config.py.log",
+      "path": "files/r29-arbitrator-candidate-regression-a1-test_tokenize_config.py.log.gz",
+      "raw_bytes": 75,
+      "raw_sha256": "a1febcccfc843a075e757e833a7179b3aa38b9f21249fd9955f9d7273c58b4f6",
+      "packed_bytes": 93,
+      "packed_sha256": "e16d0a9ba1277da5fc3bc76acda6a7673c769ef68922c7ee4076ad7dfa0d06eb"
+    },
+    {
+      "source": "r29-arbitrator-control-a1-benchmark.log",
+      "path": "files/r29-arbitrator-control-a1-benchmark.log.gz",
+      "raw_bytes": 3806,
+      "raw_sha256": "96a7a54717a2a994296ee6de053f0d5c014f204afda60b1c9d8e67f118187873",
+      "packed_bytes": 1198,
+      "packed_sha256": "545f23dad10b2ad5c342041f79b4c551530864116f07defffcccb587180f9118"
+    },
+    {
+      "source": "r29-arbitrator-control-a1-experiment.json",
+      "path": "files/r29-arbitrator-control-a1-experiment.json.gz",
+      "raw_bytes": 943,
+      "raw_sha256": "5ddd32c53bd5b9112999a1d5b107329ffe83f87af57a9c0cee9b90807d6ffab4",
+      "packed_bytes": 513,
+      "packed_sha256": "375fbe9a6ff88c0e26d516c9de72961d65ab5909f3484c73d3edae7141a5347d"
+    },
+    {
+      "source": "r29-arbitrator-control-a1-input-validation.log",
+      "path": "files/r29-arbitrator-control-a1-input-validation.log.gz",
+      "raw_bytes": 897,
+      "raw_sha256": "412d50d17221b7cae251e30c4a0c84267af425ec572855a6de9c9cb9a038b27a",
+      "packed_bytes": 361,
+      "packed_sha256": "173e464c5aa9d4751344b6d62afdcc16ce447e0230c6517264502c983eb28d72"
+    },
+    {
+      "source": "r29-arbitrator-control-a1-report.txt",
+      "path": "files/r29-arbitrator-control-a1-report.txt.gz",
+      "raw_bytes": 1415,
+      "raw_sha256": "c595fced548df5157f80c473b0c5334c7a1b18a1bd96b164ba9ea7e46726d6b3",
+      "packed_bytes": 474,
+      "packed_sha256": "3f84200e6b90adc7e94a535b9cd1c3869b70a500787f021e52d64a9cb43b50b4"
+    },
+    {
+      "source": "r29-arbitrator-control-a1-server.log",
+      "path": "files/r29-arbitrator-control-a1-server.log.gz",
+      "raw_bytes": 322,
+      "raw_sha256": "9201fbc20731c452b4fbaae453c877c2374042013b77da7f07d8344389081686",
+      "packed_bytes": 228,
+      "packed_sha256": "92e97b6a7cb26b1e0fdf25565fed9c8ce1841163a175e8ac713291c89bacf62e"
+    },
+    {
+      "source": "r29-arbitrator-control-a2-benchmark.log",
+      "path": "files/r29-arbitrator-control-a2-benchmark.log.gz",
+      "raw_bytes": 3806,
+      "raw_sha256": "50b45e61c6f6409866511723add358a01ce30bec7b11cb7858d4cd191f7d630a",
+      "packed_bytes": 1204,
+      "packed_sha256": "e5a1bb3320b65b34ad389252d2838ddd73be874418eea741d1aab64b9e103a2d"
+    },
+    {
+      "source": "r29-arbitrator-control-a2-experiment.json",
+      "path": "files/r29-arbitrator-control-a2-experiment.json.gz",
+      "raw_bytes": 942,
+      "raw_sha256": "282f313745cdb30a76a298a92209f0a76f7260b595035154213bf625480b1a99",
+      "packed_bytes": 514,
+      "packed_sha256": "efde163aa97d17fe981b323747b044b2d67215e2ca59f32efffb3dec763ba5d3"
+    },
+    {
+      "source": "r29-arbitrator-control-a2-input-validation.log",
+      "path": "files/r29-arbitrator-control-a2-input-validation.log.gz",
+      "raw_bytes": 897,
+      "raw_sha256": "c016fa3b598a88e1f90ccaf112fefdf08b3d5bf4fe942aa13852a66ca3f49bf9",
+      "packed_bytes": 366,
+      "packed_sha256": "db8468b54520a027b619ea31bf9b78ab318272fc4cb3a43ab7bdbcb6939fdd9b"
+    },
+    {
+      "source": "r29-arbitrator-control-a2-report.txt",
+      "path": "files/r29-arbitrator-control-a2-report.txt.gz",
+      "raw_bytes": 1415,
+      "raw_sha256": "a625d9d4fc4af7d674a105f566a024a52b1fec0fdfaebb8b43e59c70934ed489",
+      "packed_bytes": 471,
+      "packed_sha256": "6fa88b0642e4af815d34a69419a5f43a3416f15f40c003acbecef7afd13f9e59"
+    },
+    {
+      "source": "r29-arbitrator-control-a2-server.log",
+      "path": "files/r29-arbitrator-control-a2-server.log.gz",
+      "raw_bytes": 322,
+      "raw_sha256": "3b9227eb00751c3ad6ddb1fe9e9f129de7604014c59d98643b7f5e5557e1ac84",
+      "packed_bytes": 228,
+      "packed_sha256": "74513fbaca4680ef4d91b3a0c328ecc2d7b84e2d86129ab350cf73d124d2c412"
+    },
+    {
+      "source": "round16-row-native/prepare_fts_lazy_rows.py",
+      "path": "files/round16-row-native/prepare_fts_lazy_rows.py.gz",
+      "raw_bytes": 17100,
+      "raw_sha256": "30779fbf52372a91bbc37e823b7fde4579eae04850dc784064170758667410f9",
+      "packed_bytes": 5582,
+      "packed_sha256": "13e76d9fea3c1fbf68e8d94d09d14a37d10b433b1378b6312753fcffbcb125a4"
+    },
+    {
+      "source": "round19-evidence/summarize-template.py",
+      "path": "files/round19-evidence/summarize-template.py.gz",
+      "raw_bytes": 12653,
+      "raw_sha256": "0aca605abda2fea4ab7b32335c5fe04302895748e8f63a6ce46887b04b822035",
+      "packed_bytes": 4580,
+      "packed_sha256": "47defb430c32f6f956cc96bf0744eaf2f4091d602ca6c3013deb902fb8a53a4b"
+    },
+    {
+      "source": "round27-root-evidence/experiment-with-exit.py",
+      "path": "files/round27-root-evidence/experiment-with-exit.py.gz",
+      "raw_bytes": 15947,
+      "raw_sha256": "8baa4b26289b4ecac8941ebd7cfdfd8f480c74723c6a84cafd1d7b09660d7478",
+      "packed_bytes": 3934,
+      "packed_sha256": "a6a2579c66336fab7344f5877a11743a929688450a6ea5f9e6c727d760496496"
+    },
+    {
+      "source": "round29-arbitrator-build/application.json",
+      "path": "files/round29-arbitrator-build/application.json.gz",
+      "raw_bytes": 399,
+      "raw_sha256": "d155982f8755ab93b9b5ba2c7aeefac580e54c96cee713bfc0d6ea5304a37bd3",
+      "packed_bytes": 291,
+      "packed_sha256": "6f139536c6b0ad53db8313d731e7e8d51791d674143ac2eb6c2cd0c13baaca74"
+    },
+    {
+      "source": "round29-arbitrator-build/apply_candidate.py",
+      "path": "files/round29-arbitrator-build/apply_candidate.py.gz",
+      "raw_bytes": 2104,
+      "raw_sha256": "3fc0b7a9cca81a9741539bfd2a4dbdba50b858a30c77da66db9e86021dc0cf57",
+      "packed_bytes": 998,
+      "packed_sha256": "b50b85688f293b2f55245d7a6aa001882c1e5f05a7ac31949bf134d2dd2a6758"
+    },
+    {
+      "source": "round29-arbitrator-build/binary.json",
+      "path": "files/round29-arbitrator-build/binary.json.gz",
+      "raw_bytes": 2066,
+      "raw_sha256": "40676bd8a2559361d560dc13dab14fc2fb18f32dee9d8b22018fceb22a9832a9",
+      "packed_bytes": 902,
+      "packed_sha256": "df948f24b7fa49587b6eeba5867f9bb5d48cfb3da281c13edc4bac58892c1523"
+    },
+    {
+      "source": "round29-arbitrator-build/build.ps1",
+      "path": "files/round29-arbitrator-build/build.ps1.gz",
+      "raw_bytes": 834,
+      "raw_sha256": "a0c4c899ad5160d58f1bc04160de2b913f03a8c1ea68abac31e5e8383689f777",
+      "packed_bytes": 502,
+      "packed_sha256": "94d47313b165b1287533a98cc420d7d7d56aaefb13bc553d3ad190a3f528f203"
+    },
+    {
+      "source": "round29-arbitrator-build/build_native.py",
+      "path": "files/round29-arbitrator-build/build_native.py.gz",
+      "raw_bytes": 8276,
+      "raw_sha256": "f740a41614678a47c72b3c6a07794d955fc30bcab06dec4fdd2a6bfd01659f59",
+      "packed_bytes": 2818,
+      "packed_sha256": "db7f0ef7bd13935e1c4ad9edd10f4c1b91e288536722559c2c0fa67342de3cd1"
+    },
+    {
+      "source": "round29-arbitrator-build/candidate-build1/compile.log",
+      "path": "files/round29-arbitrator-build/candidate-build1/compile.log.gz",
+      "raw_bytes": 0,
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "packed_bytes": 20,
+      "packed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "source": "round29-arbitrator-build/candidate-build1/compile.rsp",
+      "path": "files/round29-arbitrator-build/candidate-build1/compile.rsp.gz",
+      "raw_bytes": 6616,
+      "raw_sha256": "eb66041f506c9531d60fc5818c18e40b5a3feab7a1136d5a1b8e6f3f317fa6c4",
+      "packed_bytes": 2254,
+      "packed_sha256": "c4afac5d7f72ad70301acc938fb10d3b6b4605baf7ba289952fa015091195973"
+    },
+    {
+      "source": "round29-arbitrator-build/candidate-build1/link-inputs.rsp",
+      "path": "files/round29-arbitrator-build/candidate-build1/link-inputs.rsp.gz",
+      "raw_bytes": 3704,
+      "raw_sha256": "bd736c78923732890c54918a9a6912348a5283a5c2a6ebb2ac0d620a119b5935",
+      "packed_bytes": 775,
+      "packed_sha256": "e301240f88ed70524115dff74f4a2072933d05bd09d06d82d334d7b321e88633"
+    },
+    {
+      "source": "round29-arbitrator-build/candidate-build1/link.log",
+      "path": "files/round29-arbitrator-build/candidate-build1/link.log.gz",
+      "raw_bytes": 0,
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "packed_bytes": 20,
+      "packed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "source": "round29-arbitrator-build/candidate-build1/receipt.json",
+      "path": "files/round29-arbitrator-build/candidate-build1/receipt.json.gz",
+      "raw_bytes": 23748,
+      "raw_sha256": "0ba2dcbe591f39a37ad66940e9d4828b4ebbbee06dcab136d3ef7eb8325efb43",
+      "packed_bytes": 6024,
+      "packed_sha256": "baccc9d69dacc5c6b84bc4f4d5483c596d14f04205e179df350cb571cf679b86"
+    },
+    {
+      "source": "round29-arbitrator-build/candidate-run1/build-receipt.json",
+      "path": "files/round29-arbitrator-build/candidate-run1/build-receipt.json.gz",
+      "raw_bytes": 23748,
+      "raw_sha256": "0ba2dcbe591f39a37ad66940e9d4828b4ebbbee06dcab136d3ef7eb8325efb43",
+      "packed_bytes": 6024,
+      "packed_sha256": "baccc9d69dacc5c6b84bc4f4d5483c596d14f04205e179df350cb571cf679b86"
+    },
+    {
+      "source": "round29-arbitrator-build/candidate-run1/run.json",
+      "path": "files/round29-arbitrator-build/candidate-run1/run.json.gz",
+      "raw_bytes": 822,
+      "raw_sha256": "52d0023f4633cd26dcc16cf32b31d973597a290ba4aae90935fce91870ffdbe9",
+      "packed_bytes": 499,
+      "packed_sha256": "799d4805136fb5850729ebc4169f0c7dbb6655f67f16f3fb0dd710b857f0687d"
+    },
+    {
+      "source": "round29-arbitrator-build/candidate-run1/stderr.log",
+      "path": "files/round29-arbitrator-build/candidate-run1/stderr.log.gz",
+      "raw_bytes": 0,
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "packed_bytes": 20,
+      "packed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "source": "round29-arbitrator-build/candidate-run1/stdout.log",
+      "path": "files/round29-arbitrator-build/candidate-run1/stdout.log.gz",
+      "raw_bytes": 1206831,
+      "raw_sha256": "7134ac2b0fa16f8ca2fb0594df0a30625aa17debcc443c5d9c0b83b51e17c64b",
+      "packed_bytes": 93707,
+      "packed_sha256": "e5512c039dbfaa3b970628df2f07749eef0ab21335cfa8ec655aea8e474dd4dd"
+    },
+    {
+      "source": "round29-arbitrator-build/candidate-run1/tuples.log",
+      "path": "files/round29-arbitrator-build/candidate-run1/tuples.log.gz",
+      "raw_bytes": 1181864,
+      "raw_sha256": "b1fb0adc1cb36cb75580699c7714d9a6a9a1f8b4cebf0533b1d09f1283749467",
+      "packed_bytes": 94352,
+      "packed_sha256": "f9137dcd719b32bd5caac320547bf3e4ea83fda9db5eb9c5e9eabb8ec1af338f"
+    },
+    {
+      "source": "round29-arbitrator-build/candidate.cpp",
+      "path": "files/round29-arbitrator-build/candidate.cpp.gz",
+      "raw_bytes": 12991,
+      "raw_sha256": "cb9d730455159a2c2e0c1ddfc3b6d96a2631a047ce0cf19c867df0d9ac0d8b24",
+      "packed_bytes": 2996,
+      "packed_sha256": "279fe860864769af1de0597cdaef0d67f2eba49eef2b8743e884afba07a34e96"
+    },
+    {
+      "source": "round29-arbitrator-build/control-build1/compile.log",
+      "path": "files/round29-arbitrator-build/control-build1/compile.log.gz",
+      "raw_bytes": 0,
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "packed_bytes": 20,
+      "packed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "source": "round29-arbitrator-build/control-build1/compile.rsp",
+      "path": "files/round29-arbitrator-build/control-build1/compile.rsp.gz",
+      "raw_bytes": 6612,
+      "raw_sha256": "a457a6755ca5c575e9ecd28303cff71786c17089ff3ed4e92256da37a55617c6",
+      "packed_bytes": 2254,
+      "packed_sha256": "ac7df7b65820322750510c9632968856567c0949519aeadc45c3e0f3a712110e"
+    },
+    {
+      "source": "round29-arbitrator-build/control-build1/link-inputs.rsp",
+      "path": "files/round29-arbitrator-build/control-build1/link-inputs.rsp.gz",
+      "raw_bytes": 3702,
+      "raw_sha256": "8d962dd8588c53d83bc2217e895cd83bbf2f51263a3d079c8a1c3e109b399ecc",
+      "packed_bytes": 774,
+      "packed_sha256": "0f67576434b7137de61a0632729417f6adb493eb1e3414164476edad0484c199"
+    },
+    {
+      "source": "round29-arbitrator-build/control-build1/link.log",
+      "path": "files/round29-arbitrator-build/control-build1/link.log.gz",
+      "raw_bytes": 0,
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "packed_bytes": 20,
+      "packed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "source": "round29-arbitrator-build/control-build1/receipt.json",
+      "path": "files/round29-arbitrator-build/control-build1/receipt.json.gz",
+      "raw_bytes": 23734,
+      "raw_sha256": "a313f9e9325ac4cafc6529569e9ffc8695ea6c92c4e7426eff7156eb87ceb62e",
+      "packed_bytes": 6024,
+      "packed_sha256": "813008686e470c96e8c4ffb6d1c0821012a477fd06ea939aa4bde5fbc5ab18fb"
+    },
+    {
+      "source": "round29-arbitrator-build/control-run1/build-receipt.json",
+      "path": "files/round29-arbitrator-build/control-run1/build-receipt.json.gz",
+      "raw_bytes": 23734,
+      "raw_sha256": "a313f9e9325ac4cafc6529569e9ffc8695ea6c92c4e7426eff7156eb87ceb62e",
+      "packed_bytes": 6024,
+      "packed_sha256": "813008686e470c96e8c4ffb6d1c0821012a477fd06ea939aa4bde5fbc5ab18fb"
+    },
+    {
+      "source": "round29-arbitrator-build/control-run1/run.json",
+      "path": "files/round29-arbitrator-build/control-run1/run.json.gz",
+      "raw_bytes": 788,
+      "raw_sha256": "04ea180c5b29ed65b1f1e2b099d0e07e20ef8aaed5aa3da623b144a3bd9e7905",
+      "packed_bytes": 480,
+      "packed_sha256": "a5a6bd9dade7d09e78c286cd820564bcd71fe82180df26c0f6f371e02f943611"
+    },
+    {
+      "source": "round29-arbitrator-build/control-run1/stderr.log",
+      "path": "files/round29-arbitrator-build/control-run1/stderr.log.gz",
+      "raw_bytes": 0,
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "packed_bytes": 20,
+      "packed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "source": "round29-arbitrator-build/control-run1/stdout.log",
+      "path": "files/round29-arbitrator-build/control-run1/stdout.log.gz",
+      "raw_bytes": 1206831,
+      "raw_sha256": "7134ac2b0fa16f8ca2fb0594df0a30625aa17debcc443c5d9c0b83b51e17c64b",
+      "packed_bytes": 93707,
+      "packed_sha256": "e5512c039dbfaa3b970628df2f07749eef0ab21335cfa8ec655aea8e474dd4dd"
+    },
+    {
+      "source": "round29-arbitrator-build/control-run1/tuples.log",
+      "path": "files/round29-arbitrator-build/control-run1/tuples.log.gz",
+      "raw_bytes": 1181864,
+      "raw_sha256": "b1fb0adc1cb36cb75580699c7714d9a6a9a1f8b4cebf0533b1d09f1283749467",
+      "packed_bytes": 94352,
+      "packed_sha256": "f9137dcd719b32bd5caac320547bf3e4ea83fda9db5eb9c5e9eabb8ec1af338f"
+    },
+    {
+      "source": "round29-arbitrator-build/original.cpp",
+      "path": "files/round29-arbitrator-build/original.cpp.gz",
+      "raw_bytes": 12119,
+      "raw_sha256": "c59ea5dead8183a9728087dcea403e8418398a2040b2d50e560ac0e6e5897d17",
+      "packed_bytes": 2678,
+      "packed_sha256": "a492763483da6d9c673163023834d3036b0f076f791daf3a6ff142153a04017b"
+    },
+    {
+      "source": "round29-arbitrator-build/parent-output-verification.json",
+      "path": "files/round29-arbitrator-build/parent-output-verification.json.gz",
+      "raw_bytes": 408,
+      "raw_sha256": "96462eca123cbdb22857f16c42ffb63d7b8b7356984897ec997c43e9aad387f3",
+      "packed_bytes": 304,
+      "packed_sha256": "8c2a0ef48f1fac881e9f2e9d9ddb09b2384de8aac1ac6fd1c60faf9cf8ad64c7"
+    },
+    {
+      "source": "round29-arbitrator-build/pin_binary.py",
+      "path": "files/round29-arbitrator-build/pin_binary.py.gz",
+      "raw_bytes": 1061,
+      "raw_sha256": "34e3b3318ed74c9eeaafeaa78da49387e2fd58524f93c59bb1c64d8155b14031",
+      "packed_bytes": 612,
+      "packed_sha256": "29bcff65c218dd9aa1003fda34936c27c4add481c115c15a5f927025ec842b00"
+    },
+    {
+      "source": "round29-arbitrator-build/preparation.json",
+      "path": "files/round29-arbitrator-build/preparation.json.gz",
+      "raw_bytes": 1003,
+      "raw_sha256": "20fdc96c2241f7c9ae0edf8722f64fb78140109504fcf5cb9053c958e189f183",
+      "packed_bytes": 514,
+      "packed_sha256": "a094d8faaf03a16d44b070fa6e8ef686bc29811014df1f753ee2e2d8a8dadecc"
+    },
+    {
+      "source": "round29-arbitrator-build/rejection-restoration.json",
+      "path": "files/round29-arbitrator-build/rejection-restoration.json.gz",
+      "raw_bytes": 2787,
+      "raw_sha256": "fffa5acef87d9d5319b96a2a5dd49a6e483353f8132cfe43431917a26b1f9ba1",
+      "packed_bytes": 1109,
+      "packed_sha256": "ce8c238857791ac24c37b9bea0c9fdf58056e71e83560c9a5b25befefca341e9"
+    },
+    {
+      "source": "round29-arbitrator-build/restore.py",
+      "path": "files/round29-arbitrator-build/restore.py.gz",
+      "raw_bytes": 2391,
+      "raw_sha256": "968f52aa3cf6233461eb0d37fb5633ab891c12b6c13e26a7676c75672bbbf460",
+      "packed_bytes": 1183,
+      "packed_sha256": "380cdf2961bba58ae1839a614cbe436a739a9a39a6560cce7cebc71ed94a0812"
+    },
+    {
+      "source": "round29-arbitrator-build/run_native.py",
+      "path": "files/round29-arbitrator-build/run_native.py.gz",
+      "raw_bytes": 5143,
+      "raw_sha256": "12e3b04ca5bc3722ec0c6a4d1b9b53308446f2f64745299e43e96529b3b05cd8",
+      "packed_bytes": 1837,
+      "packed_sha256": "a7205a6ea845cbd427acedf30bde56a6dd73eaab1606a973dd43fdb8480d8159"
+    },
+    {
+      "source": "round29-arbitrator-build/test_arbitrator_decode.cpp",
+      "path": "files/round29-arbitrator-build/test_arbitrator_decode.cpp.gz",
+      "raw_bytes": 8394,
+      "raw_sha256": "808f48820c97281559347e5f66e4690abc97949e658ff646e3865ece48925e2e",
+      "packed_bytes": 2920,
+      "packed_sha256": "3ead8d25188758253770cabb317199a779ebc214ead3467f51e26b9ac1ffcbc8"
+    },
+    {
+      "source": "round29-arbitrator-build/verify_outputs.py",
+      "path": "files/round29-arbitrator-build/verify_outputs.py.gz",
+      "raw_bytes": 1518,
+      "raw_sha256": "24c28198645458ac49545805c7bed03d983de7d7a8f9a92658394c2e5c115d13",
+      "packed_bytes": 791,
+      "packed_sha256": "302e2a9ed85bd79ce207e29253c2352b342fce6bddc7104134fc093af1db4f87"
+    },
+    {
+      "source": "round29-arbitrator-candidate-build.log",
+      "path": "files/round29-arbitrator-candidate-build.log.gz",
+      "raw_bytes": 473,
+      "raw_sha256": "16748b842e0e6fa4a11b492a33972cedfc3f80328b9f641080bbad5b1acc0928",
+      "packed_bytes": 318,
+      "packed_sha256": "5dfd347581b437aa75f4bb5e89b5a89938910e8dfa1c3d27df9eb93bee08d973"
+    },
+    {
+      "source": "round29-arbitrator-decode-proposal/arbitrator-decode.patch",
+      "path": "files/round29-arbitrator-decode-proposal/arbitrator-decode.patch.gz",
+      "raw_bytes": 1921,
+      "raw_sha256": "01e2c64503c25dd8b20958f8d1e7b14a6ea085b30974c094f5c0de668cb1c353",
+      "packed_bytes": 698,
+      "packed_sha256": "48b4eddfccafcb8816e0405657e26334b04529fdb7215e7d333188d3bf44ae1e"
+    },
+    {
+      "source": "round29-arbitrator-decode-proposal/report.md",
+      "path": "files/round29-arbitrator-decode-proposal/report.md.gz",
+      "raw_bytes": 8558,
+      "raw_sha256": "522be0b37b36762731bbc776ac65aa919a4f51f935b7b90751cfc0c28d539575",
+      "packed_bytes": 3773,
+      "packed_sha256": "f9d910484200e7b84361eb0809b948460c87035e92475a63e0d36da8bdf355b4"
+    },
+    {
+      "source": "round29-arbitrator-decode-proposal/source-pins.json",
+      "path": "files/round29-arbitrator-decode-proposal/source-pins.json.gz",
+      "raw_bytes": 5812,
+      "raw_sha256": "f0cc4d653191ce170b1c3fce81e3c933a9542252539866b1fcb5c4f52665e947",
+      "packed_bytes": 2072,
+      "packed_sha256": "43e5c7d7c87a6ba7800b366a203242186c9915fb06e1848aec0a33c2c979893b"
+    },
+    {
+      "source": "round29-arbitrator-evidence/arbitrator-comparison-1pair.json",
+      "path": "files/round29-arbitrator-evidence/arbitrator-comparison-1pair.json.gz",
+      "raw_bytes": 11241,
+      "raw_sha256": "f3e36333f6ac62f47a3e6eab73d56d0c200d6e3f7c113813a200a1814dd45429",
+      "packed_bytes": 2426,
+      "packed_sha256": "2abc30273addff14c96b0a11ad24cbdca9796c60b24399f564f286ca40c88ae3"
+    },
+    {
+      "source": "round29-arbitrator-evidence/arbitrator-comparison-2pair.json",
+      "path": "files/round29-arbitrator-evidence/arbitrator-comparison-2pair.json.gz",
+      "raw_bytes": 19041,
+      "raw_sha256": "35eb920c89b3aa730091ac33945773675eade48b3a5fe6ab1164523991138f66",
+      "packed_bytes": 3477,
+      "packed_sha256": "44a6b80aced2d324c7dad429a9934462e6735058157b1a0f5880264b17688758"
+    },
+    {
+      "source": "round29-arbitrator-evidence/archive.py",
+      "path": "files/round29-arbitrator-evidence/archive.py.gz",
+      "raw_bytes": 9652,
+      "raw_sha256": "712c48ab133667e2c9d08b0a3e9618496a483aab169ddd1feadb5733c7023b37",
+      "packed_bytes": 4672,
+      "packed_sha256": "f6c6343ecb2449b5a2eb4f8a6fb78eda6b3372f79a17f551d54a3c958656f235"
+    },
+    {
+      "source": "round29-arbitrator-evidence/prepare_summarizer.py",
+      "path": "files/round29-arbitrator-evidence/prepare_summarizer.py.gz",
+      "raw_bytes": 1215,
+      "raw_sha256": "d6c2ee4f8bc771d7d1f21c693cc9b4c4edebc57708313bbc0b91f3d3656f4654",
+      "packed_bytes": 669,
+      "packed_sha256": "53f8cde48916bb2f080d4d4eca9456c1aa8f158b530fabad8abe21cf38668e0d"
+    },
+    {
+      "source": "round29-arbitrator-evidence/report.en.md",
+      "path": "files/round29-arbitrator-evidence/report.en.md.gz",
+      "raw_bytes": 3243,
+      "raw_sha256": "aa06eb9861cf87f98723e1f1b371cabde8155f87090f10960e3359b77d5e1db8",
+      "packed_bytes": 1833,
+      "packed_sha256": "d4974435946bb3efbf98fce88840acc759a519c66cf788aa074a4f75753784ca"
+    },
+    {
+      "source": "round29-arbitrator-evidence/report.zh-CN.md",
+      "path": "files/round29-arbitrator-evidence/report.zh-CN.md.gz",
+      "raw_bytes": 2968,
+      "raw_sha256": "804f7a426892bba22e435420307c391970b69036dbfcfac6acd2cd12e073e0ae",
+      "packed_bytes": 1982,
+      "packed_sha256": "6400508038caaff2bc800a3487ad853811d9e2163bb1f757c8daf714b24b0ec0"
+    },
+    {
+      "source": "round29-arbitrator-evidence/summarize.py",
+      "path": "files/round29-arbitrator-evidence/summarize.py.gz",
+      "raw_bytes": 3699,
+      "raw_sha256": "cd2062e0e8a1fbbecb5c9dc256c1e0af52bcf6ee16d04ba573be5010b1b9e604",
+      "packed_bytes": 1785,
+      "packed_sha256": "80e5bc3a88a263e49cd6da2bf23a6b6dc4cbb4e0724558bb41f03e1a5b14fe3d"
+    },
+    {
+      "source": "round29-arbitrator-evidence/summarizer-provenance.json",
+      "path": "files/round29-arbitrator-evidence/summarizer-provenance.json.gz",
+      "raw_bytes": 415,
+      "raw_sha256": "be61f447ef546acfee423d62b0e02dcd143878a3f6a608be4bcbc6d98e0d6a7d",
+      "packed_bytes": 319,
+      "packed_sha256": "5e251a320d146e8996458588aa9d74590152313c8a2bd99e39ff6a0553f5ef55"
+    },
+    {
+      "source": "round29-arbitrator-native/prepare_build.py",
+      "path": "files/round29-arbitrator-native/prepare_build.py.gz",
+      "raw_bytes": 1610,
+      "raw_sha256": "c3b0d414cc0f5f35869b9d73f0ccbd51de482fe58b94270c4adf45fa3f62c294",
+      "packed_bytes": 734,
+      "packed_sha256": "6950a9335f3650be4040df0cc7a051df9d111b7d8af83ea8488bb62d33c06b28"
+    },
+    {
+      "source": "round29-arbitrator-native/stage_test.py",
+      "path": "files/round29-arbitrator-native/stage_test.py.gz",
+      "raw_bytes": 786,
+      "raw_sha256": "84d07d69a16c5416d8820d55ab7b58fa1accf3a04a320607324bf27964cf2116",
+      "packed_bytes": 459,
+      "packed_sha256": "4cd7642b3dc4f446a44359dfed91e9156bc826419871dd5d2ce989b08660a43e"
+    },
+    {
+      "source": "round29-arbitrator-native/staging.json",
+      "path": "files/round29-arbitrator-native/staging.json.gz",
+      "raw_bytes": 437,
+      "raw_sha256": "d87c2c3cf24df40862616428dc8fd9c7f258a7e11793a2a57f4a92516db4a75b",
+      "packed_bytes": 305,
+      "packed_sha256": "a00af0fbec615f24809a19093cb9690a13b61dde42adba9b286eb656eaa86d01"
+    },
+    {
+      "source": "round29-arbitrator-native/test_arbitrator_decode.cpp",
+      "path": "files/round29-arbitrator-native/test_arbitrator_decode.cpp.gz",
+      "raw_bytes": 8394,
+      "raw_sha256": "808f48820c97281559347e5f66e4690abc97949e658ff646e3865ece48925e2e",
+      "packed_bytes": 2920,
+      "packed_sha256": "3ead8d25188758253770cabb317199a779ebc214ead3467f51e26b9ac1ffcbc8"
+    },
+    {
+      "source": "round29-arbitrator-rejection-restoration-build.log",
+      "path": "files/round29-arbitrator-rejection-restoration-build.log.gz",
+      "raw_bytes": 473,
+      "raw_sha256": "16748b842e0e6fa4a11b492a33972cedfc3f80328b9f641080bbad5b1acc0928",
+      "packed_bytes": 318,
+      "packed_sha256": "5dfd347581b437aa75f4bb5e89b5a89938910e8dfa1c3d27df9eb93bee08d973"
+    }
+  ]
+}
