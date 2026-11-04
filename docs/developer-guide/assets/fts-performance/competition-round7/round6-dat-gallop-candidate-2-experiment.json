@@ -1,0 +1,24 @@
+{
+  "label": "round6-dat-gallop-candidate-2",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build_fts_competition\\src\\observer\\seekdb.exe",
+  "source_commit": "a2cd7c9cd+IK-processors-DAT-interleaved-galloping-uncommitted",
+  "binary_sha256": "b2054d84641aba723dedc3ae4e202c04c70b223fabcfabfa5ec4fb5eaed39b0e",
+  "actions": [
+    {
+      "action": "benchmark",
+      "exit_code": 0,
+      "seconds": 34.34081239999796
+    },
+    {
+      "action": "input-validation",
+      "exit_code": 0,
+      "seconds": 0.11402640001324471
+    },
+    {
+      "action": "micro",
+      "exit_code": 0,
+      "seconds": 15.802251699991757
+    }
+  ],
+  "report": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase\u6bd4\u8d5b\\setup\\fts\\round6-dat-gallop-candidate-2-report.txt"
+}

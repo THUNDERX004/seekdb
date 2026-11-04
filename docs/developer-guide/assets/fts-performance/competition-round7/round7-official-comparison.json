@@ -1,0 +1,50 @@
+{
+  "controls": [
+    "round7-original-1",
+    "round7-original-2"
+  ],
+  "candidates": [
+    "round7-prefix-name-candidate-1",
+    "round7-prefix-name-candidate-2"
+  ],
+  "control_mean": {
+    "build_ik_all_sec": 8.447,
+    "build_ik_content_sec": 6.9335,
+    "build_beng_en_sec": 3.6135,
+    "tokenize_ik_avg_ms": 0.21455000000000002,
+    "tokenize_beng_avg_ms": 0.15885,
+    "query_cn_avg_ms": 1.8259,
+    "query_beng_avg_ms": 2.5885499999999997,
+    "query_mixed_avg_ms": 2.0138,
+    "query_limit_avg_ms": 3.23545
+  },
+  "candidate_mean": {
+    "build_ik_all_sec": 7.3325,
+    "build_ik_content_sec": 5.7465,
+    "build_beng_en_sec": 3.325,
+    "tokenize_ik_avg_ms": 0.16385,
+    "tokenize_beng_avg_ms": 0.10965,
+    "query_cn_avg_ms": 1.1112,
+    "query_beng_avg_ms": 1.3548499999999999,
+    "query_mixed_avg_ms": 1.12005,
+    "query_limit_avg_ms": 2.38755
+  },
+  "per_metric_reduction": {
+    "build_ik_all_sec": 0.13194033384633597,
+    "build_ik_content_sec": 0.17119780774500615,
+    "build_beng_en_sec": 0.07983949079839492,
+    "tokenize_ik_avg_ms": 0.2363085527848987,
+    "tokenize_beng_avg_ms": 0.3097261567516525,
+    "query_cn_avg_ms": 0.39142340763459116,
+    "query_beng_avg_ms": 0.4765988680921751,
+    "query_mixed_avg_ms": 0.44381269242228616,
+    "query_limit_avg_ms": 0.262065555023258
+  },
+  "per_category_reduction": {
+    "build": 0.12765921079657902,
+    "tokenize": 0.2730173547682756,
+    "query": 0.3934751307930776
+  },
+  "overall_reduction": 0.26471723211931075,
+  "note": "Local comparison only. All listed runs retained; no SELECT1 subtraction and no negative clipping."
+}

@@ -1,0 +1,69 @@
+{
+  "label": "round5-ik-candidate-1",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build_fts_competition\\src\\observer\\seekdb.exe",
+  "source_commit": "a2cd7c9cd+fixed-IK-processor-allocation-and-dispatch-uncommitted",
+  "binary_sha256": "ae4c3755542bfc1d9b41dd693ae1dbc19f7b7e1cda5985783561e9008333de42",
+  "actions": [
+    {
+      "action": "bmp",
+      "exit_code": 0,
+      "seconds": 1.4393531999958213
+    },
+    {
+      "action": "ranked",
+      "exit_code": 0,
+      "seconds": 5.448511700000381
+    },
+    {
+      "action": "test_hot_path.py",
+      "exit_code": 0,
+      "seconds": 3.3927671999990707
+    },
+    {
+      "action": "test_tokenize_config.py",
+      "exit_code": 0,
+      "seconds": 0.3332709999958752
+    },
+    {
+      "action": "test_collation.py",
+      "exit_code": 0,
+      "seconds": 1.668301199999405
+    },
+    {
+      "action": "test_match_batches.py",
+      "exit_code": 0,
+      "seconds": 15.336148900008993
+    },
+    {
+      "action": "test_map_concurrency.py",
+      "exit_code": 0,
+      "seconds": 1.9868125999928452
+    },
+    {
+      "action": "test_stopword_concurrency.py",
+      "exit_code": 0,
+      "seconds": 0.3087627000059001
+    },
+    {
+      "action": "test_dictionary_prefixes.py",
+      "exit_code": 0,
+      "seconds": 0.35113080000155605
+    },
+    {
+      "action": "benchmark",
+      "exit_code": 0,
+      "seconds": 36.81581470000674
+    },
+    {
+      "action": "input-validation",
+      "exit_code": 0,
+      "seconds": 0.1124551000102656
+    },
+    {
+      "action": "micro",
+      "exit_code": 0,
+      "seconds": 16.453041899992968
+    }
+  ],
+  "report": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase\u6bd4\u8d5b\\setup\\fts\\round5-ik-candidate-1-report.txt"
+}

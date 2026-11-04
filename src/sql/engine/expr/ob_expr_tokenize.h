@@ -69,6 +69,8 @@ private:
   public:
     // for property and tmp json string
     mutable ObArenaAllocator allocator_;
+    // The serialized built-in name lives for this evaluation.
+    char parser_name_buffer_[storage::OB_FT_PARSER_NAME_LENGTH];
     ObString parser_name_;
     ObString properties_;
     storage::ObFTParser parser_;

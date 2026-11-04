@@ -1,0 +1,14 @@
+[0/2] Re-checking globbed directories...
+[1/12] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_charset_0_c___cxx.cxx.obj
+[2/12] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_ik_0_c___cxx.cxx.obj
+[3/12] Linking CXX static library src\oblib\oblib.lib
+[4/12] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_5_c___cxx.cxx.obj
+[5/12] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_fts_0_c___cxx.cxx.obj
+[6/12] Linking CXX static library src\storage\ob_storage_static.lib
+[7/12] Building CXX object src/observer/CMakeFiles/ob_server.dir/ob_server.cpp.obj
+[8/12] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_13_c___cxx.cxx.obj
+[9/12] Linking CXX static library src\sql\ob_sql_static.lib
+[10/12] Linking CXX static library src\observer\oceanbase_static.lib
+[11/12] Linking CXX executable src\observer\seekdb.exe
+-- BundleRuntimeDllsWindows: unresolved (likely system) VCRUNTIME140_1.dll
+-- BundleRuntimeDllsWindows: bundled 12 DLLs -> D:/Projects/OceanBase/seekdb/build_fts_competition/src/observer

@@ -1,0 +1,50 @@
+{
+  "controls": [
+    "round7-incumbent-1",
+    "round7-incumbent-2"
+  ],
+  "candidates": [
+    "round7-prefix-name-candidate-1",
+    "round7-prefix-name-candidate-2"
+  ],
+  "control_mean": {
+    "build_ik_all_sec": 8.5565,
+    "build_ik_content_sec": 6.2295,
+    "build_beng_en_sec": 3.7695,
+    "tokenize_ik_avg_ms": 0.18355,
+    "tokenize_beng_avg_ms": 0.13285,
+    "query_cn_avg_ms": 1.13305,
+    "query_beng_avg_ms": 1.2837,
+    "query_mixed_avg_ms": 1.1061,
+    "query_limit_avg_ms": 2.2765500000000003
+  },
+  "candidate_mean": {
+    "build_ik_all_sec": 7.3325,
+    "build_ik_content_sec": 5.7465,
+    "build_beng_en_sec": 3.325,
+    "tokenize_ik_avg_ms": 0.16385,
+    "tokenize_beng_avg_ms": 0.10965,
+    "query_cn_avg_ms": 1.1112,
+    "query_beng_avg_ms": 1.3548499999999999,
+    "query_mixed_avg_ms": 1.12005,
+    "query_limit_avg_ms": 2.38755
+  },
+  "per_metric_reduction": {
+    "build_ik_all_sec": 0.14304914392567059,
+    "build_ik_content_sec": 0.07753431254514809,
+    "build_beng_en_sec": 0.117920148560817,
+    "tokenize_ik_avg_ms": 0.10732770362299104,
+    "tokenize_beng_avg_ms": 0.1746330447873542,
+    "query_cn_avg_ms": 0.019284232822911584,
+    "query_beng_avg_ms": -0.055425722520838105,
+    "query_mixed_avg_ms": -0.012611879576891694,
+    "query_limit_avg_ms": -0.048757989062397034
+  },
+  "per_category_reduction": {
+    "build": 0.11283453501054523,
+    "tokenize": 0.14098037420517262,
+    "query": -0.024377839584303812
+  },
+  "overall_reduction": 0.07647902321047134,
+  "note": "Local comparison only. All listed runs retained; no SELECT1 subtraction and no negative clipping."
+}

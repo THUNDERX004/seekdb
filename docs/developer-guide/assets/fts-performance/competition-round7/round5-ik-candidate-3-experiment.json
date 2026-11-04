@@ -1,0 +1,24 @@
+{
+  "label": "round5-ik-candidate-3",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build_fts_competition\\src\\observer\\seekdb.exe",
+  "source_commit": "a2cd7c9cd+fixed-IK-processor-allocation-and-dispatch-uncommitted",
+  "binary_sha256": "ae4c3755542bfc1d9b41dd693ae1dbc19f7b7e1cda5985783561e9008333de42",
+  "actions": [
+    {
+      "action": "benchmark",
+      "exit_code": 0,
+      "seconds": 35.21654289998696
+    },
+    {
+      "action": "input-validation",
+      "exit_code": 0,
+      "seconds": 0.11186910000105854
+    },
+    {
+      "action": "micro",
+      "exit_code": 0,
+      "seconds": 16.401247800007695
+    }
+  ],
+  "report": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase\u6bd4\u8d5b\\setup\\fts\\round5-ik-candidate-3-report.txt"
+}

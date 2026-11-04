@@ -395,14 +395,15 @@ static int ob_strnncollsp_utf8mb4(const ObCharsetInfo *cs,
     if ( s_res <= 0 || t_res <= 0 ) {
       return bincmp_utf8mb4(src, se, dst, te);
     }
-    ob_tosort_unicode(uni_plane, &src_wc, cs->state);
-    ob_tosort_unicode(uni_plane, &dst_wc, cs->state);
     if ( src_wc != dst_wc ) {
-      return src_wc > dst_wc ? 1 : -1;
-    } else {
-      src +=s_res;
-      dst +=t_res;
+      ob_tosort_unicode(uni_plane, &src_wc, cs->state);
+      ob_tosort_unicode(uni_plane, &dst_wc, cs->state);
+      if ( src_wc != dst_wc ) {
+        return src_wc > dst_wc ? 1 : -1;
+      }
     }
+    src +=s_res;
+    dst +=t_res;
   }
   srclen = (size_t) (se-src);
   dstlen = (size_t) (te-dst);

@@ -39,7 +39,7 @@ public:
         coll_type_(ObCollationType::CS_TYPE_INVALID),
         ctx_(nullptr),
         hub_(hub),
-        segmenters_(allocator_),
+        processors_(nullptr),
         dict_main_(nullptr),
         dict_quan_(nullptr),
         dict_stop_(nullptr)
@@ -84,7 +84,8 @@ private:
   ObCollationType coll_type_;
   TokenizeContext *ctx_;
   ObFTDictHub *hub_;
-  ObList<ObIIKProcessor *, ObIAllocator> segmenters_;
+  struct Processors;
+  Processors *processors_;
 
   // Borrow immutable readers; the global dictionary hub owns their cache pins.
   const ObIFTDict *dict_main_;

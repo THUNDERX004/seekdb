@@ -1,0 +1,28 @@
+{
+  "controls": [
+    "round4-control-profile",
+    "round4-control-2"
+  ],
+  "candidates": [
+    "round4-typed-candidate-1",
+    "round4-typed-candidate-2"
+  ],
+  "per_metric_reduction": {
+    "build_ik_all_sec": 0.12107704355159332,
+    "build_ik_content_sec": -0.020189928976139138,
+    "build_beng_en_sec": -0.0016359918200408163,
+    "tokenize_ik_avg_ms": -0.08855850032320611,
+    "tokenize_beng_avg_ms": -0.011301369863013555,
+    "query_cn_avg_ms": -0.1174233850889499,
+    "query_beng_avg_ms": -0.06833351372803698,
+    "query_mixed_avg_ms": -0.10171480144404321,
+    "query_limit_avg_ms": -0.022602518566354535
+  },
+  "per_category_reduction": {
+    "build": 0.03308370758513779,
+    "tokenize": -0.049929935093109834,
+    "query": -0.07751855470684615
+  },
+  "overall_reduction": -0.0314549274049394,
+  "decision": "Revert this experimental patch: no stable overall improvement against last published checkpoint; keep the independently recorded ranked regression."
+}

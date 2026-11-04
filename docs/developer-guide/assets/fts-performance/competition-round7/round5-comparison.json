@@ -1,0 +1,62 @@
+{
+  "controls": [
+    "round5-control-1",
+    "round5-control-2",
+    "round5-control-3"
+  ],
+  "candidates": [
+    "round5-ik-candidate-1",
+    "round5-ik-candidate-2",
+    "round5-ik-candidate-3"
+  ],
+  "control_mean": {
+    "build_ik_all_sec": 8.010666666666667,
+    "build_ik_content_sec": 6.232,
+    "build_beng_en_sec": 3.771333333333333,
+    "tokenize_ik_avg_ms": 0.20053333333333334,
+    "tokenize_beng_avg_ms": 0.15223333333333333,
+    "query_cn_avg_ms": 1.1496,
+    "query_beng_avg_ms": 1.43,
+    "query_mixed_avg_ms": 1.2115666666666667,
+    "query_limit_avg_ms": 2.5978666666666665
+  },
+  "candidate_mean": {
+    "build_ik_all_sec": 7.158,
+    "build_ik_content_sec": 5.632333333333333,
+    "build_beng_en_sec": 3.3096666666666668,
+    "tokenize_ik_avg_ms": 0.16783333333333333,
+    "tokenize_beng_avg_ms": 0.11843333333333333,
+    "query_cn_avg_ms": 1.083,
+    "query_beng_avg_ms": 1.5020666666666667,
+    "query_mixed_avg_ms": 1.2375666666666667,
+    "query_limit_avg_ms": 2.5071666666666665
+  },
+  "per_metric_reduction": {
+    "build_ik_all_sec": 0.10644141145139818,
+    "build_ik_content_sec": 0.09622379118528024,
+    "build_beng_en_sec": 0.12241470744210703,
+    "tokenize_ik_avg_ms": 0.1630651595744681,
+    "tokenize_beng_avg_ms": 0.22202758922706367,
+    "query_cn_avg_ms": 0.0579331941544885,
+    "query_beng_avg_ms": -0.05039627039627037,
+    "query_mixed_avg_ms": -0.021459817866674058,
+    "query_limit_avg_ms": 0.03491326216382673
+  },
+  "per_category_reduction": {
+    "build": 0.10835997002626181,
+    "tokenize": 0.19254637440076589,
+    "query": 0.0052475920138427
+  },
+  "overall_reduction": 0.1020513121469568,
+  "micro_us_diagnostic_only": {
+    "ik": {
+      "control": 36.10628305554942,
+      "candidate": 34.59531203700829
+    },
+    "beng": {
+      "control": 11.054446018574202,
+      "candidate": 11.22505194442864
+    }
+  },
+  "decision": "Keep IK experiment for combined follow-up; improvement is noisy and does not establish official score. All runs retained; SELECT1 not subtracted."
+}

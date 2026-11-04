@@ -1,0 +1,24 @@
+{
+  "label": "round6-ik-control-1",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-round5-ik\\seekdb.exe",
+  "source_commit": "a2cd7c9cd+IK-processors-only",
+  "binary_sha256": "ae4c3755542bfc1d9b41dd693ae1dbc19f7b7e1cda5985783561e9008333de42",
+  "actions": [
+    {
+      "action": "benchmark",
+      "exit_code": 0,
+      "seconds": 35.99379729999055
+    },
+    {
+      "action": "input-validation",
+      "exit_code": 0,
+      "seconds": 0.11911220000183675
+    },
+    {
+      "action": "micro",
+      "exit_code": 0,
+      "seconds": 17.348972199994023
+    }
+  ],
+  "report": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase\u6bd4\u8d5b\\setup\\fts\\round6-ik-control-1-report.txt"
+}

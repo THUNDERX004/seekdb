@@ -157,6 +157,8 @@ public:
     return ret;
   }
 private:
+  // Search [cur_idx_, count_) without loading a batch or changing saved IDs/scores.
+  int advance_in_batch(const ObDatum &id_datum);
   int save_relevances_and_docids();
   int save_docids();
   ObArenaAllocator *allocator_;

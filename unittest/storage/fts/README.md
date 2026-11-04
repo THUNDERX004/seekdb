@@ -127,3 +127,34 @@ derived from original dictionary entries; they contain no workload literals.
 The expanded MATCH batch suite includes one/two/three-term unions, exhausted
 streams, overlapping and contiguous runs, plus longer-query fallbacks.
 See the round-3 evidence in the performance report for final binaries and logs.
+
+
+`test_ranked_batches.py` checks 432 complete ordered result sets (142,692
+result rows) against an independent recording from the official competition
+original. It covers dense, sparse and disjoint posting streams, natural and
+boolean queries, ranked LIMIT/offset, ordinary and composite primary keys,
+updates, deletes and transaction rollback. IDs are exact and score comparisons
+use a relative/absolute tolerance of 1e-12. The compressed fixture contains all
+rows and scores, not just hit counts.
+
+```sh
+python3 unittest/storage/fts/test_ranked_batches.py --port 2891
+```
+
+Only on the verified, unmodified `upstream/2026-competition` binary, generate a
+new fixture at a new path with `--record /path/to/ranked_batches_expected.json.gz`.
+The test refuses to overwrite an existing fixture. Use a dedicated instance;
+only the `fts_ranked_batches` test database is created and dropped.
+
+`test_ranked_key_types.py` adds 192 complete ordered result sets (68,852 rows)
+from the official original, covering UInt64/Int64 boundaries and binary/composite
+keys with NUL and trailing spaces. Only scores use 1e-12 tolerance; all key bytes
+and row order are exact. Run on the dedicated instance:
+
+```sh
+python3 unittest/storage/fts/test_ranked_key_types.py --port 2891
+```
+
+Its default fixture is `ranked_key_types_expected.json.gz`. `--record NEW_PATH`
+refuses to overwrite and is only for an independently verified official original.
+See the round-7 evidence manifest for both fixture hashes and original binaries.

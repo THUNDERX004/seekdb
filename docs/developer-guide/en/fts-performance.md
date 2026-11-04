@@ -1,5 +1,29 @@
 # Full-text performance optimization
 
+## Round-7 checkpoint (2026-11-04)
+
+Two full runs per official-original/candidate binary give a **26.47%** equal-category reduction (build 12.77%, tokenize 27.30%, query 39.35%). Two adjacent runs per previously pushed a2cd7c9cd/candidate binary give a **7.65%** incremental reduction, with a **2.44% query regression**. The first original LIMIT run was noisy and is retained. This is below 50% and does not establish a new formal platform score.
+
+| Metric | Official original mean | Candidate mean | Time reduction |
+| --- | ---: | ---: | ---: |
+| `build_ik_all_sec` | 8.44700 | 7.33250 | 13.19% |
+| `build_ik_content_sec` | 6.93350 | 5.74650 | 17.12% |
+| `build_beng_en_sec` | 3.61350 | 3.32500 | 7.98% |
+| `tokenize_ik_avg_ms` | 0.21455 | 0.16385 | 23.63% |
+| `tokenize_beng_avg_ms` | 0.15885 | 0.10965 | 30.97% |
+| `query_cn_avg_ms` | 1.82590 | 1.11120 | 39.14% |
+| `query_beng_avg_ms` | 2.58855 | 1.35485 | 47.66% |
+| `query_mixed_avg_ms` | 2.01380 | 1.12005 | 44.38% |
+| `query_limit_avg_ms` | 3.23545 | 2.38755 | 26.21% |
+
+IK's four fixed processors now share one arena allocation and retain their exact per-character invocation order. TOKENIZE serializes its parser name into an evaluation-owned 64-byte buffer. UTF8 general_ci comparisons avoid duplicate weight lookups for equal successfully decoded codepoints, preserving invalid-input and trailing-space behavior. This checkpoint also includes adaptive linear/galloping searches over saved posting batches using the original comparator and unchanged cross-batch path; its isolated benefit remains unproven and is subject to follow-up or reversal.
+
+All seven established suites, 2,488 BMP checks and two normal close/reopen cycles pass. Two new independently recorded official-original fixtures compare 432 complete ranked result sets (142,692 rows) and 192 key-type result sets (68,852 rows). Ordered IDs/complete keys are exact; only scores allow 1e-12 relative/absolute tolerance. Coverage includes UInt64 high bits, Int64 extrema, NUL/trailing-space binary/composite keys, sparse/disjoint postings, ranked LIMIT/offset, updates/deletes and rollback. Shared collation checks cover 27 cases and 52,963 rows. Benchmark hits remain 8001/11000/7332/20.
+
+Rejected experiments remain auditable: the round-4 combination regressed 3.15% against the pushed checkpoint; the round-6 interleaved-DAT/galloping combination regressed 5.80% against the IK control, so its optional DAT table was removed. That table requested 8N+63 extra bytes per DAT, where N includes empty slots. Round-5's three paired IK runs and engine-only diagnostics are also retained; variation in unchanged BENG is not attributed to IK.
+
+[Evidence and manifest](../assets/fts-performance/competition-round7/manifest.json) retain all reports, build/regression logs, exact source patches and hashes. Executable metadata identifies the real binary/source; benchmark git_head/git_dirty describe the working checkout. No SELECT1 subtraction, negative clipping, input/timing/scoring/baseline or official build changes are used.
+
 ## Round 3 on the official competition baseline (2026-11-04)
 
 The official `2026-competition` original 5bce9e06d1281347ad61344e4b01fab9158c58a2 and the final candidate each ran the unchanged complete benchmark twice. All samples and negative changes are retained.

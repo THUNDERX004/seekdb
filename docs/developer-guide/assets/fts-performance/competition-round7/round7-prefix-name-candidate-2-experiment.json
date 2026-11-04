@@ -1,0 +1,24 @@
+{
+  "label": "round7-prefix-name-candidate-2",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build_fts_competition\\src\\observer\\seekdb.exe",
+  "source_commit": "a2cd7c9cd+IK-processors-galloping-equal-codepoint-name-buffer-uncommitted",
+  "binary_sha256": "7803026263fb23c5bdabdae4811332720e5bb76b9b50e3401e439b1124cf7f7a",
+  "actions": [
+    {
+      "action": "benchmark",
+      "exit_code": 0,
+      "seconds": 35.663582599998335
+    },
+    {
+      "action": "input-validation",
+      "exit_code": 0,
+      "seconds": 0.14357650000602007
+    },
+    {
+      "action": "micro",
+      "exit_code": 0,
+      "seconds": 15.349328100011917
+    }
+  ],
+  "report": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase\u6bd4\u8d5b\\setup\\fts\\round7-prefix-name-candidate-2-report.txt"
+}

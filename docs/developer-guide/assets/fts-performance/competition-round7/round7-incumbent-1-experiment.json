@@ -1,0 +1,24 @@
+{
+  "label": "round7-incumbent-1",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-round3-final\\seekdb.exe",
+  "source_commit": "a2cd7c9cd33973299d325afe11b738700117e671",
+  "binary_sha256": "63ebceeea3c10323213e848a449c7f9ec081f013fe3148e1469b9c5bf28b6cc1",
+  "actions": [
+    {
+      "action": "benchmark",
+      "exit_code": 0,
+      "seconds": 38.506103600011556
+    },
+    {
+      "action": "input-validation",
+      "exit_code": 0,
+      "seconds": 0.12444220000179484
+    },
+    {
+      "action": "micro",
+      "exit_code": 0,
+      "seconds": 16.706884700004593
+    }
+  ],
+  "report": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase\u6bd4\u8d5b\\setup\\fts\\round7-incumbent-1-report.txt"
+}
