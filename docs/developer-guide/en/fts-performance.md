@@ -1,5 +1,43 @@
 # Full-text performance optimization
 
+## Round 19 descriptor-major common-span checkpoint (2026-11-04)
+
+Decision: **retain a bounded incremental checkpoint**, separately from the rejected template V1 below. The five-pair ratio-of-metric-means result is query **+8.820601%**, build **+0.115071%**, tokenize **+0.691649%**, equal-category overall **+3.209107%**. Parent retained it on the combination of four nonnegative query-pair observations and exact semantic-output agreement. **This is not evidence of stable or statistically significant improvement.** Pair 1 slightly regresses, pair 4 is small, and pair 3 has unusually large control BENG/mixed timings. Untouched-path fluctuations are not causal gains from this change.
+
+Only common-byte initialization in `ObStringDiffDecoder::batch_decode` changes. For `row_cap >= 2` the candidate visits descriptors before rows, copying each common span into the same owned row slots; the original row-first helper remains for smaller capacities. Allocation size/count, stride, null/extension handling, variable-row errors, payload decoding, datum publication and scalar decode remain unchanged. It does not copy a first-row template. The exact production source SHA256 is `6140f8f5d70b5108312df925d3f9bba4b2212a94f8c1d32f6c5ebf3c98113499`. Parent reports source plus the established native unit entry committed/pushed as `f56ddd03e66826919d8d9192bc4c0afece8843dd`; this archive performs no Git operation.
+
+All ten full runs use unchanged official parameters `ROWS=20000 BATCH=500 ROUNDS=3000 QUERY_ROUNDS=200 SAMPLES=3 WARMUP=30 SKIP_LOAD=0`, WARN logging and requested/verified affinity mask 15. Recorded CN/BENG/mixed/LIMIT hits remain 8001/11000/7332/20. The immutable `span-comparison-5pair.json` first averages each metric over five runs per variant, then applies within-category arithmetic means and equal category weighting, retaining negative changes. SELECT1 is not subtracted. Tables format existing values without replacing the comparison.
+
+| Metric | Control mean | Span mean | Time reduction |
+| --- | ---: | ---: | ---: |
+| build_ik_all_sec | 6.591200 | 6.542200 | +0.743415% |
+| build_ik_content_sec | 5.291800 | 5.234800 | +1.077138% |
+| build_beng_en_sec | 2.846800 | 2.888800 | -1.475341% |
+| tokenize_ik_avg_ms | 0.138620 | 0.136180 | +1.760208% |
+| tokenize_beng_avg_ms | 0.100820 | 0.101200 | -0.376909% |
+| query_cn_avg_ms | 0.963300 | 0.933200 | +3.124676% |
+| query_beng_avg_ms | 1.366180 | 1.173020 | +14.138693% |
+| query_mixed_avg_ms | 1.200960 | 1.023760 | +14.754863% |
+| query_limit_avg_ms | 2.330760 | 2.254680 | +3.264171% |
+
+| Pair | Query time reduction | Equal-category overall |
+| --- | ---: | ---: |
+| 1 | -0.208687% | -2.555710% |
+| 2 | +5.598214% | +4.213473% |
+| 3 | +20.993236% | +8.556581% |
+| 4 | +0.266746% | +3.000032% |
+| 5 | +7.100278% | -1.639954% |
+
+**Pair 3 is influential:** control BENG/mixed are **1.9279/1.8758 ms**, versus candidate **1.1291/1.0723 ms**. All five pairs and negative metrics remain included; no outlier removal, significance test or stability claim is made. The ratio-of-run-means aggregate differs from the descriptive mean of pair improvements. The unchanged build/tokenize results do not establish benefits caused by common-span traversal.
+
+Candidate a1 records PASS for **315 sort metadata/result cases, 4,416 materialization cases, 432 ranked cases / 142,692 rows, 192 key-type cases / 68,852 rows, 709 focused count-union comparisons and seven existing suites**. The five span-control receipts record benchmark/input-validation only; they are not presented as newly rerunning those regression suites. Hints, hit counts and SQL equality do not prove exact internal paths or arbitrary-input equivalence.
+
+The actual production-linked original and span native runs both PASS **230 cases**. Complete stdout, stderr and deterministic records match byte-for-byte. Stdout SHA256 is `f67d52774c96396878ffae09d7df65c7d1c4c670c3f04165900f87e68e5b0221`; normalized record SHA256 is `3502db6cf34b46e0c8ae0cee09673d1767c70a6f9885265bdca1d1c03efae7f5`. There are **13,649 CASE/B/T/PASS record lines, including 12,976 T records**. The unit source `unittest/storage/encoding/test_stringdiff_batch.cpp` is an exact copy of the executed extended source, SHA256 `0cbd3e08a391b4b2f5ddb88fdfc773d5312589250fb5ab4a97f96632852e73c9`. Finite synthetic fixtures check scalar/source bytes, nulls, fixed/variable raw/hex layouts, allocation failure, partial-error publication/retry and ownership; they do not prove encoder selection, malformed-metadata safety, concurrent use, read-bound safety or Linux CI coverage.
+
+Historical benchmark binaries are pinned as control `b271980a025bf9b20086e69f116ec2c24f164d21edd814b4e03d418cadd239fc` and span `c7fcc8676875246a38bc4135f29e6f52b85a9d29a9563679003d5b6140666b01`. Runtime labels such as `856864757de18f383dd9feb44b5a0e492811bd23+round19-span` remain historical metadata: exact source/patch and recorded binary/library hashes identify the dirty candidate. Mutable current binary paths are not historical oracles.
+
+[Accepted-span manifest](../assets/fts-performance/competition-round19-span/manifest.json) preserves ten reports/receipts/log sets, all five immutable comparisons and summaries, exact proposal/application/build records, full span-native output and the committed unit source. Gzip preserves raw bytes and records raw/packed SHA256 and sizes. The original control-230 output/build/helper evidence is hash-referenced to the unchanged [rejected V1 archive](../assets/fts-performance/competition-round19-template/manifest.json); raw V1 evidence is not duplicated. Historical pending proposal text is preserved, with later execution explained here. The archiver invokes no builds/workloads or Git. Official protected files are not edited; parent baseline verification remains separate. Round21 sampling, other proposals, binaries/PDB/LIB/OBJ/DLL, runtime/data/temp and large server logs are excluded. **No new formal result, cumulative score or full-score claim is made.**
+
 ## Round 19 string-diff template V1 experiment (2026-11-04)
 
 Decision: **reject V1**. The three-pair local aggregate is **+2.264429%**, but build is **-3.256386%**, tokenize **+6.680873%** and query **+3.368800%**. Query reductions vary across pairs (**+6.710130%, +5.416746%, -3.561439%**); the untouched tokenize path is not a causal gain from this decoder change. These observations do not establish a stable benefit. The rejected proposal and restoration history are archived; this section does not retain or promote the candidate.
