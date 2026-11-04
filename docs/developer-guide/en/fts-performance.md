@@ -1,5 +1,36 @@
 # Full-text performance optimization
 
+## Round 25 cumulative comparison with the official source original (2026-11-04)
+
+Two complete local pairs compare the official competition source original `5bce9e06d1281347ad61344e4b01fab9158c58a2` with accepted candidate `f56ddd03e66826919d8d9192bc4c0afece8843dd`. The immutable `cumulative-2pair.json` reports mean-time reductions of **build +19.826591%, tokenize +17.494448%, query +41.144971%, equal-category overall +26.155337%**. This measures the cumulative candidate against a locally executed source original. It does not add earlier incremental results or attribute the total to the span change alone. **It is not a new formal result or proof of full score, stability or statistical significance.**
+
+All four full runs use `ROWS=20000 BATCH=500 ROUNDS=3000 QUERY_ROUNDS=200 SAMPLES=3 WARMUP=30 SKIP_LOAD=0`, WARN logging and requested/verified affinity mask **15**. Each metric is first averaged over two runs per variant; its time reduction is then averaged within build/tokenize/query, with equal weight for the three categories. Values below only format the completed comparison. No raw timing correction, outlier removal, SELECT1 subtraction or clipping of individual improvements is applied. The original one-pair snapshot is also retained verbatim.
+
+| Metric | Original mean | Candidate mean | Time reduction |
+| --- | ---: | ---: | ---: |
+| build_ik_all_sec | 8.339500 | 6.517500 | +21.847833% |
+| build_ik_content_sec | 6.727500 | 5.461000 | +18.825715% |
+| build_beng_en_sec | 3.501500 | 2.843000 | +18.806226% |
+| tokenize_ik_avg_ms | 0.179700 | 0.137650 | +23.400111% |
+| tokenize_beng_avg_ms | 0.107000 | 0.094600 | +11.588785% |
+| query_cn_avg_ms | 1.776650 | 0.974550 | +45.146765% |
+| query_beng_avg_ms | 2.528400 | 1.154350 | +54.344645% |
+| query_mixed_avg_ms | 2.100350 | 1.035150 | +50.715357% |
+| query_limit_avg_ms | 2.508850 | 2.148250 | +14.373119% |
+
+| Pair | Build | Tokenize | Query | Equal-category overall |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | +15.335599% | +15.914972% | +38.702818% | +23.317796% |
+| 2 | +23.995038% | +18.948312% | +43.388402% | +28.777251% |
+
+The primary aggregate uses ratios of per-metric run means, rather than averaging these pair percentages. There are only **two pairs**; all raw sample summaries, variation and runs remain included. This observation does not establish robustness across machines, loads, compiler/platform configurations or longer runs. Local input-validation logs preserve scorer output against fixed CI constants for **both** variants; that output is not treated as a formal or full-score result.
+
+Recorded execution identity is original source `5bce9e06d1281347ad61344e4b01fab9158c58a2` / binary SHA256 `bae4a3b9e1b4662d4021b28d5adc085764beb6cf02122eacd57b8e16b6fe1762`, versus candidate source `f56ddd03e66826919d8d9192bc4c0afece8843dd` / binary SHA256 `c7fcc8676875246a38bc4135f29e6f52b85a9d29a9563679003d5b6140666b01`. The raw reports' `git_head=f56ddd03e`, including the original runs, identifies the harness checkout rather than the executed binary's source. These historical bytes are unchanged. Receipts record binary/source identity; this offline archive neither runs Git nor rehashes mutable current executables as historical proof.
+
+All receipts record successful benchmark and input-validation actions, with CN/BENG/mixed/LIMIT hits **8001/11000/7332/20**. These four runs do not rerun the full SQL/native regression suites. Hit counts and successful scoring validation do not replace complete semantic checks; the accepted changes' separate correctness evidence remains in earlier sections and archives.
+
+The [round25 cumulative manifest](../assets/fts-performance/competition-round25-cumulative/manifest.json) preserves four complete report/receipt/benchmark/input-validation/small-server-log sets, both immutable comparison snapshots, exact `round25-cumulative/summarize.py` and its frozen imported `round19-evidence/summarize-template.py` (SHA256 `0aca605abda2fea4ab7b32335c5fe04302895748e8f63a6ce46887b04b822035`). Per-file gzip preserves original bytes, with raw/packed sizes and SHA256. The archiver verifies inputs without importing or rerunning the summarizers. Official benchmark, scoring and baseline files remain unchanged; prior accepted/rejected archives remain frozen. Only these new report sections and preimage/postimage hashes are added, with existing report content preserved. No builds, runtime, SQL, benchmark, profiling or Git operations are performed during archival.
+
 ## Round 19 descriptor-major common-span checkpoint (2026-11-04)
 
 Decision: **retain a bounded incremental checkpoint**, separately from the rejected template V1 below. The five-pair ratio-of-metric-means result is query **+8.820601%**, build **+0.115071%**, tokenize **+0.691649%**, equal-category overall **+3.209107%**. Parent retained it on the combination of four nonnegative query-pair observations and exact semantic-output agreement. **This is not evidence of stable or statistically significant improvement.** Pair 1 slightly regresses, pair 4 is small, and pair 3 has unusually large control BENG/mixed timings. Untouched-path fluctuations are not causal gains from this change.
