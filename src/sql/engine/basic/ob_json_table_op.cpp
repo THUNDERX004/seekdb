@@ -1002,6 +1002,7 @@ int ObJsonTableOp::inner_get_next_row_file()
                     convert_ctx, datetime_value))) {
               } else {
                 obj.set_datetime(datetime_value);
+                obj.set_scale(0);
               }
               break;
             }
