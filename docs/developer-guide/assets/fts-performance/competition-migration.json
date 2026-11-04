@@ -1,0 +1,203 @@
+{
+  "verified_date": "2026-11-04",
+  "official_remote": "https://github.com/oceanbase/seekdb.git",
+  "official_branch": "2026-competition",
+  "official_baseline_commit": "5bce9e06d1281347ad61344e4b01fab9158c58a2",
+  "submission_branch": "codex/fts-performance-competition",
+  "migrated_optimization_head": "a960f6c3a62c5600bb337a4c267cc6f6025c4759",
+  "historical_wrong_branch": "codex/fts-performance",
+  "historical_wrong_base": "e3c04befd2c9b6559f0005c4bf72c62e244cf06c",
+  "historical_wrong_head": "a678df23244166a50e622f3e8a4ee89b70adb340",
+  "official_baseline_is_ancestor": true,
+  "official_build_ci_benchmark_files_unchanged": true,
+  "official_benchmark_files": {
+    "tools/benchmark/fts_large_bench.sh": {
+      "git_blob": "a80c1ad9fad94515c8a1838d873ce2d052c42fd1",
+      "sha256": "596ea5d1c0038e666b78aa94bef22d2dfb87ffc9e84dbc7e2a1da1f746424462"
+    },
+    "tools/benchmark/fts_large_bench_baseline.json": {
+      "git_blob": "1296c5a3689978ee908bad8e31b0085465170d19",
+      "sha256": "f4e97eddb2e49c982b967fc8047f7cf37177eebe53d648f6746d85aacda91f0c"
+    },
+    "tools/benchmark/fts_large_bench_gen.py": {
+      "git_blob": "009dddbd7e5c883a7616f144059526b57319bf2d",
+      "sha256": "b0c816dd8211ac0471f60b72a37a3fb5c62580357a5b6d7ac95f5a8c2e3f143d"
+    },
+    "tools/benchmark/fts_large_bench_score.py": {
+      "git_blob": "791a28e00c09181f4da0d2d26902ae991bb1a1e7",
+      "sha256": "bea52eb1c68d05693bb3ac5b910ab0e2fa0e70e01582f40466898ee1e2e3ef55"
+    },
+    "tools/benchmark/fts_large_bench_setup.sql": {
+      "git_blob": "89cba4d8b3ef99ac890b790017934fa479cd79da",
+      "sha256": "311826751df7f51ac45156fb4284aeca9bd9197370aceb88f4fb92832b458108"
+    }
+  },
+  "changed_source_files": [
+    "src/data_plane/api/data_plane/fts/ob_fts_parser_helper.h",
+    "src/data_plane/api/data_plane/fts/ob_fts_parser_property.h",
+    "src/data_plane/api/data_plane/fts/ob_fts_struct.h",
+    "src/oblib/lib/charset/ob_ctype_utf8.cc",
+    "src/observer/composition/retrieval/ob_das_legacy_tr_merge_iter.cpp",
+    "src/observer/ob_server.cpp",
+    "src/share/text_analysis/ob_token_stream.cpp",
+    "src/share/text_analysis/ob_token_stream.h",
+    "src/sql/code_generator/ob_tsc_cg_service.cpp",
+    "src/sql/das/iter/ob_das_iter_utils.cpp",
+    "src/sql/das/iter/ob_das_text_retrieval_merge_iter.cpp",
+    "src/sql/engine/expr/ob_expr_tokenize.cpp",
+    "src/sql/engine/expr/ob_expr_tokenize.h",
+    "src/sql/optimizer/ob_join_order.cpp",
+    "src/sql/optimizer/ob_log_plan.cpp",
+    "src/sql/rewrite/ob_transform_utils.cpp",
+    "src/sql/rewrite/ob_transform_utils.h",
+    "src/storage/fts/dict/ob_ft_dict_hub.cpp",
+    "src/storage/fts/dict/ob_ft_dict_hub.h",
+    "src/storage/fts/dict/ob_ft_range_dict.h",
+    "src/storage/fts/ik/ob_ik_char_util.h",
+    "src/storage/fts/ob_beng_ft_parser.cpp",
+    "src/storage/fts/ob_beng_ft_parser.h",
+    "src/storage/fts/ob_fts_parser_helper.cpp",
+    "src/storage/fts/ob_fts_parser_property.cpp",
+    "src/storage/fts/ob_fts_stop_word.cpp",
+    "src/storage/fts/ob_fts_stop_word.h",
+    "src/storage/fts/ob_ik_ft_parser.cpp",
+    "src/storage/fts/ob_ik_ft_parser.h",
+    "src/storage/retrieval/ob_sparse_daat_iter.cpp",
+    "src/storage/retrieval/ob_sparse_taat_iter.cpp",
+    "src/storage/retrieval/ob_text_daat_iter.cpp",
+    "src/storage/retrieval/ob_text_daat_iter.h",
+    "src/storage/retrieval/ob_text_retrieval_token_iter.cpp",
+    "src/storage/retrieval/ob_text_taat_iter.cpp"
+  ],
+  "migration_patch_comparison": "1:  56d5d3342 ! 1:  44eb66340 Optimize FTS parser hot paths and score-free natural retrieval\n    @@ src/observer/ob_server.cpp: void ObServer::destroy()\n     -\n          FLOG_INFO(\"begin to destroy io device\");\n          ObIODeviceWrapper::get_instance().destroy();\n    -     log_device_.destroy();\n    +     FLOG_INFO(\"io device destroyed\");\n     \n      ## src/share/text_analysis/ob_token_stream.cpp ##\n     @@ src/share/text_analysis/ob_token_stream.cpp: int ObTextWhitespaceTokenizer::get_next(ObDatum &next_token, int64_t &token_freq\n2:  346177012 = 2:  f99b4dff1 Reduce FTS word aggregation and tokenizer configuration overhead\n3:  7ba84fd78 = 3:  5bf839867 Avoid bucket locks for evaluation-local FTS word maps\n4:  a678df232 = 4:  a960f6c3a Optimize immutable stopword lookups and validate parser edge cases",
+  "historical_master_reports_apply_to_competition_build": false,
+  "official_platform_failure_root_cause_confirmed": false,
+  "formal_linux_ci": "not run locally",
+  "local_build_configuration": {
+    "build_system": "official CMake compatibility builder",
+    "platform": "Windows x64",
+    "build_type": "RelWithDebInfo",
+    "unity": true,
+    "OB_ENABLE_STANDBY": false,
+    "reason": "The local vcpkg installation has no gRPC/protobuf package; Anaconda supplies an incompatible protobuf build. Physical standby is disabled only through an existing local configure option.",
+    "rust_bridge_cxx_compiler": "MSVC cl.exe from the existing x64 developer environment",
+    "dependency_headers_restored_from_official_packages": [
+      "devdeps-protobuf-c-20260506.tar.gz",
+      "devdeps-icu-20260506.tar.gz"
+    ],
+    "official_package_repository": "https://mirrors.oceanbase.com/oceanbase/development-kit/windows/11/x86_64",
+    "source_build_files_modified": false
+  },
+  "local_baseline_validation": {
+    "kind": "baseline",
+    "source_commit": "5bce9e06d1281347ad61344e4b01fab9158c58a2",
+    "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-competition-baseline\\seekdb.exe",
+    "binary_sha256": "bae4a3b9e1b4662d4021b28d5adc085764beb6cf02122eacd57b8e16b6fe1762",
+    "tests": [
+      {
+        "test": "test_hot_path.py",
+        "exit_code": 0,
+        "elapsed_sec": 3.849264200005564
+      },
+      {
+        "test": "test_tokenize_config.py",
+        "exit_code": 0,
+        "elapsed_sec": 0.3328488999977708
+      },
+      {
+        "test": "test_collation.py",
+        "exit_code": 0,
+        "elapsed_sec": 1.7364203999895835
+      },
+      {
+        "test": "test_match_batches.py",
+        "exit_code": 0,
+        "elapsed_sec": 14.385861500006285
+      },
+      {
+        "test": "test_map_concurrency.py",
+        "exit_code": 0,
+        "elapsed_sec": 1.7350193000020226
+      },
+      {
+        "test": "test_stopword_concurrency.py",
+        "exit_code": 0,
+        "elapsed_sec": 0.2907956999988528
+      },
+      {
+        "test": "test_dictionary_prefixes.py",
+        "exit_code": 0,
+        "elapsed_sec": 0.375082200000179
+      }
+    ],
+    "fixtures": {
+      "hot_path_expected.json": "83c1da519a69312e72220bf73e8e88c840ee8d63407ffa0bc62fee3544443e54",
+      "collation_expected.json": "3b90f0a560d7772170df019c64055cd42ec5164ae60937866254d1f313b40ebc",
+      "tokenize_config_expected.json": "abfca25f4c813ba0d7e582ba22bbdea491a7352ec1489abcb51a554286f924b3",
+      "dictionary_prefixes_expected.json": "cd44bc43bd31a1da0fb1ab48df85b7d05acc5bf4f7dc5e5cf04ee0fb6ade97dd"
+    }
+  },
+  "local_candidate_validation": {
+    "kind": "candidate",
+    "source_commit": "a960f6c3a62c5600bb337a4c267cc6f6025c4759",
+    "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-competition-candidate\\seekdb.exe",
+    "binary_sha256": "6ab8d0349decdede08e40893231d0514fa9895c8efc1f8d3ca2d93d348db72a6",
+    "tests": [
+      {
+        "test": "test_hot_path.py",
+        "exit_code": 0,
+        "elapsed_sec": 4.128266800005804
+      },
+      {
+        "test": "test_tokenize_config.py",
+        "exit_code": 0,
+        "elapsed_sec": 0.845297899999423
+      },
+      {
+        "test": "test_collation.py",
+        "exit_code": 0,
+        "elapsed_sec": 2.0534244000009494
+      },
+      {
+        "test": "test_match_batches.py",
+        "exit_code": 0,
+        "elapsed_sec": 12.908903800009284
+      },
+      {
+        "test": "test_map_concurrency.py",
+        "exit_code": 0,
+        "elapsed_sec": 1.8026817999925697
+      },
+      {
+        "test": "test_stopword_concurrency.py",
+        "exit_code": 0,
+        "elapsed_sec": 0.2796375000034459
+      },
+      {
+        "test": "test_dictionary_prefixes.py",
+        "exit_code": 0,
+        "elapsed_sec": 0.38149309999425896
+      }
+    ],
+    "benchmark": {
+      "report_file": "competition-candidate-report.txt",
+      "report_sha256": "795b02f85d4b79171374d6ffac5ccc8a24e90c85f06aa6928b197d8d9be60af3",
+      "benchmark_exit_code": 0,
+      "score_script_exit_code": 0,
+      "ROWS": 20000,
+      "BATCH": 500,
+      "ROUNDS": 3000,
+      "QUERY_ROUNDS": 200,
+      "SAMPLES": 3,
+      "WARMUP": 30,
+      "SKIP_LOAD": 0,
+      "comparison_or_formal_ci_score": false
+    },
+    "fixtures": {
+      "hot_path_expected.json": "83c1da519a69312e72220bf73e8e88c840ee8d63407ffa0bc62fee3544443e54",
+      "collation_expected.json": "3b90f0a560d7772170df019c64055cd42ec5164ae60937866254d1f313b40ebc",
+      "tokenize_config_expected.json": "abfca25f4c813ba0d7e582ba22bbdea491a7352ec1489abcb51a554286f924b3",
+      "dictionary_prefixes_expected.json": "cd44bc43bd31a1da0fb1ab48df85b7d05acc5bf4f7dc5e5cf04ee0fb6ade97dd"
+    }
+  }
+}

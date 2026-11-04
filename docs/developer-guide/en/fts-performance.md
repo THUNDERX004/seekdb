@@ -1,6 +1,27 @@
 # Full-text performance optimization
 
-The final v22 local Windows native-client control measures a 9.65%
+> Baseline correction (2026-11-04): the submission now uses the official
+> `upstream/2026-competition` baseline
+> `5bce9e06d1281347ad61344e4b01fab9158c58a2` on
+> `codex/fts-performance-competition`. The former `codex/fts-performance`
+> used master. The historical timings, improvements and old regression records below
+> describe the former master build; migration validation is recorded separately.
+> Official benchmark and build files are inherited without modification. See
+> [competition-migration.json](../assets/fts-performance/competition-migration.json).
+
+Migration validation: the official competition original and candidate were
+built with the same Windows x64 CMake configuration. Four fixtures were
+independently re-recorded on the official original, and both binaries passed
+all seven SQL integration suites. Physical standby is disabled locally;
+these checks do not establish Linux CI success or new performance results.
+The candidate also completed the unchanged official benchmark with 20,000
+documents, batch 500, tokenization 3,000, queries 200, 3 samples, 30 warmups
+and SKIP_LOAD=0. The official score script accepted its parameters and metrics.
+The [candidate report](../assets/fts-performance/competition-candidate-report.txt)
+records successful execution; no new original performance control was measured.
+Binary hashes, logs and configuration are retained in the migration evidence.
+
+Historical master result: the final v22 local Windows native-client control measures a 9.65%
 category-equal time reduction: build 7.42%, tokenization 5.54% and query
 15.98%. All three complete runs of each binary are included, with negative
 metrics retained. One original IK-all build was unusually slow (10.638 s), so

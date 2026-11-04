@@ -1,5 +1,14 @@
 # Full-text hot-path regressions
 
+> Competition validation (2026-11-04): both the unmodified official
+> `upstream/2026-competition` at `5bce9e06d1281347ad61344e4b01fab9158c58a2`
+> and the migrated candidate passed all seven SQL integration suites.
+> The four fixtures were independently recorded again on the official original,
+> then used unchanged for candidate comparisons. Windows x64 CMake builds use
+> the same local configuration with physical standby disabled; formal Linux CI
+> and competition performance scoring are not established by these checks.
+> See [migration evidence](../../../docs/developer-guide/assets/fts-performance/competition-migration.json).
+
 These integration tests require Python 3, PyMySQL, and a dedicated running
 seekdb instance. The suites create/drop only fts_hot_path_regression,
 fts_collation_regression, fts_match_batches and fts_map_concurrency_regression. The default SQL endpoint is 127.0.0.1:2891;
@@ -59,9 +68,13 @@ top-N sorting, grouping, distinct values and index access under
 utf8mb4_general_ci, utf8mb4_unicode_ci and utf8mb4_bin. Its SHA-256 fixtures
 cover every result cell and ordering, not just hit counts.
 
-All four fixtures were independently recorded on unmodified source
-e3c04befd2c9b6559f0005c4bf72c62e244cf06c, with baseline executable SHA-256
-e6ac29a9653941049d3b4982899b7ff7c4abea490a5ec827c3c21cf834e28429.
+All four fixtures were independently recorded on the unmodified official
+competition commit 5bce9e06d1281347ad61344e4b01fab9158c58a2, with executable SHA-256
+bae4a3b9e1b4662d4021b28d5adc085764beb6cf02122eacd57b8e16b6fe1762.
+The committed fixtures have identical complete JSON contents to the new
+original recordings; unchanged results retain their compact file formatting.
+The historical master fixture comparison and committed file hashes are retained in
+[competition-fixture-comparison.json](../../../docs/developer-guide/assets/fts-performance/competition-fixture-comparison.json).
 Use --record PATH only when deliberately recording an independently verified
 baseline. A candidate must be checked against the baseline fixtures.
 

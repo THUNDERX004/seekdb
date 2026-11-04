@@ -1,0 +1,26 @@
+{
+  "hot_path_expected.json": {
+    "official_sha256": "83c1da519a69312e72220bf73e8e88c840ee8d63407ffa0bc62fee3544443e54",
+    "historical_master_sha256": "e32d88b74bfca0af55e0eb3a263d47bf7f3ccfbf1b4e2c3a57a62191981bf77b",
+    "same_complete_json_results": true,
+    "committed_sha256": "e32d88b74bfca0af55e0eb3a263d47bf7f3ccfbf1b4e2c3a57a62191981bf77b"
+  },
+  "collation_expected.json": {
+    "official_sha256": "3b90f0a560d7772170df019c64055cd42ec5164ae60937866254d1f313b40ebc",
+    "historical_master_sha256": "2978497ec9988980aa51bb96093af963d277f6866a1f99974f8f4a28c4297bef",
+    "same_complete_json_results": true,
+    "committed_sha256": "3b90f0a560d7772170df019c64055cd42ec5164ae60937866254d1f313b40ebc"
+  },
+  "tokenize_config_expected.json": {
+    "official_sha256": "abfca25f4c813ba0d7e582ba22bbdea491a7352ec1489abcb51a554286f924b3",
+    "historical_master_sha256": "8f9e560504879b91450357ad5aba4262c808d39397b223cf0c16e76e25d169e2",
+    "same_complete_json_results": false,
+    "committed_sha256": "abfca25f4c813ba0d7e582ba22bbdea491a7352ec1489abcb51a554286f924b3"
+  },
+  "dictionary_prefixes_expected.json": {
+    "official_sha256": "cd44bc43bd31a1da0fb1ab48df85b7d05acc5bf4f7dc5e5cf04ee0fb6ade97dd",
+    "historical_master_sha256": "fe892585625f43c1132715555ecceefd5f8738dfca613693a489458e39a68874",
+    "same_complete_json_results": false,
+    "committed_sha256": "cd44bc43bd31a1da0fb1ab48df85b7d05acc5bf4f7dc5e5cf04ee0fb6ade97dd"
+  }
+}
