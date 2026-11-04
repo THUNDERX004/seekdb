@@ -1,5 +1,42 @@
 # Full-text performance optimization
 
+## Round 19 string-diff template V1 experiment (2026-11-04)
+
+Decision: **reject V1**. The three-pair local aggregate is **+2.264429%**, but build is **-3.256386%**, tokenize **+6.680873%** and query **+3.368800%**. Query reductions vary across pairs (**+6.710130%, +5.416746%, -3.561439%**); the untouched tokenize path is not a causal gain from this decoder change. These observations do not establish a stable benefit. The rejected proposal and restoration history are archived; this section does not retain or promote the candidate.
+
+The candidate builds a common small-string row template in `ObStringDiffDecoder::batch_decode` and reuses it only under its guarded layout/length/descriptor conditions; other rows retain the existing path. Exact original/candidate source and patch identify this dirty historical experiment. The source snapshots are incremental preimages, not an official-original baseline. The parent's restoration build log records history; later live working-tree contents belong to separate experiments and are not substituted into this archive.
+
+All six full runs use unchanged official parameters `ROWS=20000 BATCH=500 ROUNDS=3000 QUERY_ROUNDS=200 SAMPLES=3 WARMUP=30 SKIP_LOAD=0`, WARN logging and requested/verified affinity mask 15 (logical CPUs 0–3). Recorded hit counts are 8001/11000/7332/20. The immutable `template-comparison-3pair.json` first averages each timing across runs, then applies arithmetic metric means within categories and equal category weighting, preserving negative results. SELECT1 is not subtracted. Values below are formatted from that existing comparison; it was not overwritten or recomputed by the archiver.
+
+| Metric | Control mean | V1 mean | Time reduction |
+| --- | ---: | ---: | ---: |
+| `build_ik_all_sec` | 6.453 | 6.794 | -5.284364% |
+| `build_ik_content_sec` | 5.076667 | 5.245 | -3.315824% |
+| `build_beng_en_sec` | 2.823 | 2.856 | -1.168969% |
+| `tokenize_ik_avg_ms` | 0.1405667 | 0.1364 | +2.964193% |
+| `tokenize_beng_avg_ms` | 0.1199 | 0.1074333 | +10.397554% |
+| `query_cn_avg_ms` | 0.9728667 | 1.016167 | -4.450764% |
+| `query_beng_avg_ms` | 1.188233 | 1.172633 | +1.312873% |
+| `query_mixed_avg_ms` | 1.1042 | 0.9909333 | +10.257804% |
+| `query_limit_avg_ms` | 2.4022 | 2.249533 | +6.355285% |
+
+| Pair | Query time reduction | Equal-category overall |
+| --- | ---: | ---: |
+| 1 | +6.710130% | -2.531425% |
+| 2 | +5.416746% | +2.289857% |
+| 3 | -3.561439% | +2.938963% |
+
+Both a1 execution receipts/logs record PASS for **4,416 materialization cases, 432 ranked cases / 142,692 result rows, 192 key-type cases / 68,852 rows, 709 focused count-union comparisons and seven established suites**. Hit counts alone are not correctness proof; these are bounded existing regression results, not arbitrary-input equivalence or Linux/platform validation.
+
+Parent-run production-linked native comparisons also PASS. The unchanged original **152 cases / 5,399 tuple lines** share tuple SHA256 `53f000b4106540bcc1acc54e72fe2675c372578b772bd256edfe19941b613bc6` and complete stdout SHA256 `6df75ad24e9b917367175426a0965582ca7a9be817093c2767d62093009e6450`. The separately extended **230 cases / 13,649 tuple lines** share tuple SHA256 `3502db6cf34b46e0c8ae0cee09673d1767c70a6f9885265bdca1d1c03efae7f5` and stdout SHA256 `f67d52774c96396878ffae09d7df65c7d1c4c670c3f04165900f87e68e5b0221`. Within each control/candidate pair, full stdout, stderr and tuple bytes match; the original 152-case stdout prefix is unchanged in the extension. The initial corpus did not cover the variable-layout template guard; the separate extension adds variable-template and partial-failure/retry cases. Native evidence does not override the performance rejection. The immutable parent `extended-template-comparison.json` is preserved separately from the archiver's offline byte-check receipt.
+
+Native control-build1 failed on standalone datum declarations and MemoryContext boolean use; control-build2 failed on an invalid datum include path. Both exact failed sources and compile logs are retained. Later original/extended builds and runs are supported by their actual receipts, command response files and logs. Historical proposal/README “pending” text remains byte-for-byte unchanged; later parent executions are described here rather than rewritten into preparation records. This archival task did not build or execute them.
+
+Historical benchmark binary pins: control `b271980a025bf9b20086e69f116ec2c24f164d21edd814b4e03d418cadd239fc`; candidate `2881dce4a7f2c5eea50057b74bf5cc3a77c0142a4eeb7d1ca45adfa1526ae5cb`. Commit labels such as `856864757de18f383dd9feb44b5a0e492811bd23+round19-template` are historical metadata; source/patch and recorded library/binary hashes govern the dirty candidate's identity, not mutable current binary paths.
+
+[Round19 exact-byte manifest](../assets/fts-performance/competition-round19-template/manifest.json) includes six full reports/metadata and all bounded run logs, source/patch/proposal records, native test/helper versions, failed and successful build records, every allowlisted native stdout/stderr/tuple stream, comparisons, summarizer and full local harness. Raw streams are gzip-packed without newline conversion, with raw and packed SHA256/size pins. The six launcher server logs are only 314 bytes each and are retained; large server logs, runtime/data/temp, binaries/PDB/LIB/OBJ/DLL, span experiments and round20 are excluded. The native selection uses explicit filenames in the six approved build directories, four run directories and seven root files, with no future-file discovery. Official baseline/test/scoring/build/CI files are not edited by this archive. **No new formal result, cumulative score or full-score claim is made.**
+
+
 ## Round 18 bounded count-union checkpoint (2026-11-04)
 
 Decision: **retain this bounded incremental checkpoint**. The existing natural-language, score-free union for at most three dimensions preserves champion selection and deduplication. Only unmaterialized results with no valid pushed LIMIT/OFFSET increment the local count directly; input/output counters receive the produced-row delta before return. Materialized and valid LIMIT/OFFSET paths retain `cache_result`. Saved token-ID access uses `get_data` with the index assertion and refill path retained; borrowed array views remain local. SQL equality does not prove every internal invariant or error path.
