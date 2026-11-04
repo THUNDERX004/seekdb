@@ -1,5 +1,36 @@
 # Full-text performance optimization
 
+## Round 17 BMW saturation-bound experiment (2026-11-04)
+
+Decision: **reject both V1 and V2**. V1 replaced the full per-term block-stat prepass with the existing BM25 query-token saturation bound while retaining actual scores and local block bounds, but changed ordered Boolean LIMIT results. V2 restricted the shortcut to natural-language mode, non-function lookups, no dimension weights and unit field boost, retaining nonnegative-count, finite-positive-average and finite-positive-bound guards. V2 passed the existing correctness checks but regressed the target query. A numeric upper bound does not establish traversal, ordering or performance compatibility.
+
+The first V1 ranked-suite failure was `root[49][4][0][0]`. Subsequent complete 432-case candidate/control diagnoses identify **two differing cases, 49 and 265**, for simple_docs/composite_docs at the built stage: Boolean `+database -audit`, `ORDER BY score DESC,id LIMIT 1`. Expected ID **1585** becomes **2170**, both at score **0.5001172075859774**. The control has zero differences across all 432 cases. Equal scores or hit counts do not excuse a changed selected ID; candidate output was never substituted for expected results. Both complete actual-output gzip streams, diagnoses, original failure traceback, comparator and original expected fixture are preserved.
+
+V2 passed the unchanged **432 ranked cases (142,692 result rows), 192 key-type cases (68,852 result rows) and seven existing suites**, as recorded in logs and exit statuses. This is neither arbitrary-input equivalence nor a newly recorded complete V2 output fixture. Performance evidence contains **one complete adjacent candidate/control pair, not three pairs**. The existing comparison.json values are retained below; positive reduction means faster and negative means slower:
+
+| Metric | Control | V2 candidate | Time reduction |
+| --- | ---: | ---: | ---: |
+| `build_ik_all_sec` | 7.886 | 6.424 | 18.5392% |
+| `build_ik_content_sec` | 6.024 | 4.807 | 20.2025% |
+| `build_beng_en_sec` | 2.992 | 2.686 | 10.2273% |
+| `tokenize_ik_avg_ms` | 0.1365 | 0.1305 | 4.3956% |
+| `tokenize_beng_avg_ms` | 0.0957 | 0.0971 | -1.4629% |
+| `query_cn_avg_ms` | 1.0507 | 1.0195 | 2.9694% |
+| `query_beng_avg_ms` | 1.3671 | 1.5087 | -10.3577% |
+| `query_mixed_avg_ms` | 1.2252 | 1.1114 | 9.2883% |
+| `query_limit_avg_ms` | 2.2823 | 3.2295 | **-41.5020%** |
+
+Category reductions are **build +16.3230%, tokenize +1.4663%, query -9.9005%**; the existing equal-category overall **+2.6296%** is also retained. Favorable fluctuations in untouched build/tokenize paths cannot be attributed to this BMW change. The target LIMIT query is approximately **41.5% slower**, so the proposal was rejected after this pair. No statistical stability, significance or formal-score claim is made. Increased later traversal from a looser bound is a hypothesis; this round did not measure a prepass-versus-traversal cost breakdown.
+
+Both reports use WARN, logical CPUs 0–3 affinity and the full fixed parameters `ROWS=20000 BATCH=500 ROUNDS=3000 QUERY_ROUNDS=200 SAMPLES=3 WARMUP=30 SKIP_LOAD=0`; hit counts are 8001/11000/7332/20. SELECT1 is not subtracted, negative metrics remain, and separate diagnoses/restoration builds are not performance samples. Executable SHA256 values are V1 `44c16395e1fab585b725cdf93ef6708701bec09346f9880bb7397799bae01856`, V2 `df0547dbdf5d79d971be202f5cfc50480ad66f637ebbdf00e8d15218024f6159`, and control `58a14c4b3cfb44464882de1d87b0f8018c76595a563e039ff3cbd8be2351f07d`. Commit labels are runtime metadata; dirty-tree identities also depend on exact source/patch hashes.
+
+All four production files were restored to the saved V2 original bytes and independently hash-checked again during archival. The initial restore build logged `ninja: no work to do`, which is not recompilation evidence. The parent attributes this to inherited old timestamps, then touched verified originals and performed the actual seven-task rebuild. Both logs are preserved separately. The archival sidecar only reads those historical records; it does not build or measure a post-restoration executable.
+
+Extra SQL regression preparation stopped before a runnable test or new fixture was written. The production-linked native numeric helper contains only **616,096 planned cases** (ceiling one million) and a real plan-only capture: **compile, link and execution all NOT RUN**. No native PASS exists. Even an eventual numeric pass would not validate natural-language/Boolean gating, pivots/ties, local block statistics, initialization/reuse or query integration.
+
+[Round 17 exact-byte evidence](../assets/fts-performance/competition-round17/manifest.json) preserves V1/V2 originals and candidates, all patches, complete diagnoses and fixture identity, the single complete performance pair, restoration logs, reviews and unexecuted helper preparations. Each file records raw/gzip SHA256; already-compressed results receive an outer gzip layer to preserve their original compressed bytes. Historical proposal preparation statuses retain their original meaning; later parent execution is recorded separately. Runtime data, binaries, PDB/OBJ/LIB/DLL, temporary directories and unrelated round18 profiles are excluded. No new formal score exists; **50/50 remains unproven**.
+
+
 ## Round 16 lazy DDL rows (2026-11-04)
 
 Decision: **reject**. Three full serial pairs show build +2.6705%, tokenize -3.9781%, query +1.6349% and equal-category overall only **+0.1091%** time reduction. Pair totals are -1.6662%, -1.3330%, +3.0223%; repeatable benefit is unproven. Both DAS production files were restored and their raw original SHA256 values verified. This checkpoint archives evidence only; no new formal score or 50/50 result exists.

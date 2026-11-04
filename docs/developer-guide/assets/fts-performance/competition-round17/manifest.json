@@ -1,0 +1,830 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-11-04T12:14:28.488529+00:00",
+  "experiment": "round17 rejected BMW V1/V2",
+  "source_root": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts",
+  "encoding": "Exact binary streams; no newline conversion; deterministic gzip header; nested gzip retains compressed originals",
+  "decision": {
+    "schema_version": 1,
+    "v1": "REJECT: exact Boolean ordered-LIMIT IDs differ at cases49/265",
+    "v2": "REJECT: target LIMIT slower in one full matched pair",
+    "completed_pairs": 1,
+    "comparison_statistics": "Original comparison.json preserved, including favorable values; no significance or causal claim",
+    "v2_existing_correctness": "432 ranked,192 key-type,seven suites passed in parent logs; no expanded coverage",
+    "extra_sql_regression": "Preparation stopped before runnable source/fixture; NOT RUN",
+    "native": "616096 planned only; compile/link/runtime NOT RUN",
+    "restoration": "Four production files independently match saved original hashes at archival check; no-op then actual seven-task chain logged",
+    "new_formal_score": "NONE; 50/50 unproven",
+    "sidecar_actions": "Offline reads, documentation and evidence bytes only; no build/run/profile/SQL/production edits/Git"
+  },
+  "completed_pairs": 1,
+  "comparison": {
+    "source": "round17-evidence/comparison.json",
+    "raw_sha256": "b98f7cb76df1f4c861c08abdc1e56013234fe3fef24840a726dd6a33df59928e",
+    "treatment": "Archived verbatim, not recomputed"
+  },
+  "native": "PREPARATION ONLY; compile/link/execution NOT RUN; no native pass",
+  "files": [
+    {
+      "source": "diagnose-r17-bmw.py",
+      "path": "files/diagnose-r17-bmw.py.gz",
+      "raw_bytes": 3730,
+      "raw_sha256": "dbc7111899f65da90c5b43c8a779cc6e5dbc6b30d60ba68beb6e5ca36cf3ebf4",
+      "packed_bytes": 1570,
+      "packed_sha256": "6a788a3dc573e70420ef9089dd50b37900195a76b7f2fb42ceac3afad412a5b5",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-candidate-a1-affinity.json",
+      "path": "files/r17-bmw-candidate-a1-affinity.json.gz",
+      "raw_bytes": 396,
+      "raw_sha256": "33a06a2a3f4cc56684b3301367e32e360e0b674650a6645414e2b6363bbd16d7",
+      "packed_bytes": 272,
+      "packed_sha256": "b17caa5a812be2b63113156c5c556a85d2fe1e50f3824b795e36d8371e17fa13",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-candidate-a1-experiment.json",
+      "path": "files/r17-bmw-candidate-a1-experiment.json.gz",
+      "raw_bytes": 527,
+      "raw_sha256": "e9922933ff325397c181813e78bdfce3529577409b09931ea6cf646b77ece178",
+      "packed_bytes": 356,
+      "packed_sha256": "b8bcb8cf3935aeeb1bb63f2745678f32e729aef772bb2478d692a9b55cd8284b",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-candidate-a1-ranked.log",
+      "path": "files/r17-bmw-candidate-a1-ranked.log.gz",
+      "raw_bytes": 1361,
+      "raw_sha256": "4f6c78aee5a498222ca50372839224b5872461e751ee3f1e3ed6dbe0771ce2fe",
+      "packed_bytes": 371,
+      "packed_sha256": "24a7c24264d0f783c65c082a4df6c89615a13a11752add930d28f9678254238d",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-candidate-a1-server.log",
+      "path": "files/r17-bmw-candidate-a1-server.log.gz",
+      "raw_bytes": 326,
+      "raw_sha256": "6273262bb99a68d52fa95de4b3cc6d9ef4e39a8630ce06024292d0d30ba0f47e",
+      "packed_bytes": 228,
+      "packed_sha256": "b239ee0a6561b97b3976f2abf33ed2560445792da0a31a7a2ff7af1c64886dea",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-ranked-diagnostic-candidate-1/actual-ranked-output.json.gz",
+      "path": "files/r17-bmw-ranked-diagnostic-candidate-1/actual-ranked-output.json.gz.gz",
+      "raw_bytes": 801964,
+      "raw_sha256": "e097b1ba7487c2eed0a7233ab145738a50c893c0bd0a87a881da96c67986e837",
+      "packed_bytes": 798349,
+      "packed_sha256": "bdb96948a7a3008c75e1671ef85f9e328ab4446484a8e54dae4b1ed644c6cf99",
+      "source_encoding": "gzip preserved inside outer gzip"
+    },
+    {
+      "source": "r17-bmw-ranked-diagnostic-candidate-1/diagnosis.json",
+      "path": "files/r17-bmw-ranked-diagnostic-candidate-1/diagnosis.json.gz",
+      "raw_bytes": 1506,
+      "raw_sha256": "363271ebc9c20bb9cce7bb1a61ba6a04ad6d2302af92d39bd732c1918f8801e1",
+      "packed_bytes": 570,
+      "packed_sha256": "3326e1bbe2840c5a3ec6b69d466b09d85366182f54845ae171906170852e5707",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-ranked-diagnostic-candidate-1/server.log",
+      "path": "files/r17-bmw-ranked-diagnostic-candidate-1/server.log.gz",
+      "raw_bytes": 360,
+      "raw_sha256": "fae2ffa00e3006e1bb5b30c506d2a6d058dad9f0ca09a9344bad55a2cf094299",
+      "packed_bytes": 239,
+      "packed_sha256": "21fe4d12d397857212f9f95fc7b48c45cce2fa9c92ba65ff3c51fd416faa60fd",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-ranked-diagnostic-control-1/actual-ranked-output.json.gz",
+      "path": "files/r17-bmw-ranked-diagnostic-control-1/actual-ranked-output.json.gz.gz",
+      "raw_bytes": 801965,
+      "raw_sha256": "d322411c90638ba7cb0dbb4a71c2b770ff41309cac3da185e375a2e9b8d40570",
+      "packed_bytes": 798403,
+      "packed_sha256": "d656e9923e38f9a3ccbaa54bdd4b696da8d778bdde715f2bb64ece24b1c7ba71",
+      "source_encoding": "gzip preserved inside outer gzip"
+    },
+    {
+      "source": "r17-bmw-ranked-diagnostic-control-1/diagnosis.json",
+      "path": "files/r17-bmw-ranked-diagnostic-control-1/diagnosis.json.gz",
+      "raw_bytes": 519,
+      "raw_sha256": "d51ff915f4223d469cac4f4300ee1d58ab42707c9e6678a688ee22598012192c",
+      "packed_bytes": 368,
+      "packed_sha256": "0dab441f3005893af9877523c91abc2559abb895935324f328c15f8ff6c877dd",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-ranked-diagnostic-control-1/server.log",
+      "path": "files/r17-bmw-ranked-diagnostic-control-1/server.log.gz",
+      "raw_bytes": 356,
+      "raw_sha256": "e76b998da80041853b741124658d4ce1c7c8b20daca4f1a6fd9f434d385247ba",
+      "packed_bytes": 238,
+      "packed_sha256": "e1596a79d4f8990d6b7fec7af1bf790a6d9950efeaab339f4e63eb576cbd0bba",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-candidate-a1-affinity.json",
+      "path": "files/r17-bmw-v2-candidate-a1-affinity.json.gz",
+      "raw_bytes": 399,
+      "raw_sha256": "8c9b7d3506f38880729d938153e57d37b51688e2de5453b3acf4046b39ccce30",
+      "packed_bytes": 275,
+      "packed_sha256": "d14c7958ce10be15655ea43404c960a1fa619bf59b38039f155e6000e18d15b7",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-candidate-a1-benchmark.log",
+      "path": "files/r17-bmw-v2-candidate-a1-benchmark.log.gz",
+      "raw_bytes": 3800,
+      "raw_sha256": "652778d87873af3af41759fd53efd9ae0de0807f337f92662672313c25baeade",
+      "packed_bytes": 1212,
+      "packed_sha256": "f9845cfd92af1610bc69fb8a140cf9e095d220f52daedffd35f749ae7daf5422",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-candidate-a1-experiment.json",
+      "path": "files/r17-bmw-v2-candidate-a1-experiment.json.gz",
+      "raw_bytes": 1804,
+      "raw_sha256": "3d18c0989403a7cee334a5745520ffb70f2d78be694b8ce1075896fd1fea222c",
+      "packed_bytes": 651,
+      "packed_sha256": "7243cccb2471e50431fa0b91c1a955dc8e9b069d069ee884e9a3df5c24cbc61b",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-candidate-a1-input-validation.log",
+      "path": "files/r17-bmw-v2-candidate-a1-input-validation.log.gz",
+      "raw_bytes": 897,
+      "raw_sha256": "4b3cc04f59926d2ab819da427d8f56234b1484defd3ef05318802a52689cf8d1",
+      "packed_bytes": 366,
+      "packed_sha256": "ca824fd1921a9eea89c38480927314b638bb89d883be38db7a58a7555cb7b25f",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-candidate-a1-keytypes.log",
+      "path": "files/r17-bmw-v2-candidate-a1-keytypes.log.gz",
+      "raw_bytes": 69,
+      "raw_sha256": "1a746b595c23d41f1bc367fdfa957fb73a05012c7e7e8815314828d0eae4be78",
+      "packed_bytes": 86,
+      "packed_sha256": "da7f9e6911473a4f5a32f02fd2c6821a3d95c26ce02d9fee9b38b191206b7198",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-candidate-a1-ranked.log",
+      "path": "files/r17-bmw-v2-candidate-a1-ranked.log.gz",
+      "raw_bytes": 70,
+      "raw_sha256": "a01523e38052ad5626312505aa5f45551a5630efc5b41110264a6cbc6ac0123b",
+      "packed_bytes": 87,
+      "packed_sha256": "bb68437a2c635b2f52491aa57b8d0d48dc0b85d73c71563ab04ed27b791d82a0",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-candidate-a1-report.txt",
+      "path": "files/r17-bmw-v2-candidate-a1-report.txt.gz",
+      "raw_bytes": 1413,
+      "raw_sha256": "cf5b32effdb662f649af8e2d52f9074b3f684ee2362eabd7e6f151840b5d6398",
+      "packed_bytes": 475,
+      "packed_sha256": "43c85d4e0aa575ed7e636738c4b8490fc4d9f5c8e6d12a5690522aea090f7bd7",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-candidate-a1-server.log",
+      "path": "files/r17-bmw-v2-candidate-a1-server.log.gz",
+      "raw_bytes": 332,
+      "raw_sha256": "1d05c90ce451ae6fe4bcf29bf47c01609900ff6b425fd89c43ee7f6293148193",
+      "packed_bytes": 230,
+      "packed_sha256": "106df4e743eb130ba75a21f95e43d65084e0a13eb8b032684ed2ce36e7f3cd96",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-candidate-a1-test_collation.py.log",
+      "path": "files/r17-bmw-v2-candidate-a1-test_collation.py.log.gz",
+      "raw_bytes": 53,
+      "raw_sha256": "ff3b2caa535981d84518d4486caec79bd86f0574dfe964685fb0b848aefe5c33",
+      "packed_bytes": 72,
+      "packed_sha256": "e807bcf959531947cd7723ce154f35377dfa06b929fc18ff5e9e05f673beb029",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-candidate-a1-test_dictionary_prefixes.py.log",
+      "path": "files/r17-bmw-v2-candidate-a1-test_dictionary_prefixes.py.log.gz",
+      "raw_bytes": 74,
+      "raw_sha256": "4f1013cbdc0f2ce96a7194cf61937f531d81d789d5ad7ac0d1c0eb169575ee4b",
+      "packed_bytes": 93,
+      "packed_sha256": "f9cbf4e18749c6a890bf69373554d73aa76f5f49d64ddc7cd6bbdecff09a8790",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-candidate-a1-test_hot_path.py.log",
+      "path": "files/r17-bmw-v2-candidate-a1-test_hot_path.py.log.gz",
+      "raw_bytes": 184,
+      "raw_sha256": "0d204ab8da768dc581aee6577549bec46145254aaf1a8bcb5c8e0eae3663cf9d",
+      "packed_bytes": 162,
+      "packed_sha256": "e7c8a3ff76440b29f1fdeed40cf7932090cb102129cc1609004243635cbb6f8f",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-candidate-a1-test_map_concurrency.py.log",
+      "path": "files/r17-bmw-v2-candidate-a1-test_map_concurrency.py.log.gz",
+      "raw_bytes": 74,
+      "raw_sha256": "b12ea9937f8cc3b29b86ca2fb578e71e47afa9302ccddd24fa30538b50ed228d",
+      "packed_bytes": 92,
+      "packed_sha256": "f381bd5610ca8b8fe667da1fdaac2191706bf2ec11e10f25326ccce7cc76023d",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-candidate-a1-test_match_batches.py.log",
+      "path": "files/r17-bmw-v2-candidate-a1-test_match_batches.py.log.gz",
+      "raw_bytes": 83,
+      "raw_sha256": "d2d99a68d4ad2bfbc2924a50abeec9360c1acc93c647194f788bef0e6d43d688",
+      "packed_bytes": 103,
+      "packed_sha256": "0a7c9974ccb627588ec7550d80f6c03605b910e03114e4f4a334cfa33905f3fb",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-candidate-a1-test_stopword_concurrency.py.log",
+      "path": "files/r17-bmw-v2-candidate-a1-test_stopword_concurrency.py.log.gz",
+      "raw_bytes": 106,
+      "raw_sha256": "c2c3398fb81fc8a289f0a715cf90eb21889482819f821553124014a400173f15",
+      "packed_bytes": 116,
+      "packed_sha256": "d4ab57539671da868ad387bde38a37f99adc38dddc572c73a1dc72686688fc6c",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-candidate-a1-test_tokenize_config.py.log",
+      "path": "files/r17-bmw-v2-candidate-a1-test_tokenize_config.py.log.gz",
+      "raw_bytes": 75,
+      "raw_sha256": "a1febcccfc843a075e757e833a7179b3aa38b9f21249fd9955f9d7273c58b4f6",
+      "packed_bytes": 93,
+      "packed_sha256": "e16d0a9ba1277da5fc3bc76acda6a7673c769ef68922c7ee4076ad7dfa0d06eb",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-control-a1-affinity.json",
+      "path": "files/r17-bmw-v2-control-a1-affinity.json.gz",
+      "raw_bytes": 397,
+      "raw_sha256": "042ccef3cef524fa51c0a8d89c69cbe7c772d7d7d7d5a6e8b585d66fe25b85e3",
+      "packed_bytes": 272,
+      "packed_sha256": "9ae3b90a599b4141b016a1204bfe51aea7d3bd4ee4e187871cc0f99a70a4e407",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-control-a1-benchmark.log",
+      "path": "files/r17-bmw-v2-control-a1-benchmark.log.gz",
+      "raw_bytes": 3794,
+      "raw_sha256": "faae7cb0dc933a6e61280803ac42025b91f60a8b8050c4f2b9f922725cd765fc",
+      "packed_bytes": 1191,
+      "packed_sha256": "4bb3280e1944f0e608fd19a541a14604b79d49400b88a7a6629b4a14d1bd5ff9",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-control-a1-experiment.json",
+      "path": "files/r17-bmw-v2-control-a1-experiment.json.gz",
+      "raw_bytes": 761,
+      "raw_sha256": "829cb5959b947a482dc535d0f299f6d497f6448ac1ad58a96524853970b9d6d2",
+      "packed_bytes": 441,
+      "packed_sha256": "95a476073778f7a20b24a1f5e14a19add455985715f92fcc15705911dc5fb009",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-control-a1-input-validation.log",
+      "path": "files/r17-bmw-v2-control-a1-input-validation.log.gz",
+      "raw_bytes": 897,
+      "raw_sha256": "dc1e83f48406e6943b946755d26d91233d7cf7695de765fdbeb9160f7648417a",
+      "packed_bytes": 361,
+      "packed_sha256": "444c2c27629f033f7417e7d0c2a4f6162cd047cf24a67b19c9d95534b2a9640f",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-control-a1-report.txt",
+      "path": "files/r17-bmw-v2-control-a1-report.txt.gz",
+      "raw_bytes": 1411,
+      "raw_sha256": "50ae70af5aa2b2e34e65c666067fb9d64e3e5e168f5967943783b7d9f768c3bb",
+      "packed_bytes": 468,
+      "packed_sha256": "fa2cddfcbcad93cbe6b9a77e32215d9cb6bfee5a1272fa3569f22b3716dd3235",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "r17-bmw-v2-control-a1-server.log",
+      "path": "files/r17-bmw-v2-control-a1-server.log.gz",
+      "raw_bytes": 328,
+      "raw_sha256": "03c8f555ac60523ae60af7481c6e0d002a01d1bec469dbb478b09e0f75d318ed",
+      "packed_bytes": 229,
+      "packed_sha256": "787ba4293d269848c3bf7924fc969ee871237917c64ac7b94ba67a61d1744ebf",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-bmw-bound-build.log",
+      "path": "files/round17-bmw-bound-build.log.gz",
+      "raw_bytes": 754,
+      "raw_sha256": "54ea11244d92a98caa39a3f098b95abb3e0a0656f78637349f7f73d20c47b1a0",
+      "packed_bytes": 385,
+      "packed_sha256": "d7e2b586f7e260db550d697df3f9aa384050a57f1f7974f26e7cccd031ae9538",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-bmw-bound-v2-build.log",
+      "path": "files/round17-bmw-bound-v2-build.log.gz",
+      "raw_bytes": 754,
+      "raw_sha256": "445b73a115b6c5011e2c1f6083a539e68a02e62807390826994973d5a7e556e5",
+      "packed_bytes": 384,
+      "packed_sha256": "e009b34622f88b1f1154ca26d1d50743dfd34063c2cf1c5e40791fb9a8e3b1fa",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-bmw-native/README.md",
+      "path": "files/round17-bmw-native/README.md.gz",
+      "raw_bytes": 7153,
+      "raw_sha256": "49fd417aed7cd57e8ac17e565dd0585a57c79aa897dc80df4ecaa06b8ec88371",
+      "packed_bytes": 3396,
+      "packed_sha256": "7e45683167f2026c8d570cb960fbf83416ef34531d69282ddd797409301bc224",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-bmw-native/build-settings.json",
+      "path": "files/round17-bmw-native/build-settings.json.gz",
+      "raw_bytes": 13538,
+      "raw_sha256": "441d7a8d85e291bca198177d4bed0854ddd37e1fab8995c8aa666e2cb59a09b7",
+      "packed_bytes": 4505,
+      "packed_sha256": "ccadc4c60e50b0fa083ec45a73f544c65ec661fb2286c0351664dec35b051a0c",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-bmw-native/build_bm25_bound.ps1",
+      "path": "files/round17-bmw-native/build_bm25_bound.ps1.gz",
+      "raw_bytes": 892,
+      "raw_sha256": "aee56f42d91a652e5e35e96b1f242a35b2d9761ab8aeec7f45020af65eb3e6a9",
+      "packed_bytes": 540,
+      "packed_sha256": "ed2d8e84f4d68792aedfdb7b1b24c83186b5d4a827175ae52f2078e68cec653e",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-bmw-native/capture-plan/commands.json",
+      "path": "files/round17-bmw-native/capture-plan/commands.json.gz",
+      "raw_bytes": 1756,
+      "raw_sha256": "b0dd866892f8336224b950bbf56062cea4f7f9512760321a087692bd86bd38a1",
+      "packed_bytes": 631,
+      "packed_sha256": "7db115977126931e88253112a2affab56333e4bf451a1f5e34c19054158f2b49",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-bmw-native/capture-plan/compile.rsp",
+      "path": "files/round17-bmw-native/capture-plan/compile.rsp.gz",
+      "raw_bytes": 6629,
+      "raw_sha256": "2e58944ad61ca2e42f5ee01ef992739e87102714970624bfdd1550c85c18b75c",
+      "packed_bytes": 2240,
+      "packed_sha256": "bfd6d50cbabd97244eeafaaaebf14b8b57dac158a7834d3ee11f5a02640ead9e",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-bmw-native/capture-plan/link-inputs.rsp",
+      "path": "files/round17-bmw-native/capture-plan/link-inputs.rsp.gz",
+      "raw_bytes": 3816,
+      "raw_sha256": "2da7578ea095c5826d47e22014fca3a86bb09c0c0decafba917d4109abe0c447",
+      "packed_bytes": 796,
+      "packed_sha256": "0d11e439d6b4abb47f6de233fe06a4a3c3e6c4ec5dae77304e4f365059e23859",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-bmw-native/capture-plan/receipt.json",
+      "path": "files/round17-bmw-native/capture-plan/receipt.json.gz",
+      "raw_bytes": 943,
+      "raw_sha256": "fd9fc2c0d155a7a5a478535375b234c4ebeee24ea2153878d688e4a6b1a4be73",
+      "packed_bytes": 450,
+      "packed_sha256": "963b0ff2d1f983d24283779df8351360f7482d1cd9b325f02de6b91780f741fe",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-bmw-native/preparation.json",
+      "path": "files/round17-bmw-native/preparation.json.gz",
+      "raw_bytes": 2659,
+      "raw_sha256": "110aa35711b4a5d1a753dce06be0f54befc6b7d93a4a9982d7ef29e1380477a9",
+      "packed_bytes": 1294,
+      "packed_sha256": "c25eb27fb18727c11fef6db3b1d3989f061722a3323f8ff5333935f03a1d56ec",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-bmw-native/prepare_bm25_bound.py",
+      "path": "files/round17-bmw-native/prepare_bm25_bound.py.gz",
+      "raw_bytes": 16221,
+      "raw_sha256": "abd3054ade6c7239343eef4000281122c628cd2c359eed6078071aab5498f568",
+      "packed_bytes": 5337,
+      "packed_sha256": "9847bf600aec9febbc57d3ac556af378b9fb6396cf0583881bd831a82664ff67",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-bmw-native/run_bm25_bound.py",
+      "path": "files/round17-bmw-native/run_bm25_bound.py.gz",
+      "raw_bytes": 5427,
+      "raw_sha256": "338404dcada0bbd970ebc4f93f0fe1b3e38cd498a18bc5c520ea5b7d5f68d689",
+      "packed_bytes": 2142,
+      "packed_sha256": "91cf77eac4b0318e9affb3818c02c3ee10ca2d1db2bb77c8b1c33f9676cc8e8b",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-bmw-native/test_bm25_bound.cpp",
+      "path": "files/round17-bmw-native/test_bm25_bound.cpp.gz",
+      "raw_bytes": 9233,
+      "raw_sha256": "2f03487f89ad22b5b8edb106a31be02001c2b0ea98e46292d26dd5336edbdf4a",
+      "packed_bytes": 3028,
+      "packed_sha256": "b4240224843650e3a0cbdd6a5af1bc82aa0c416b3993e2d8679475b48e760463",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-bmw-regression/README.md",
+      "path": "files/round17-bmw-regression/README.md.gz",
+      "raw_bytes": 751,
+      "raw_sha256": "16fdd177cbb748251d9b52909291c596803874aa1c64cd6828578db0939ca9c7",
+      "packed_bytes": 481,
+      "packed_sha256": "22b86d3e5e2c19b78125e82e5e7c75eb1aabc68860287f58503961d604925c7f",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-bmw-regression/report.md",
+      "path": "files/round17-bmw-regression/report.md.gz",
+      "raw_bytes": 4324,
+      "raw_sha256": "4f8764f6d7b54198307a4cdda1e0c69e1f78acb45dec2a0f6b1f039530d98c1b",
+      "packed_bytes": 2197,
+      "packed_sha256": "a049d9c1a8d3c05241f94a2964b52467e842cd724e8cec862e077ccc04e12ab1",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-ddl-proposal/report.md",
+      "path": "files/round17-ddl-proposal/report.md.gz",
+      "raw_bytes": 30312,
+      "raw_sha256": "c6793d5a3dbe6c2f3755fb9c4cc5b5f0de0d05ff46046a2c095d441c4ed3f4fc",
+      "packed_bytes": 11445,
+      "packed_sha256": "8b3672aefeaa389d5a3347d06fc846446a334c0fc7b17cbd517d2f471695e5f2",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-evidence/README.md",
+      "path": "files/round17-evidence/README.md.gz",
+      "raw_bytes": 1967,
+      "raw_sha256": "6c789a8d203d616a5f89255ff6a51dd4fd6c40e88df420275a34877c6025c945",
+      "packed_bytes": 1125,
+      "packed_sha256": "a8065d265864f72e5e45104b11d9ab7adf4a96fddcc3e858aa15bb7a3dce87c0",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-evidence/comparison.json",
+      "path": "files/round17-evidence/comparison.json.gz",
+      "raw_bytes": 6974,
+      "raw_sha256": "b98f7cb76df1f4c861c08abdc1e56013234fe3fef24840a726dd6a33df59928e",
+      "packed_bytes": 2343,
+      "packed_sha256": "6a64e3fed8f596b94e725d72d83372d50db19d085fbc0774794a30ab07dfe9df",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-evidence/disposition.json",
+      "path": "files/round17-evidence/disposition.json.gz",
+      "raw_bytes": 895,
+      "raw_sha256": "6e15fb92c21239d274367f0432f4f0adbb23d14d1087ec76d20cbf5155d96043",
+      "packed_bytes": 564,
+      "packed_sha256": "a83ef6e772d670401615f7118ee3d818af7b11df107834e1dfd04122607688c0",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-evidence/package.py",
+      "path": "files/round17-evidence/package.py.gz",
+      "raw_bytes": 6792,
+      "raw_sha256": "3697d68435c2e1ef34982a395cbe55644fc53d22c6429a23bdfceb45eb0ad69b",
+      "packed_bytes": 2556,
+      "packed_sha256": "ae0fd9d184bd63e2dd60f4c4dfa775427974955f44a433e1acd66d1a8c64e038",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-evidence/preflight.json",
+      "path": "files/round17-evidence/preflight.json.gz",
+      "raw_bytes": 9019,
+      "raw_sha256": "eeed95d7ba08e65ec40a95d60133cbe18e24c7309c8492ced44b9a0cb5f718af",
+      "packed_bytes": 2584,
+      "packed_sha256": "8b6beee01f22c7dc3929b429a7b63833116c379772bc0479606595d62ed6d00b",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-evidence/prepare_archive.py",
+      "path": "files/round17-evidence/prepare_archive.py.gz",
+      "raw_bytes": 9758,
+      "raw_sha256": "765e7626acacf56169543444c7f35d4d442ba2209875d18242ce10a1a857165d",
+      "packed_bytes": 3489,
+      "packed_sha256": "1d0e9698a3296b944b00be09cfa6c52f95e08395f2d9e7e2ae906ed01170fca7",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-evidence/publish_docs.py",
+      "path": "files/round17-evidence/publish_docs.py.gz",
+      "raw_bytes": 2835,
+      "raw_sha256": "691712fbee13bfb17e14b04ea61c5d3581160f73d7b81b95f018f30891cd75ec",
+      "packed_bytes": 1225,
+      "packed_sha256": "d39a4069c4ab26fa6a96fe9b60a2f8a6c6ab9a1e36b1baa514d9a6ec2fcd459c",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-evidence/reference/ranked_batches_expected.original.json.gz",
+      "path": "files/round17-evidence/reference/ranked_batches_expected.original.json.gz.gz",
+      "raw_bytes": 801965,
+      "raw_sha256": "d322411c90638ba7cb0dbb4a71c2b770ff41309cac3da185e375a2e9b8d40570",
+      "packed_bytes": 798403,
+      "packed_sha256": "d656e9923e38f9a3ccbaa54bdd4b696da8d778bdde715f2bb64ece24b1c7ba71",
+      "source_encoding": "gzip preserved inside outer gzip"
+    },
+    {
+      "source": "round17-evidence/reference/test_ranked_batches.py",
+      "path": "files/round17-evidence/reference/test_ranked_batches.py.gz",
+      "raw_bytes": 5540,
+      "raw_sha256": "c395dd01bde831f7a8a1965d32d13d99c5bd876ef28807eabb85e614aa48409d",
+      "packed_bytes": 2057,
+      "packed_sha256": "b9c36fdea7966e8c7ad58c5710e12503edbc559032f6f3a4a14d65ab930866e8",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-evidence/report.en.md",
+      "path": "files/round17-evidence/report.en.md.gz",
+      "raw_bytes": 5279,
+      "raw_sha256": "3a8227f7fde7cb45b61d938a524adf97e8dcc1ace06b659ac4454355fb0562a5",
+      "packed_bytes": 2747,
+      "packed_sha256": "434b0efe60d87566bc48c5c309d0361c242c547b8f0e75cb3035b8f30a02193d",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-evidence/report.zh-CN.md",
+      "path": "files/round17-evidence/report.zh-CN.md.gz",
+      "raw_bytes": 4640,
+      "raw_sha256": "f16ca6e6acf5921fa5d6ee87e7defaecc847d42970b6375e260875c068c0cd4d",
+      "packed_bytes": 2959,
+      "packed_sha256": "7d87a92586328415234c5807b20b3d7129fc08c36073bf27be1a8102d9a8fea2",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-evidence/source.json",
+      "path": "files/round17-evidence/source.json.gz",
+      "raw_bytes": 9328,
+      "raw_sha256": "f49bbd9f11fe8abc5a2f4bc458f32c9b2b527ac45d114b0750703ea18bd85022",
+      "packed_bytes": 2345,
+      "packed_sha256": "1a305c20c1f636fa2de9b9b732031731a690e464d204865adae3df67b5783e5c",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-evidence/summarize.py",
+      "path": "files/round17-evidence/summarize.py.gz",
+      "raw_bytes": 4357,
+      "raw_sha256": "1ec0f4804ed032ab38be6977476f544824bf6c252d9263bb94d50c5284ea2251",
+      "packed_bytes": 2084,
+      "packed_sha256": "b94cc6fdd949b302f47cf61fe7b1f3c5ff025e644242a842728e55c3845c8cc6",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-evidence/verify_package.py",
+      "path": "files/round17-evidence/verify_package.py.gz",
+      "raw_bytes": 3045,
+      "raw_sha256": "0e8cdfb6ae8a489e5901c60ab93bea1ffa04d336819b4c359b28dd6bd25ee1f4",
+      "packed_bytes": 1271,
+      "packed_sha256": "14098c79f928ff8aa698d716dd1ec2a7ab2b85139d8214c93356f0c477214af4",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal-v2/README.md",
+      "path": "files/round17-query-proposal-v2/README.md.gz",
+      "raw_bytes": 3491,
+      "raw_sha256": "51887e24b322fee776b8cf56112282597b9db615834617bedff7e9f40316a43c",
+      "packed_bytes": 1866,
+      "packed_sha256": "be908f8f1d38646033afa20e2da471f4af7b19753ec6d414735db5a39ca6fc79",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal-v2/manifest.json",
+      "path": "files/round17-query-proposal-v2/manifest.json.gz",
+      "raw_bytes": 3851,
+      "raw_sha256": "87b5746c90172c487e1c3a6d02db510399101fef1b113a46c30d4f7cdefd999a",
+      "packed_bytes": 1370,
+      "packed_sha256": "91409691d9ff808d124d2100332e4c548279b44ceadbab8dde4a61dbb4b11151",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal-v2/original/src/storage/retrieval/ob_text_daat_iter.cpp",
+      "path": "files/round17-query-proposal-v2/original/src/storage/retrieval/ob_text_daat_iter.cpp.gz",
+      "raw_bytes": 7994,
+      "raw_sha256": "dbc022030c8fa856a1e521d80c366207e290f13bb679b62b81d2293e44c3ce2d",
+      "packed_bytes": 2216,
+      "packed_sha256": "6a3f766eaf010ccce9ace10729e3344cb9e08eba1ab24b56231282aa4a4ed321",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal-v2/original/src/storage/retrieval/ob_text_daat_iter.h",
+      "path": "files/round17-query-proposal-v2/original/src/storage/retrieval/ob_text_daat_iter.h.gz",
+      "raw_bytes": 2987,
+      "raw_sha256": "64cb8530ac3a8919cedea96fce5095b833f391fa505d944e9d0077a1d1563ba0",
+      "packed_bytes": 1166,
+      "packed_sha256": "bb8eb6f6079cfe06ea7fb62a2704e9d6479ac05118173ffdc487297e66a2fdff",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal-v2/original/src/storage/retrieval/ob_text_retrieval_token_iter.cpp",
+      "path": "files/round17-query-proposal-v2/original/src/storage/retrieval/ob_text_retrieval_token_iter.cpp.gz",
+      "raw_bytes": 28279,
+      "raw_sha256": "7a7d33cef52f0da958586356f249ab7c807151dc49a5f1c60ecfee41900bd586",
+      "packed_bytes": 5396,
+      "packed_sha256": "da3f46b946a5c54835edf15d1c734c5a2712be5e845934f154e7793627886d36",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal-v2/original/src/storage/retrieval/ob_text_retrieval_token_iter.h",
+      "path": "files/round17-query-proposal-v2/original/src/storage/retrieval/ob_text_retrieval_token_iter.h.gz",
+      "raw_bytes": 8068,
+      "raw_sha256": "b094bd2d5700ea9fe3ed36a36960c0874d3ee54744e68126d7a0dfe487e48ae9",
+      "packed_bytes": 2217,
+      "packed_sha256": "2a5316ccfb667b4121dc47726ef0e0341a2aac370a77e352f085b8f104185fce",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal-v2/report.md",
+      "path": "files/round17-query-proposal-v2/report.md.gz",
+      "raw_bytes": 7208,
+      "raw_sha256": "20add99cc581977ecfd22d54852f9b3561a2e46f30c51b0367e2599522508ba1",
+      "packed_bytes": 3552,
+      "packed_sha256": "5ac968be94f95967f87dd5ff5055dd027ca5e4957f89391066c004f75655efb2",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal-v2/source.patch",
+      "path": "files/round17-query-proposal-v2/source.patch.gz",
+      "raw_bytes": 6148,
+      "raw_sha256": "603fd96cd5974911093cbd07857856e91885af0a978dc7ed22115eb28f59133b",
+      "packed_bytes": 1886,
+      "packed_sha256": "776677b075d060bd64d5978574fa65bb8ddc52340a9c5e9c111da041447e27e0",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal-v2/src/storage/retrieval/ob_text_daat_iter.cpp",
+      "path": "files/round17-query-proposal-v2/src/storage/retrieval/ob_text_daat_iter.cpp.gz",
+      "raw_bytes": 8456,
+      "raw_sha256": "fcf22198fa3c706b4b5e48e653ec2c5d5704fdf559c31e779604b71d6958c07f",
+      "packed_bytes": 2340,
+      "packed_sha256": "9a6c8c657b0b8071459e3de317c5dde8820be1e95e0ff5292422af4920c01222",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal-v2/src/storage/retrieval/ob_text_daat_iter.h",
+      "path": "files/round17-query-proposal-v2/src/storage/retrieval/ob_text_daat_iter.h.gz",
+      "raw_bytes": 3017,
+      "raw_sha256": "7cfff7a7ffea4e74b7ede9641373644b33663e0f395f5dbd9c1553357d92e2a2",
+      "packed_bytes": 1181,
+      "packed_sha256": "20ab5e7281d6fc6b73eb99d7312a905c1a8f3ca67a10093cddb6ad1cd351e81f",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal-v2/src/storage/retrieval/ob_text_retrieval_token_iter.cpp",
+      "path": "files/round17-query-proposal-v2/src/storage/retrieval/ob_text_retrieval_token_iter.cpp.gz",
+      "raw_bytes": 29167,
+      "raw_sha256": "169f3ef24ed7f89c947e14f471e316939a2112fd1de58b8836c8c8982fa203c2",
+      "packed_bytes": 5684,
+      "packed_sha256": "8d01cfb4dd22f2bed8926f912f5db5df50f774536eb14c2e484c09c31a356183",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal-v2/src/storage/retrieval/ob_text_retrieval_token_iter.h",
+      "path": "files/round17-query-proposal-v2/src/storage/retrieval/ob_text_retrieval_token_iter.h.gz",
+      "raw_bytes": 8124,
+      "raw_sha256": "67fb1ae86da8072076273f8b6d9c10c0efd41165426ded79f738bb6c7c18625a",
+      "packed_bytes": 2240,
+      "packed_sha256": "13a8ac6f34f91244b60f86fc8b69e9369c7b9a62206fb98539ce98db339f5bdf",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal-v2/v1-preimage/src/storage/retrieval/ob_text_daat_iter.cpp",
+      "path": "files/round17-query-proposal-v2/v1-preimage/src/storage/retrieval/ob_text_daat_iter.cpp.gz",
+      "raw_bytes": 8208,
+      "raw_sha256": "d12d6b4077413969df1cf0db9b79d4812f4899c70d064edf5694f9a984725e57",
+      "packed_bytes": 2300,
+      "packed_sha256": "7dc3fd3e17e2a3873342c33dd8a47f93e180e7959f84012b9152a8c4cafff9ab",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal-v2/v1-preimage/src/storage/retrieval/ob_text_daat_iter.h",
+      "path": "files/round17-query-proposal-v2/v1-preimage/src/storage/retrieval/ob_text_daat_iter.h.gz",
+      "raw_bytes": 2987,
+      "raw_sha256": "64cb8530ac3a8919cedea96fce5095b833f391fa505d944e9d0077a1d1563ba0",
+      "packed_bytes": 1166,
+      "packed_sha256": "bb8eb6f6079cfe06ea7fb62a2704e9d6479ac05118173ffdc487297e66a2fdff",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal-v2/v1-to-v2.patch",
+      "path": "files/round17-query-proposal-v2/v1-to-v2.patch.gz",
+      "raw_bytes": 2635,
+      "raw_sha256": "305f16eb82fcea121fe5ddc0e5dd69565f5cb102dcbd0787fb3fa7309bf6a0a4",
+      "packed_bytes": 1015,
+      "packed_sha256": "2239399771be682f30ae3e79f2fd6b07cc2050c5de5a4426c13757ece96a1b8a",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal/README.md",
+      "path": "files/round17-query-proposal/README.md.gz",
+      "raw_bytes": 1754,
+      "raw_sha256": "29ad356f96de1bbb839f98239382156371a2d00fec821466bee8c4a8c6664b0a",
+      "packed_bytes": 1037,
+      "packed_sha256": "b75dd4c2a87bb8a76796ea3bafcabb9ddac82a79b7008f60253717d22f725613",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal/manifest.json",
+      "path": "files/round17-query-proposal/manifest.json.gz",
+      "raw_bytes": 5732,
+      "raw_sha256": "84175d918c57ddf72a4c8532b15cf1f40a23b72c9e5e3eb4f6e3c1a21fc72b08",
+      "packed_bytes": 2315,
+      "packed_sha256": "6b7614d401ae6cab5883487129b5911934f55514036a30779686ae380b291484",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal/original/src/storage/retrieval/ob_text_daat_iter.cpp",
+      "path": "files/round17-query-proposal/original/src/storage/retrieval/ob_text_daat_iter.cpp.gz",
+      "raw_bytes": 7994,
+      "raw_sha256": "dbc022030c8fa856a1e521d80c366207e290f13bb679b62b81d2293e44c3ce2d",
+      "packed_bytes": 2216,
+      "packed_sha256": "6a3f766eaf010ccce9ace10729e3344cb9e08eba1ab24b56231282aa4a4ed321",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal/original/src/storage/retrieval/ob_text_retrieval_token_iter.cpp",
+      "path": "files/round17-query-proposal/original/src/storage/retrieval/ob_text_retrieval_token_iter.cpp.gz",
+      "raw_bytes": 28279,
+      "raw_sha256": "7a7d33cef52f0da958586356f249ab7c807151dc49a5f1c60ecfee41900bd586",
+      "packed_bytes": 5396,
+      "packed_sha256": "da3f46b946a5c54835edf15d1c734c5a2712be5e845934f154e7793627886d36",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal/original/src/storage/retrieval/ob_text_retrieval_token_iter.h",
+      "path": "files/round17-query-proposal/original/src/storage/retrieval/ob_text_retrieval_token_iter.h.gz",
+      "raw_bytes": 8068,
+      "raw_sha256": "b094bd2d5700ea9fe3ed36a36960c0874d3ee54744e68126d7a0dfe487e48ae9",
+      "packed_bytes": 2217,
+      "packed_sha256": "2a5316ccfb667b4121dc47726ef0e0341a2aac370a77e352f085b8f104185fce",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal/report.md",
+      "path": "files/round17-query-proposal/report.md.gz",
+      "raw_bytes": 6645,
+      "raw_sha256": "95a7a21e2ed5d906f7feed684e90d10a67c6384eb50349a46ec483bdce8f5a9e",
+      "packed_bytes": 3253,
+      "packed_sha256": "1f685af6590201c0c97769aca464378420452966f7b918caf086d81cbf9b62ee",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal/source.patch",
+      "path": "files/round17-query-proposal/source.patch.gz",
+      "raw_bytes": 4548,
+      "raw_sha256": "3a53b8186e123e16c6f49aef835c0719fb6d7f921713cadc8017aa8c0c80e786",
+      "packed_bytes": 1417,
+      "packed_sha256": "8b48f4798f51f83c25e011433413a0f6b10e386ec9fce014e042232b1fb23f59",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal/src/storage/retrieval/ob_text_daat_iter.cpp",
+      "path": "files/round17-query-proposal/src/storage/retrieval/ob_text_daat_iter.cpp.gz",
+      "raw_bytes": 8208,
+      "raw_sha256": "d12d6b4077413969df1cf0db9b79d4812f4899c70d064edf5694f9a984725e57",
+      "packed_bytes": 2300,
+      "packed_sha256": "7dc3fd3e17e2a3873342c33dd8a47f93e180e7959f84012b9152a8c4cafff9ab",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal/src/storage/retrieval/ob_text_retrieval_token_iter.cpp",
+      "path": "files/round17-query-proposal/src/storage/retrieval/ob_text_retrieval_token_iter.cpp.gz",
+      "raw_bytes": 29167,
+      "raw_sha256": "169f3ef24ed7f89c947e14f471e316939a2112fd1de58b8836c8c8982fa203c2",
+      "packed_bytes": 5684,
+      "packed_sha256": "8d01cfb4dd22f2bed8926f912f5db5df50f774536eb14c2e484c09c31a356183",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round17-query-proposal/src/storage/retrieval/ob_text_retrieval_token_iter.h",
+      "path": "files/round17-query-proposal/src/storage/retrieval/ob_text_retrieval_token_iter.h.gz",
+      "raw_bytes": 8124,
+      "raw_sha256": "67fb1ae86da8072076273f8b6d9c10c0efd41165426ded79f738bb6c7c18625a",
+      "packed_bytes": 2240,
+      "packed_sha256": "13a8ac6f34f91244b60f86fc8b69e9369c7b9a62206fb98539ce98db339f5bdf",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round18-profile-control-build.log",
+      "path": "files/round18-profile-control-build.log.gz",
+      "raw_bytes": 65,
+      "raw_sha256": "7716162f3cd3b99cf3b8a8dd6decf324e08c7e941aae7e730baba5e4fc8c075b",
+      "packed_bytes": 84,
+      "packed_sha256": "292fad35a15de979a2c43c82e30c66ece35dd949cbe83f94fc970bad6265dfe4",
+      "source_encoding": "raw bytes"
+    },
+    {
+      "source": "round18-profile-control-rebuild-build.log",
+      "path": "files/round18-profile-control-rebuild-build.log.gz",
+      "raw_bytes": 754,
+      "raw_sha256": "445b73a115b6c5011e2c1f6083a539e68a02e62807390826994973d5a7e556e5",
+      "packed_bytes": 384,
+      "packed_sha256": "e009b34622f88b1f1154ca26d1d50743dfd34063c2cf1c5e40791fb9a8e3b1fa",
+      "source_encoding": "raw bytes"
+    }
+  ]
+}
