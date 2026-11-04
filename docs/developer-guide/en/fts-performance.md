@@ -1,5 +1,40 @@
 # Full-text performance optimization
 
+## Round 27 root-transition prefix experiment — REJECTED and restored (2026-11-04)
+
+**REJECTED; no production or unit-test promotion.** The parent restored the exact original DAT CPP/header and completed the recorded restoration rebuild. Two full local timing pairs against accepted C7 control show mean-time reductions of **build −1.040791%, tokenize +0.254403%, query +1.786638%, equal-category overall +0.333417%**. The target IK tokenize reduction is only **+0.508806%**, with BENG **0%**. Query fluctuations do not establish a causal benefit from this tokenizer change; there is no convincing measured target benefit. These observations do not add to any cumulative result and make no formal/full-score, stability or statistical significance claim.
+
+The proposal prevalidates a consecutive root-transition prefix during optional BMP table initialization, then skips redundant root base/check reads only for admitted BMP codes at normalized root state 1. It retains the destination base read and existing hit/error behavior. Exact originals, candidates, patch, bounded reviews and historical pending text are preserved; the later parent results below do not rewrite those preparation records.
+
+The four completed timing labels are `r27-root-control-a1/a2` and `r27-root-candidate-bench-a1/a2`. All retain `ROWS=20000 BATCH=500 ROUNDS=3000 QUERY_ROUNDS=200 SAMPLES=3 WARMUP=30 SKIP_LOAD=0`, WARN logging and requested/verified affinity **15**; CN/BENG/mixed/LIMIT hits are **8001/11000/7332/20**. The immutable `root-comparison-2pair.json` uses ratios of per-metric run means, signed within-category averages and equal category weighting. No timing correction, SELECT1 subtraction, sample removal or individual-value clipping is applied; the one-pair snapshot remains unchanged.
+
+| Metric | C7 control mean | Rejected candidate mean | Time reduction |
+| --- | ---: | ---: | ---: |
+| build_ik_all_sec | 8.645000 | 8.505500 | +1.613650% |
+| build_ik_content_sec | 5.778500 | 5.982500 | -3.530328% |
+| build_beng_en_sec | 3.442000 | 3.483500 | -1.205694% |
+| tokenize_ik_avg_ms | 0.127750 | 0.127100 | +0.508806% |
+| tokenize_beng_avg_ms | 0.092900 | 0.092900 | +0.000000% |
+| query_cn_avg_ms | 0.881800 | 1.045450 | -18.558630% |
+| query_beng_avg_ms | 1.086750 | 1.044800 | +3.860133% |
+| query_mixed_avg_ms | 0.976800 | 0.898450 | +8.021089% |
+| query_limit_avg_ms | 2.419350 | 2.084900 | +13.823961% |
+
+| Pair | Build | Tokenize | Query | Equal-category overall |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | +1.662492% | +0.300245% | +2.813911% | +1.592216% |
+| 2 | -3.883139% | +0.202708% | -0.258799% | -1.313077% |
+
+**The initial candidate sequence failed.** `r27-root-candidate-a1` records successful sort **315**, count-union **709**, materialization **4,416**, case-copy **16,359** and BMP **2,488** cases, then a ranked-query connection reset (exit 1). It never reached benchmark and is excluded from completed timing pairs, with the entire traceback retained. C7 `r27-root-control-regression-a1` and the same candidate's `r27-root-candidate-regression-a2` later pass all **14 actions**, including ranked **432 / 142,692 rows**, key types **192 / 68,852 rows** and seven existing suites. The candidate repeat records a PID and `owned_server_exit_before_cleanup=null`, showing it was alive at that observation. **The initial failure's cause remains undetermined; later PASS does not establish a fix or reproduction.** Cleanup exits are kept separately.
+
+Actual production-linked control and candidate native runs use the identical frozen TU SHA256 `5316b2ae7b480fe6d73144237c1e0f73c7612d86f4328fcbd8d9cce937053009`. Both PASS **16,416 cases**, emitting **98,496 T rows within 114,913 CASE/T/PASS records**. Complete raw stdout matches byte-for-byte (SHA256 `ca736bb5badb8c6a32143a5dd988121abd1f8ad3ef51d28898657e55ce41fedd`), both stderr streams are empty, and complete normalized records match (SHA256 `2f261d6564ff94ab904632bf6de2e5ae071ecab7ada4fc3eef008f4f57acd499`). Parent verification and an independent offline byte recheck are archived. This finite synthetic matrix checks reader return and complete hit state against a generic map/base/check oracle; it does not prove shortcut execution, production reload/concurrency, arbitrary malformed-layout safety, sanitizers, Linux CI or speedup. The TU stays archive-only because the proposal is rejected. Final build/run receipts pin actual helper bytes; historical generator hashes and newline differences remain separately documented without inventing missing preparation history.
+
+The separate unscored diagnostic has **356 snapshots / 14 thread-reader generations**, with **144,481 eligible successes / 350,215 calls** at the last captured snapshots. These are incomplete prefix snapshots, omitting tails; they are not CPU percentages or performance evidence. IK and BENG each record 2,000 exact-reference outputs. The bounded captured diagnostic log and full outputs are included; reference identities remain recorded metadata, with no other experiment's runtime/data copied.
+
+Historical control source label is `f56ddd03e66826919d8d9192bc4c0afece8843dd` / binary SHA256 `c7fcc8676875246a38bc4135f29e6f52b85a9d29a9563679003d5b6140666b01`; candidate label `94e1a77354b51761d3baf7a73c98b794d313d36e+round27-root` / binary SHA256 `1da2c6e4522616454e3f60a6f4c1649c53365a5b059095b8f87030ac529bc22a`. Exact source snapshots and recorded library/binary pins govern dirty-candidate identity. Restoration returns CPP to `131d28841ac827601aefc5dbf786589b72d15a5444f9269abbc8aa1ca95dd11f` and header to `6ac81ac0b70d718780fd16c78a0a357f49978aed24553a82fc0081e20d3f303a`. No mutable current binary is used as a historical oracle.
+
+The [rejected root manifest](../assets/fts-performance/competition-round27-root/manifest.json) preserves exact raw bytes in per-file gzip with raw/packed sizes and SHA256: proposal/reviews/diagnostic/restoration/build evidence, complete native text outputs and link flags, all four timing sets, initial failure and both complete regression repeats, strict comparison scripts and exit-harness provenance. Official benchmark/scoring/baseline files and previous archives remain unchanged. Other experiments, Round28, binary products, runtime/data directories, secrets and large unrelated server logs are excluded. Archival runs no builds, native/SQL/runtime/benchmark/profile or Git commands.
+
 ## Round 25 cumulative comparison with the official source original (2026-11-04)
 
 Two complete local pairs compare the official competition source original `5bce9e06d1281347ad61344e4b01fab9158c58a2` with accepted candidate `f56ddd03e66826919d8d9192bc4c0afece8843dd`. The immutable `cumulative-2pair.json` reports mean-time reductions of **build +19.826591%, tokenize +17.494448%, query +41.144971%, equal-category overall +26.155337%**. This measures the cumulative candidate against a locally executed source original. It does not add earlier incremental results or attribute the total to the span change alone. **It is not a new formal result or proof of full score, stability or statistical significance.**
