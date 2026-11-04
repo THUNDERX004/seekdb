@@ -45,6 +45,25 @@ struct ObSRMergeCmp
 
   int init(sql::ObDatumMeta id_meta, const ObFixedArray<const ObDatum *, ObIAllocator> *iter_ids);
   int cmp(const ObSRMergeItem &l, const ObSRMergeItem &r, int64_t &cmp_ret);
+  int compare_ids(const ObDatum &left, const ObDatum &right, int &result) const
+  {
+    int ret = OB_SUCCESS;
+    if (binary_ids_ && !left.is_null() && !right.is_null()) {
+      // CS_TYPE_BINARY compares every byte, including trailing spaces and NUL.
+      // This is the same ordering as its charset handler, without repeated
+      // charset validation/dispatch in the posting merge loop.
+      const int64_t length = MIN(left.len_, right.len_);
+      result = length > 0 ? MEMCMP(left.ptr_, right.ptr_, length) : 0;
+      if (result == 0) {
+        result = left.len_ < right.len_ ? -1 : (left.len_ > right.len_ ? 1 : 0);
+      } else {
+        result = result < 0 ? -1 : 1;
+      }
+    } else {
+      ret = cmp_func_(left, right, result, nullptr);
+    }
+    return ret;
+  }
 private:
   inline const ObDatum &get_id_datum(const int64_t iter_idx)
   {
@@ -54,6 +73,7 @@ private:
   }
 private:
   common::ObDatumCmpFuncType cmp_func_;
+  bool binary_ids_;
   // TODO: if memory lifetime of docid datum is guaranteed by dim_iters, we can use pointer to datum directly
   //       and avoid deep copy into merge heap here
   const ObFixedArray<const ObDatum *, ObIAllocator> *iter_ids_;
@@ -85,6 +105,7 @@ public:
       K_(next_round_iter_idxes), K_(next_round_cnt));
 protected:
   virtual int pre_process();
+  virtual int do_merge_batch(const int64_t capacity, int64_t &count);
   virtual int do_one_merge_round(int64_t &count);
   virtual int fill_merge_heap();
   virtual int collect_dims_by_id(const ObDatum *&id_datum, double &relevance, bool &got_valid_id);

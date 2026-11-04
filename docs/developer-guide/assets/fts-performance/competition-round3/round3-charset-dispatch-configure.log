@@ -1,0 +1,51 @@
+-- ARCHITECTURE: amd64
+-- Using C++20 standard
+-- build without pie
+-- Using OB_CC compiler: clang-cl
+-- Using OB_CXX compiler: clang-cl
+-- ob-compile not found, compile locally.
+D:\Projects\OceanBase\seekdb\tools\cmake\emit_bazel_source_inventory.py:36: DeprecationWarning: ast.Str is deprecated and will be removed in Python 3.14; use ast.Constant instead
+  _AST_STR = getattr(ast, "Str", None)
+D:\Projects\OceanBase\seekdb\tools\cmake\emit_bazel_source_inventory.py:37: DeprecationWarning: ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead
+  _AST_NUM = getattr(ast, "Num", None)
+D:\Projects\OceanBase\seekdb\tools\cmake\emit_bazel_source_inventory.py:38: DeprecationWarning: ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead
+  _AST_NAME_CONSTANT = getattr(ast, "NameConstant", None)
+D:\Projects\OceanBase\seekdb\tools\cmake\emit_bazel_source_inventory.py:48: DeprecationWarning: ast.Str is deprecated and will be removed in Python 3.14; use ast.Constant instead
+  if _AST_STR is not None and isinstance(node, _AST_STR):
+D:\Projects\OceanBase\seekdb\tools\cmake\emit_bazel_source_inventory.py:52: DeprecationWarning: ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead
+  and isinstance(node, _AST_NAME_CONSTANT)
+D:\Projects\OceanBase\seekdb\tools\cmake\emit_bazel_source_inventory.py:64: DeprecationWarning: ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead
+  and isinstance(node, _AST_NUM)
+-- [rust] cargo: C:/Users/11946/.cargo/bin/cargo.exe
+-- [rust] config target ready -> D:/Projects/OceanBase/seekdb/build_fts_competition/rust-target/exports/config.lib
+-- [rust] local target ready -> D:/Projects/OceanBase/seekdb/build_fts_competition/rust-target/exports/local.lib
+-- [rust] sql_nio target ready -> D:/Projects/OceanBase/seekdb/build_fts_competition/rust-target/exports/sql_nio.lib
+-- oblib_add_library compress
+-- oblib_add_library zstd_1_3_8
+-- oblib_add_library restore
+-- ob_lib_add_target oblib_lib
+-- ob_lib_add_target oblib_lib_simd
+-- ob_lib_add_target oblib_lib_bitmap
+-- ob_add_new_object_target ob_malloc_object
+-- ob_lib_add_target oblib_common
+-- ob_lib_add_target oblib_rpc
+-- oblib_extra_objects D:/Projects/OceanBase/seekdb/build_fts_competition/src/oblib/lib/compress/zstd_1_3_8/zstd_1_3_8_objs.lib
+-- ob_add_new_object_target ob_share
+-- ob_add_new_object_target ob_share_extra
+-- observer_add_target ob_data_plane
+-- observer_add_target ob_query
+-- ob_add_new_object_target ob_sql
+-- ob_add_new_object_target ob_sql_extra
+-- observer_add_target ob_sql_simd
+-- observer_add_target ob_pl
+-- observer_add_target syspack_source
+-- observer_add_target ob_standby
+-- observer_add_target ob_rootserver
+-- observer_add_target ob_logservice
+-- observer_add_target ob_storage_tablet_autoincrement_state
+-- ob_add_new_object_target ob_storage
+-- observer_add_target ob_storage_simd
+-- observer_add_target ob_server
+-- Configuring done (7.2s)
+-- Generating done (1.8s)
+-- Build files have been written to: D:/Projects/OceanBase/seekdb/build_fts_competition

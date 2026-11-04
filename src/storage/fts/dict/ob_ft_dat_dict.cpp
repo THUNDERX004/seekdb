@@ -247,6 +247,22 @@ int ObFTDATBuilder<DATA_TYPE>::encode(const ObString &word, ObFTWordCode &code, 
 }
 
 template <typename DATA_TYPE>
+int ObFTDATReader<DATA_TYPE>::init_utf8_bmp_codes(ObIAllocator &allocator)
+{
+  int ret = OB_SUCCESS;
+  const int64_t bytes = (1 << 16) * sizeof(ObFTWordCode);
+  ObFTWordCode *codes = static_cast<ObFTWordCode *>(allocator.alloc(bytes));
+  if (OB_ISNULL(codes)) {
+    // The original hash lookup remains available when the optional table does not fit.
+  } else {
+    MEMSET(codes, 0, bytes);
+    dat_->get_map()->fill_utf8_bmp_codes(codes);
+    utf8_bmp_codes_ = codes;
+  }
+  return ret;
+}
+
+template <typename DATA_TYPE>
 int ObFTDATReader<DATA_TYPE>::match_with_hit(const ObString &ft_char,
                                              const ObDATrieHit &last_hit,
                                              ObDATrieHit &hit) const
@@ -258,9 +274,17 @@ int ObFTDATReader<DATA_TYPE>::match_with_hit(const ObString &ft_char,
   int32_t *base = reinterpret_cast<int32_t *>(dat_->buff + dat_->base_offset_);
   int32_t *check = reinterpret_cast<int32_t *>(dat_->buff + dat_->check_offset_);
 
-  ObFTSingleWord word;
-  word.set_word(ft_char.ptr(), ft_char.length());
-  if (OB_FAIL(dat_->get_map()->find(word, code)) && OB_ENTRY_NOT_EXIST != ret) {
+  const int32_t index = nullptr == utf8_bmp_codes_ ? -1
+      : ft_utf8_bmp_index(ft_char.ptr(), ft_char.length());
+  if (index >= 0) {
+    code = utf8_bmp_codes_[index];
+    ret = code > 0 ? OB_SUCCESS : OB_ENTRY_NOT_EXIST;
+  } else {
+    ObFTSingleWord word;
+    word.set_word(ft_char.ptr(), ft_char.length());
+    ret = map->find(word, code);
+  }
+  if (OB_FAIL(ret) && OB_ENTRY_NOT_EXIST != ret) {
   } else if (OB_ENTRY_NOT_EXIST == ret) {
     ret = OB_SUCCESS;
     hit.set_unmatch();
@@ -314,6 +338,19 @@ int ObArrayHashMap::find(const ObFTSingleWord &word, ObFTWordCode &code) const
     }
   }
   return ret;
+}
+
+void ObArrayHashMap::fill_utf8_bmp_codes(ObFTWordCode *codes) const
+{
+  for (uint32_t i = 0; i < header_.capacity_; ++i) {
+    const Entry &entry = header_.data[i];
+    if (entry.used) {
+      const int32_t index = ft_utf8_bmp_index(entry.word.word, entry.word.word_len);
+      if (index >= 0) {
+        codes[index] = entry.code;
+      }
+    }
+  }
 }
 
 int ObArrayHashMap::insert(const ObString &key, ObFTWordCode code)

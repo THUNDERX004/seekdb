@@ -66,6 +66,7 @@ public:
   int insert(const ObString &key, ObFTWordCode code);
 
   int find(const ObFTSingleWord &word, ObFTWordCode &code) const;
+  void fill_utf8_bmp_codes(ObFTWordCode *codes) const;
 
 private:
   struct Header header_;
@@ -167,7 +168,9 @@ template <typename DataType = void>
 class ObFTDATReader
 {
 public:
-  ObFTDATReader(ObFTDAT *dat) : dat_(dat) {}
+  ObFTDATReader(ObFTDAT *dat) : dat_(dat), utf8_bmp_codes_(nullptr) {}
+
+  int init_utf8_bmp_codes(ObIAllocator &allocator);
 
   // Match single word with hit.
   int match_with_hit(const ObString &single_word,
@@ -176,6 +179,7 @@ public:
 
 private:
   ObFTDAT *dat_;
+  const ObFTWordCode *utf8_bmp_codes_;
 
 private:
   DISALLOW_COPY_AND_ASSIGN(ObFTDATReader);

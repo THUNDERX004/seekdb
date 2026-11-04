@@ -21,7 +21,9 @@ def main():
     args = parser.parse_args()
     rows = {}
     for key in range(1, 2052):
-        terms = {"padding"}
+        # Contiguous and overlapping runs straddle both input and output batches.
+        terms = {"padding", "phasealpha" if key <= 512 else
+                 "phasebeta" if key <= 1024 else "phasegamma"}
         if key % 3:
             terms.add("database")
         if key % 5:
@@ -35,6 +37,16 @@ def main():
         ("database audit", "", lambda terms: bool(terms & {"database", "audit"})),
         ("database database audit", "", lambda terms: bool(terms & {"database", "audit"})),
         ("missingword", "", lambda terms: False),
+        ("database audit search", "",
+         lambda terms: bool(terms & {"database", "audit", "search"})),
+        ("missingword database audit", "",
+         lambda terms: bool(terms & {"database", "audit"})),
+        ("phasealpha phasebeta phasegamma", "",
+         lambda terms: bool(terms & {"phasealpha", "phasebeta", "phasegamma"})),
+        ("phasealpha phasegamma", "",
+         lambda terms: bool(terms & {"phasealpha", "phasegamma"})),
+        ("missingword database audit search", "",
+         lambda terms: bool(terms & {"database", "audit", "search"})),
         ("+database -audit", " IN BOOLEAN MODE",
          lambda terms: "database" in terms and "audit" not in terms),
         ("database audit " + " ".join("word" + str(i) for i in range(300)),

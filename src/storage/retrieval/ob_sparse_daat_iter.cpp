@@ -25,6 +25,7 @@ namespace storage
 
 ObSRMergeCmp::ObSRMergeCmp()
   : cmp_func_(nullptr),
+    binary_ids_(false),
     iter_ids_(nullptr),
     is_inited_(false)
 {
@@ -41,6 +42,7 @@ int ObSRMergeCmp::init(
     iter_ids_ = iter_ids;
     common::ObDatumBasicFuncs *basic_funcs = ObDatumFuncs::get_basic_func(id_meta.type_, id_meta.cs_type_);
     cmp_func_ = basic_funcs->null_first_cmp_;
+    binary_ids_ = id_meta.type_ == common::ObVarcharType && id_meta.cs_type_ == CS_TYPE_BINARY;
     if (OB_ISNULL(cmp_func_)) {
       ret = OB_ERR_UNEXPECTED;
     } else {
@@ -60,8 +62,8 @@ int ObSRMergeCmp::cmp(
     ret = OB_NOT_INIT;
   } else {
     int tmp_ret = 0;
-    if (OB_FAIL(cmp_func_(
-            get_id_datum(l.iter_idx_), get_id_datum(r.iter_idx_), tmp_ret, nullptr))) {
+    if (OB_FAIL(compare_ids(
+            get_id_datum(l.iter_idx_), get_id_datum(r.iter_idx_), tmp_ret))) {
     } else {
       cmp_ret = tmp_ret;
     }
@@ -232,12 +234,7 @@ int ObSRDaaTIterImpl::get_next_rows(const int64_t capacity, int64_t &count)
   } else {
     count = 0;
     const int64_t real_capacity = MIN(capacity, iter_param_->max_batch_size_);
-    while (OB_SUCC(ret) && count < real_capacity) {
-      if (OB_FAIL(do_one_merge_round(count))) {
-        if (OB_UNLIKELY(OB_ITER_END != ret)) {
-        }
-      }
-    }
+    ret = do_merge_batch(real_capacity, count);
 
     if (OB_SUCC(ret) || OB_ITER_END == ret) {
       if (count > 0 && OB_FAIL(project_results(count))) {
@@ -251,6 +248,15 @@ int ObSRDaaTIterImpl::get_next_rows(const int64_t capacity, int64_t &count)
 int ObSRDaaTIterImpl::pre_process()
 {
   return OB_NOT_IMPLEMENT;
+}
+
+int ObSRDaaTIterImpl::do_merge_batch(const int64_t capacity, int64_t &count)
+{
+  int ret = OB_SUCCESS;
+  while (OB_SUCC(ret) && count < capacity) {
+    ret = do_one_merge_round(count);
+  }
+  return ret;
 }
 
 int ObSRDaaTIterImpl::do_one_merge_round(int64_t &count)

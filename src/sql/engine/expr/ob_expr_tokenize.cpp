@@ -377,7 +377,14 @@ int ObExprTokenize::TokenizeParam::reform_parser_properties(const ObString &prop
   int ret = OB_SUCCESS;
   storage::ObFTParserJsonProps parser_properties;
 
-  if (OB_FAIL(parser_properties.init())) {
+  if (properties.empty()) {
+    parser_property_ = storage::ObFTParserProperty();
+    if (parser_.is_ik()) {
+      parser_property_.dict_table_ = ObString(storage::ObFTSLiteral::CONFIG_NAME_DICT_TABLE);
+      parser_property_.stopword_table_ = ObString(storage::ObFTSLiteral::CONFIG_NAME_STOPWORD_TABLE);
+      parser_property_.quantifier_table_ = ObString(storage::ObFTSLiteral::CONFIG_NAME_QUANTIFIER_TABLE);
+    }
+  } else if (OB_FAIL(parser_properties.init())) {
   } else if (OB_FAIL(parser_properties.parse_from_valid_str(properties))) {
     LOG_USER_ERROR(OB_INVALID_ARGUMENT, "parser properties invalid.");
   } else if (OB_FAIL(parser_properties.rebuild_props_for_ddl(parser_name_,

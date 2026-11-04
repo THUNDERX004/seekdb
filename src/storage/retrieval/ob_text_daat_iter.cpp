@@ -78,6 +78,58 @@ int ObTextDaaTIter::pre_process()
   return ret;
 }
 
+int ObTextDaaTIter::do_merge_batch(const int64_t capacity, int64_t &count)
+{
+  int ret = OB_SUCCESS;
+  if (iter_param_->need_project_relevance() || iter_param_->need_filter()
+      || mode_flag_ != sql::ObMatchAgainstMode::NATURAL_LANGUAGE_MODE
+      || function_lookup_mode_
+      || dim_iters_->count() > ObSRSimpleMerger::USE_SIMPLE_MERGER_MAX_TABLE_CNT) {
+    ret = ObSRDaaTIterImpl::do_merge_batch(capacity, count);
+  } else {
+    // For short existence-only unions, a direct scan of the candidates avoids
+    // rebuilding a heap and transporting a score for each posting. Advance all
+    // equal champions together and copy the result before any next-batch load.
+    const int64_t dim_count = dim_iters_->count();
+    while (OB_SUCC(ret) && count < capacity) {
+      for (int64_t i = 0; OB_SUCC(ret) && i < next_round_cnt_; ++i) {
+        const int64_t idx = next_round_iter_idxes_[i];
+        auto *token_iter = static_cast<ObTextRetrievalDaaTTokenIter *>(dim_iters_->at(idx));
+        if (OB_ISNULL(token_iter)) {
+          ret = OB_ERR_UNEXPECTED;
+        } else if (OB_FAIL(token_iter->next_doc_id(iter_domain_ids_[idx]))) {
+          if (OB_ITER_END == ret) {
+            iter_domain_ids_[idx] = nullptr;
+            ret = OB_SUCCESS;
+          }
+        }
+      }
+      next_round_cnt_ = 0;
+      const ObDatum *champion = nullptr;
+      for (int64_t i = 0; OB_SUCC(ret) && i < dim_count; ++i) {
+        const ObDatum *id = iter_domain_ids_[i];
+        int comparison = -1;
+        if (nullptr == id) {
+        } else if (nullptr != champion && OB_FAIL(merge_cmp_.compare_ids(*id, *champion, comparison))) {
+        } else if (comparison <= 0) {
+          if (comparison < 0) {
+            champion = id;
+            next_round_cnt_ = 0;
+          }
+          next_round_iter_idxes_[next_round_cnt_++] = i;
+        }
+      }
+      if (OB_FAIL(ret)) {
+      } else if (nullptr == champion) {
+        ret = OB_ITER_END;
+      } else {
+        ret = cache_result(count, *champion, 1.0);
+      }
+    }
+  }
+  return ret;
+}
+
 int ObTextDaaTIter::do_one_merge_round(int64_t &count)
 {
   int ret = OB_SUCCESS;

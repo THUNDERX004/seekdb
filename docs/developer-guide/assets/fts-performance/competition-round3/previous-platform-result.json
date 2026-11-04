@@ -1,0 +1,17 @@
+{
+  "source": "Metrics supplied by user for the prior submission; not a measurement of this candidate.",
+  "fts_mean_improvement": 0.10549595786628246,
+  "fts_raw_score": 21.099191573256494,
+  "weighted_points_50": 10.549595786628247,
+  "metrics": {
+    "build_beng_en_sec": 2.523,
+    "build_ik_all_sec": 6.657,
+    "build_ik_content_sec": 5.228,
+    "tokenize_beng_avg_ms": 0.0387,
+    "tokenize_ik_avg_ms": 0.0724,
+    "query_cn_avg_ms": 0.9593,
+    "query_beng_avg_ms": 1.4977,
+    "query_mixed_avg_ms": 1.0962,
+    "query_limit_avg_ms": 1.9366
+  }
+}

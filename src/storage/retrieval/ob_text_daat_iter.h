@@ -63,6 +63,7 @@ public:
   virtual void reset() override;
 protected:
   virtual int pre_process() override;
+  virtual int do_merge_batch(const int64_t capacity, int64_t &count) override;
   virtual int do_one_merge_round(int64_t &count) override;
 protected:
   ObBM25ParamEstimator bm25_param_estimator_;

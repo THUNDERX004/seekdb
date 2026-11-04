@@ -1,0 +1,24 @@
+{
+  "label": "round3-dispatch-candidate-2",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build_fts_competition\\src\\observer\\seekdb.exe",
+  "source_commit": "d59a97b27+dictionary+direct-union+binary-ids+charset-dispatch-uncommitted",
+  "binary_sha256": "63ebceeea3c10323213e848a449c7f9ec081f013fe3148e1469b9c5bf28b6cc1",
+  "actions": [
+    {
+      "action": "benchmark",
+      "exit_code": 0,
+      "seconds": 37.00741810000909
+    },
+    {
+      "action": "input-validation",
+      "exit_code": 0,
+      "seconds": 0.11675249999098014
+    },
+    {
+      "action": "micro",
+      "exit_code": 0,
+      "seconds": 15.747253499997896
+    }
+  ],
+  "report": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase\u6bd4\u8d5b\\setup\\fts\\round3-dispatch-candidate-2-report.txt"
+}

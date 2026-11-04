@@ -1,0 +1,18 @@
+[0/2] Re-checking globbed directories...
+[1/16] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/ftsparser_tab.c.obj
+[2/16] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/ftsblex_lex.c.obj
+[3/16] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/fts_parse.c.obj
+[4/16] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/non_reserved_keywords_mysql_mode.c.obj
+[5/16] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/type_name.c.obj
+[6/16] Building C object src/pl/CMakeFiles/ob_pl.dir/parser/pl_non_reserved_keywords_mysql_mode.c.obj
+[7/16] Building C object src/pl/CMakeFiles/ob_pl.dir/parser/pl_parser_mysql_mode_lex.c.obj
+[8/16] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/sql_parser_mysql_mode_lex.c.obj
+[9/16] Building C object src/pl/CMakeFiles/ob_pl.dir/parser/pl_parser_mysql_mode_tab.c.obj
+[10/16] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_charset_0_c___cxx.cxx.obj
+[11/16] Linking CXX static library src\oblib\oblib.lib
+[12/16] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/sql_parser_mysql_mode_tab.c.obj
+[13/16] Linking CXX static library src\sql\parser\ob_sql_server_parser_static.lib
+[14/16] Linking CXX static library src\observer\oceanbase_static.lib
+[15/16] Linking CXX executable src\observer\seekdb.exe
+-- BundleRuntimeDllsWindows: unresolved (likely system) VCRUNTIME140_1.dll
+-- BundleRuntimeDllsWindows: bundled 12 DLLs -> D:/Projects/OceanBase/seekdb/build_fts_competition/src/observer

@@ -41,7 +41,7 @@ collation-equivalent words and verifies repeated-word frequencies. Its fixture
 was recorded on the same unmodified executable and rechecked after restarting
 that original binary. JSON token arrays are compared exactly in this suite.
 
-The batch suite independently derives the complete expected document-ID sets
+The expanded batch suite checks 480 complete results and independently derives the complete expected document-ID sets
 from 2,051 input documents per table. It checks simple/composite primary keys,
 overlapping posting lists, long token lists, OFFSET crossing batch boundaries,
 updates, deletes, transactions and rollback.
@@ -111,3 +111,19 @@ Set MYSQL and MYSQL_VERBOSE to that executable plus the usual -N -s -A
 --default-character-set=utf8mb4 flags. Use exactly the same client binary for
 the original and candidate. The native comparison is retained separately from
 the PyMySQL-client comparison; it does not establish a formal CI score.
+
+## Competition BMP dictionary lookup coverage
+
+```bash
+python3 unittest/storage/fts/test_dictionary_bmp.py --port 2891
+```
+
+The 2,488 SHA-256 digests cover every complete ordered JSON result in both IK
+modes. Inputs include every BMP scalar outside the surrogate range, fixed-seed
+mixes, repeated characters, character-context combinations and supplementary
+planes. Expected outputs were independently recorded on the official
+competition original, not on a candidate. The optimized dictionary tables are
+derived from original dictionary entries; they contain no workload literals.
+The expanded MATCH batch suite includes one/two/three-term unions, exhausted
+streams, overlapping and contiguous runs, plus longer-query fallbacks.
+See the round-3 evidence in the performance report for final binaries and logs.

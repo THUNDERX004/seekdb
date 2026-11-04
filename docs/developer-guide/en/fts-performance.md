@@ -1,5 +1,29 @@
 # Full-text performance optimization
 
+## Round 3 on the official competition baseline (2026-11-04)
+
+The official `2026-competition` original 5bce9e06d1281347ad61344e4b01fab9158c58a2 and the final candidate each ran the unchanged complete benchmark twice. All samples and negative changes are retained.
+Category reductions are **build 7.43%, tokenization 17.84%, query 41.62%**, for an equally weighted **22.30%** overall reduction. Local variance remains substantial. This has not achieved the 50% target and does not establish a formal platform score.
+The user's prior platform result was 21.099/100 raw performance points, or 10.550/50 after the task weight. This candidate requires another platform evaluation.
+
+| Metric (seconds or milliseconds) | Original mean of two runs | Candidate mean of two runs | Time reduction |
+| --- | ---: | ---: | ---: |
+| `build_ik_all_sec` | 8.20200 | 8.26250 | -0.74% |
+| `build_ik_content_sec` | 6.93550 | 6.11850 | 11.78% |
+| `build_beng_en_sec` | 3.98600 | 3.53800 | 11.24% |
+| `tokenize_ik_avg_ms` | 0.21360 | 0.17640 | 17.42% |
+| `tokenize_beng_avg_ms` | 0.14205 | 0.11610 | 18.27% |
+| `query_cn_avg_ms` | 2.09900 | 1.02970 | 50.94% |
+| `query_beng_avg_ms` | 2.64155 | 1.34505 | 49.08% |
+| `query_mixed_avg_ms` | 2.18695 | 1.07250 | 50.96% |
+| `query_limit_avg_ms` | 2.60460 | 2.20055 | 15.51% |
+
+IK samples identified per-character hash and range lookups. Read-only BMP code/range tables are derived from the original dictionaries; supplementary/non-canonical inputs and allocation failures retain the original lookups. Memory costs 256KiB per DAT range plus 128KiB per range dictionary, owned by the shared dictionary lifetime; serialized dictionaries and cache formats are unchanged. The invocation-owned arbitration map avoids bucket locks, and empty TOKENIZE properties directly construct equivalent defaults. Query samples identified per-posting heap work and charset dispatch. Short score-free natural-language unions directly merge IDs, advance duplicates together and copy output before batch refills, honoring the caller's batch capacity. Ranked, boolean and functional lookup paths retain their algorithms. Binary ID comparison preserves trailing spaces, NUL and length ordering. Shared strcmpsp reuses initialized charset entries while retaining the existing cold/invalid-argument path.
+
+The final candidate passed seven complete-result suites, 2,488 complete BMP outputs independently recorded on the official original, 480 expanded batch-boundary checks, and two normal close/reopen cycles. Shared sorting checks cover 27 groups and 52,963 full result rows. Benchmark hits remain 8001/11000/7332/20.
+Report git_head describes the checkout; selected executable provenance and SHA-256 come from experiment metadata.
+[Complete evidence and limitations](../assets/fts-performance/competition-round3/comparison.json) retain raw reports and diagnostics. Official workload, SQL, timing, scoring, baseline and build files are unchanged. Migration and master results below remain historical records.
+
 > Baseline correction (2026-11-04): the submission now uses the official
 > `upstream/2026-competition` baseline
 > `5bce9e06d1281347ad61344e4b01fab9158c58a2` on

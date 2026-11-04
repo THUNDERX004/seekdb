@@ -1,0 +1,139 @@
+{
+  "date": "2026-11-04",
+  "official_baseline": "5bce9e06d1281347ad61344e4b01fab9158c58a2",
+  "source_parent": "d59a97b27049222e9fa99983c496f6d692b88c72",
+  "branch": "codex/fts-performance-competition",
+  "source_patch_sha256": "92704f8b192049410c698815d49bb88565bc21d5f51f1e87e2a0cb884b3eb0a5",
+  "candidate_sha256": "63ebceeea3c10323213e848a449c7f9ec081f013fe3148e1469b9c5bf28b6cc1",
+  "original_sha256": "bae4a3b9e1b4662d4021b28d5adc085764beb6cf02122eacd57b8e16b6fe1762",
+  "environment": "Same Windows x64 Clang 18/O2/Unity CMake build; OB_ENABLE_STANDBY=OFF; dedicated SQL2891/RPC2892; 4 CPU, 2G memory, 2G log; same native client",
+  "comparison": {
+    "controls": [
+      "round2-baseline-1",
+      "round3-original-2"
+    ],
+    "candidates": [
+      "round3-dispatch-candidate-1",
+      "round3-dispatch-candidate-2"
+    ],
+    "per_metric": {
+      "build_ik_all_sec": {
+        "original_mean": 8.202,
+        "candidate_mean": 8.2625,
+        "reduction": -0.007376249695196212
+      },
+      "build_ik_content_sec": {
+        "original_mean": 6.935499999999999,
+        "candidate_mean": 6.1185,
+        "reduction": 0.11779972604714864
+      },
+      "build_beng_en_sec": {
+        "original_mean": 3.9859999999999998,
+        "candidate_mean": 3.5380000000000003,
+        "reduction": 0.11239337681886591
+      },
+      "tokenize_ik_avg_ms": {
+        "original_mean": 0.2136,
+        "candidate_mean": 0.1764,
+        "reduction": 0.17415730337078655
+      },
+      "tokenize_beng_avg_ms": {
+        "original_mean": 0.14205,
+        "candidate_mean": 0.11610000000000001,
+        "reduction": 0.1826821541710665
+      },
+      "query_cn_avg_ms": {
+        "original_mean": 2.099,
+        "candidate_mean": 1.0297,
+        "reduction": 0.5094330633635065
+      },
+      "query_beng_avg_ms": {
+        "original_mean": 2.64155,
+        "candidate_mean": 1.34505,
+        "reduction": 0.49081031969866173
+      },
+      "query_mixed_avg_ms": {
+        "original_mean": 2.18695,
+        "candidate_mean": 1.0725,
+        "reduction": 0.5095909828756945
+      },
+      "query_limit_avg_ms": {
+        "original_mean": 2.6046,
+        "candidate_mean": 2.20055,
+        "reduction": 0.15512938647009147
+      }
+    },
+    "per_category": {
+      "build": 0.07427228439027278,
+      "tokenize": 0.17841972877092654,
+      "query": 0.41624093810198853
+    },
+    "overall": 0.22297765042106263
+  },
+  "report_note": "git_head identifies the working checkout, not the selected executable; identify each executable by experiment.json source_commit and binary_sha256.",
+  "limitations": [
+    "Local machine only; does not establish a formal competition score or Linux CI success.",
+    "All measured runs and negative metric changes are retained. No outlier trimming or SELECT1 subtraction.",
+    "Full baseline/CI/data/SQL/timing/scoring inputs are unchanged.",
+    "Benchmark hit counts supplement complete result regressions, not replace them.",
+    "Optional tables cost 256KiB per DAT range plus 128KiB per range dictionary. Allocation failure keeps original lookups.",
+    "TaaT bucket tuning was removed because no benefit was established on the active path."
+  ],
+  "fixture_sha256": "4e5f1c528b5fed14dee6746e73993afd8e16f727e9e09dcbbd4d399b2ac4a371",
+  "file_sha256": {
+    "previous-platform-result.json": "0da2c0d7a5cc9493a701435d1718633304751de86fd4dd369849f6a315093127",
+    "round2-baseline-1-experiment.json": "6dbb351a67b2f26a9cbbb33ff51a62396af410cf92a4223e09d044a5e3c0118e",
+    "round2-baseline-1-report.txt": "25228f45d407b0b3f289d4af45ff48c2f287dbf5c447c838a78273be93b78a38",
+    "round2-bmp-original-bmp.log": "2e29b9457c25b42dfeecd70a582bd08c4261f8e77759833df364f55f96589ee1",
+    "round2-bmp-original-experiment.json": "df2e5c4a422f549d5dc1590659fd0cb76a2e7fed77fb57a6c212709881364d28",
+    "round2-control-2-experiment.json": "9b0a30ea3e7023dcecc4eff015c90414a32abe611014e1301655dddd114ee127",
+    "round2-control-2-micro.json": "93dace05d1ce8f24d9341fa0dac02d88152713704e9c1ec36af2a072fd52c1d7",
+    "round2-control-2-report.txt": "b55b086c24e4ddeaf8e580eb3f5b536e0b85e8dbc6283e0b8354ac5cdc33679e",
+    "round2-profile-2-ik-profile.json": "6392fa0b75823629ac05fdc208fae567913d1d1e4c45b49a65735094fbef04f8",
+    "round2-ranges-candidate-1-build-profile.json": "7e06e57ac1b82f7828b59e422be7d901d7b2a208c49f1e04c81f9ea2d26d637c",
+    "round2-ranges-candidate-1-experiment.json": "5e6a23aa3e0a1afce176d9ee9c95d96444742a318a10da21ea86a69b08956d52",
+    "round2-ranges-candidate-1-micro.json": "9b3272407ed078abf2531117ee94f1f7abd38d6daffb8cdc28dbf2e51c65f653",
+    "round2-ranges-candidate-1-query-beng-profile.json": "0da7270813efd42ebe04e03cb666a0ad65e267babb9930cb4b38579688144d34",
+    "round2-ranges-candidate-1-report.txt": "73e5029d728aefdf36c1b380420eb0692ad3402358f3d27a91de0446f0151e3b",
+    "round3-binary-candidate-1-build-profile.json": "deb1bf9be38c4b0d5488299480bb740303d1cfb5d708255a2b014e8b5afe945d",
+    "round3-binary-candidate-1-experiment.json": "c38c2e3ce68dbc240f38903ed0ee3f44a336ec68e8fd60de3fe909bd0136fb0b",
+    "round3-binary-candidate-1-micro.json": "de050b6864ed10f9da9e776423acf1f6054a8828dea1b0d33386b83c5e3c2cb4",
+    "round3-binary-candidate-1-query-limit-profile.json": "034cf956b4d938f2879f704a883e07cb4c02b8d034c69487b00d617597a7d87e",
+    "round3-binary-candidate-1-report.txt": "ab39f286200ec192cb076e4c4911a3cba536ad7958079597f5a03b2727523254",
+    "round3-charset-dispatch-build.log": "7130a477af8cfb7bcf36b246bdbe4fc6a2dfd48fd2171a7921af1590931f1db4",
+    "round3-charset-dispatch-configure.log": "a1b01f344d9de8ea0298e3551a7ce20ed39d7f58e8c78239a0b0561a14545ac0",
+    "round3-dictionary-lifecycle.log": "4933f19f0f3cca9cdf76268426700508043d3afbe5fcb070a1de733224186ee2",
+    "round3-dispatch-candidate-1-bmp.log": "aa97176bd911f50dc1d194cc014294387e642091e422f0e51b68b5e0cdba5560",
+    "round3-dispatch-candidate-1-experiment.json": "57264c90e7b01d465dc4cd3639b1d684461c997cf8ca5052ad7c169be24eb205",
+    "round3-dispatch-candidate-1-input-validation.log": "cb74fa12c5035372c3d7daf81c42b83af9ff7c0a8798915c779d1eb57e34dd98",
+    "round3-dispatch-candidate-1-micro.json": "e84851e31de07b03b138f2dad7881314aeb1307351105f279a98926096b87fdf",
+    "round3-dispatch-candidate-1-report.txt": "1effc17a7387d99648787a1fb0a6494f0abef29fc02d0c8b55ca1e3e3cd738df",
+    "round3-dispatch-candidate-1-test_collation.py.log": "1b45e616715a543f260ea4660662ecd537656f1637fa3fbb4e8d7af0c17340b9",
+    "round3-dispatch-candidate-1-test_dictionary_prefixes.py.log": "1f5ae6bc386a82b10c49585b7edf77c113506846041caaf636ba795380434026",
+    "round3-dispatch-candidate-1-test_hot_path.py.log": "db0ad8575c82a5a5765810b4dfd5a1f18c34b956f1fa9f305f98c412d117010c",
+    "round3-dispatch-candidate-1-test_map_concurrency.py.log": "28778445a5ebd0c93bb94d840004fdfc374462bec204fcbc3019c6e36ce35336",
+    "round3-dispatch-candidate-1-test_match_batches.py.log": "2b5fea81fff98c4b08a50231c6297175c0ece19281e73139ece2ec413c49cbc6",
+    "round3-dispatch-candidate-1-test_stopword_concurrency.py.log": "e31de6810c920435650a7b49686eab94a54716a7e6a78fb0618dbf688bb91b6a",
+    "round3-dispatch-candidate-1-test_tokenize_config.py.log": "a9bdcaf2a613b546f46e3e52f9de594437a1a437ef5054808ee2cc53c36453f5",
+    "round3-dispatch-candidate-2-experiment.json": "300944cc1074e37c00b113041862c430de04473504a21e13ddc69dc1e4150861",
+    "round3-dispatch-candidate-2-input-validation.log": "5d49d7e25a0faec91c3bb3baceb596d802c25f76340d3aa07e6a3b6b78efa9ab",
+    "round3-dispatch-candidate-2-micro.json": "3ae58266c200462eb06238ea0fc465c9c9df387831dbd0427f814f76fc4103d8",
+    "round3-dispatch-candidate-2-report.txt": "3c5288eadf7565429f8955e3299f7fcc85805c5491bc10edf1354ba59a2e424f",
+    "round3-original-2-experiment.json": "7274cfa07302f48f671fa9760f71bccf711312f03d446601c3d27917a2720030",
+    "round3-original-2-micro.json": "54fa125eab237f9080fe83c0b9bf457117b9e8d6735b5e477bc97d8795495aa2",
+    "round3-original-2-report.txt": "0bba1ce6417663035bcdce5c8524ca06ef20f59b73f4b251ccf7d4252cc9a5fe",
+    "round3-original-2-test_collation.py.log": "1b45e616715a543f260ea4660662ecd537656f1637fa3fbb4e8d7af0c17340b9",
+    "round3-original-2-test_dictionary_prefixes.py.log": "1f5ae6bc386a82b10c49585b7edf77c113506846041caaf636ba795380434026",
+    "round3-original-2-test_hot_path.py.log": "db0ad8575c82a5a5765810b4dfd5a1f18c34b956f1fa9f305f98c412d117010c",
+    "round3-original-2-test_map_concurrency.py.log": "28778445a5ebd0c93bb94d840004fdfc374462bec204fcbc3019c6e36ce35336",
+    "round3-original-2-test_match_batches.py.log": "2b5fea81fff98c4b08a50231c6297175c0ece19281e73139ece2ec413c49cbc6",
+    "round3-original-2-test_stopword_concurrency.py.log": "e31de6810c920435650a7b49686eab94a54716a7e6a78fb0618dbf688bb91b6a",
+    "round3-original-2-test_tokenize_config.py.log": "a9bdcaf2a613b546f46e3e52f9de594437a1a437ef5054808ee2cc53c36453f5",
+    "round3-union-candidate-1-experiment.json": "a1d815636123982ec726f61607cc561da22f343b7ac895d8112af6ef49153142",
+    "round3-union-candidate-1-micro.json": "7e763cdd84a26dcf0fbb43ffd6c336f2ecd4b4b9ca2012af92ef9cd235054128",
+    "round3-union-candidate-1-report.txt": "91dcf8fe4e5bf25a843459300d3bfc2e9f4e5bf6eb8244838411af3292cb6e48",
+    "source.patch.gz": "1e33ed769177b16a57b30297f746f616578d849262ac19bb518d944e4d6ddfa2"
+  },
+  "source_patch_file": "source.patch.gz",
+  "source_patch_note": "Text evidence uses LF line endings; source.patch.gz decompresses to the exact git diff -- src patch."
+}

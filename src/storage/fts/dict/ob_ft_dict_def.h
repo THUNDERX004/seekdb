@@ -25,6 +25,26 @@ namespace oceanbase
 {
 namespace storage
 {
+// An acceleration index for canonical UTF-8 BMP characters. Other byte
+// sequences continue through the original byte-key dictionary lookup.
+inline int32_t ft_utf8_bmp_index(const char *text, const int64_t length)
+{
+  const unsigned char *s = reinterpret_cast<const unsigned char *>(text);
+  int32_t index = -1;
+  if (nullptr != text && length == 1 && s[0] < 0x80) {
+    index = s[0];
+  } else if (nullptr != text && length == 2 && s[0] >= 0xc2 && s[0] <= 0xdf
+             && (s[1] & 0xc0) == 0x80) {
+    index = ((s[0] & 0x1f) << 6) | (s[1] & 0x3f);
+  } else if (nullptr != text && length == 3 && s[0] >= 0xe0 && s[0] <= 0xef
+             && (s[1] & 0xc0) == 0x80 && (s[2] & 0xc0) == 0x80
+             && (s[0] != 0xe0 || s[1] >= 0xa0)
+             && (s[0] != 0xed || s[1] < 0xa0)) {
+    index = ((s[0] & 0x0f) << 12) | ((s[1] & 0x3f) << 6) | (s[2] & 0x3f);
+  }
+  return index;
+}
+
 typedef int32_t ObFTWordCode;
 typedef int32_t ObFTWordBase;
 typedef uint32_t ObFTWordStateIndex;

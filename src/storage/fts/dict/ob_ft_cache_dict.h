@@ -38,6 +38,10 @@ public:
   {
   }
   int init() override;
+  int init_utf8_bmp_codes(ObIAllocator &allocator)
+  {
+    return reader_.init_utf8_bmp_codes(allocator);
+  }
   int match(const ObString &single_word, ObDATrieHit &hit) const override;
   int match(const ObString &words, bool &is_match) const override;
   int match_with_hit(const ObString &single_word,

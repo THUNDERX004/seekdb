@@ -1,0 +1,6 @@
+test_close_reopen (__main__.DictionaryLifecycleTest.test_close_reopen) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 5.137s
+
+OK

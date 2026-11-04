@@ -1,0 +1,24 @@
+{
+  "label": "round2-control-2",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-competition-candidate\\seekdb.exe",
+  "source_commit": "d59a97b27049222e9fa99983c496f6d692b88c72",
+  "binary_sha256": "6ab8d0349decdede08e40893231d0514fa9895c8efc1f8d3ca2d93d348db72a6",
+  "actions": [
+    {
+      "action": "benchmark",
+      "exit_code": 0,
+      "seconds": 34.97330170001078
+    },
+    {
+      "action": "input-validation",
+      "exit_code": 0,
+      "seconds": 0.11525719999917783
+    },
+    {
+      "action": "micro",
+      "exit_code": 0,
+      "seconds": 21.28289099999529
+    }
+  ],
+  "report": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase\u6bd4\u8d5b\\setup\\fts\\round2-control-2-report.txt"
+}
