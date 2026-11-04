@@ -290,3 +290,18 @@ but was rejected after three full pairs showed unstable benefit and a tokenize
 category regression. Its planned native helper did not compile or run because
 capture settings were missing. SQL equality does not establish allocator
 failure-path safety. See the round-14 evidence and validation limitations.
+
+## IK chain-directory boundary regression (round 15)
+
+```sh
+python3 unittest/storage/fts/test_ik_chain_directory.py --port 2891 --expected unittest/storage/fts/ik_chain_directory_expected.json.gz
+```
+
+The 972-case independent-original fixture covers smart/max_word, DEFAULT/ALL,
+three UTF8 collations, disjoint phrases, overlaps, NUL and segment boundaries.
+Compare complete ordered JSON bytes, column metadata, warnings and exact errors.
+Recording requires the verified official-original binary, never candidate output.
+This suite issues parameterized SELECTs on dedicated port 2891 and creates no
+tables. Input phrase counts do not assert a particular internal directory size.
+See round-15 decision.json for fixture SHA256 and provenance. The small-array
+production experiment was rejected after a 1.2912% full-benchmark regression.

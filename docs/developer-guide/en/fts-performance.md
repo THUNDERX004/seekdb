@@ -1,5 +1,13 @@
 # Full-text performance optimization
 
+## Round 15 IK chain-directory experiment (2026-11-04)
+
+Decision: **reject** the small-array chain directory. Three full pairs show build +0.6844%, tokenize -0.1953%, query -4.3628%, and equal-category overall **-1.2912%** time reduction. Pair totals are -4.0185%, +0.7303%, -1.0909%. The unscored engine-only IK diagnostic improves about 6.74%; scored IK TOKENIZE means are equal. Retain unchanged BENG fluctuations without assigning a cause.
+
+The pinned candidate passed 1,560 complete TOKENIZE cases, seven established suites, and **972 new cases** spanning IK modes, both output modes, three UTF8 collations, capacity inputs, overlapping words, NUL and the 1000-character segmentation boundary. The new fixture was independently recorded from the official original and compares complete ordered JSON bytes, metadata, warnings and 12 original errors. No direct private-directory allocation-failure test ran; SQL equality does not prove that path.
+
+[Round 15 evidence](../assets/fts-performance/competition-round15/manifest.json) preserves all six full runs, diagnostics, exact patch/source/binary identities, review and original-fixture provenance. Both production files were restored. No new formal score or full marks is claimed.
+
 ## Round 14 rejected experiments (2026-11-04)
 
 Both production experiments were restored. Each has three serial, complete pairs against the same-configuration parent executable. Reductions use ratios of the three metric means, followed by equal category weighting; all negative values remain.

@@ -1,0 +1,31 @@
+{
+  "date": "2026-11-04",
+  "decision": "rejected; both IK production files restored exactly",
+  "overall_reduction": -0.012912473386346567,
+  "class_reductions": {
+    "build": 0.006843973146741635,
+    "tokenize": -0.001953125000000056,
+    "query": -0.04362826830578128
+  },
+  "ik_micro_reduction_unscored": 0.06740610559311967,
+  "reason": "No repeatable scored overall benefit, despite an engine-only IK diagnostic improvement",
+  "causality_limit": "Unchanged BENG timing changes are retained; this comparison does not establish their cause",
+  "correctness": {
+    "existing_complete_tokenize_cases": 1560,
+    "standard_suites": 7,
+    "focused_complete_ik_cases": 972,
+    "status": "all passed on pinned candidate"
+  },
+  "fixture": {
+    "path": "unittest\\storage\\fts\\ik_chain_directory_expected.json.gz",
+    "sha256": "e3ce3092c328012dc8f4a4408d85455cec06673cb4630b288b031966dcdf6617",
+    "workload_sha256": "88503130a31c4da39c8d7579691b32547f5fd297b8adee4f3f7a1a3f9cf94f68"
+  },
+  "fixture_provenance": {
+    "commit": "5bce9e06d1281347ad61344e4b01fab9158c58a2",
+    "binary_sha256": "bae4a3b9e1b4662d4021b28d5adc085764beb6cf02122eacd57b8e16b6fe1762"
+  },
+  "native_limit": "No direct private-directory allocation-failure/lifecycle test executed; SQL does not prove those paths",
+  "formal_result": "No new formal score; only the user's earlier raw21.099/100, weighted10.55/50",
+  "protection": "Official workload, SQL, timing, scoring and build/CI files unchanged"
+}
