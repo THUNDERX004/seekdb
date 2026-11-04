@@ -4293,10 +4293,13 @@ int ObDMLResolver::resolve_file_table_item(const ParseNode &parse_tree,
         data_type.set_obj_type(ObDateType);
         data_type.set_accuracy(ObAccuracy::DDL_DEFAULT_ACCURACY[ObDateType]);
         break;
-      case file_sql::ColumnType::DATETIME:
+      case file_sql::ColumnType::DATETIME: {
+        ObAccuracy datetime_accuracy = ObAccuracy::DDL_DEFAULT_ACCURACY[ObDateTimeType];
+        datetime_accuracy.set_scale(0);
         data_type.set_obj_type(ObDateTimeType);
-        data_type.set_accuracy(ObAccuracy::DDL_DEFAULT_ACCURACY[ObDateTimeType]);
+        data_type.set_accuracy(datetime_accuracy);
         break;
+      }
       case file_sql::ColumnType::VARCHAR:
       default: {
         ObCollationType collation = CS_TYPE_INVALID;
