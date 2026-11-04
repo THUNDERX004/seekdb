@@ -89,17 +89,35 @@ int ObTextDaaTIter::do_merge_batch(const int64_t capacity, int64_t &count)
   } else {
     // For short existence-only unions, a direct scan of the candidates avoids
     // rebuilding a heap and transporting a score for each posting. Advance all
-    // equal champions together and copy the result before any next-batch load.
+    // equal champions together; materialized results must be copied before
+    // any next-batch load.
     const int64_t dim_count = dim_iters_->count();
+    ObISRDaaTDimIter *const *const dim_iters = dim_iters_->get_data();
+    const ObDatum **const domain_ids = iter_domain_ids_.get_data();
+    int64_t *const next_round_iter_idxes = next_round_iter_idxes_.get_data();
+    const int64_t initial_count = count;
+    // Preserve cache_result's capacity error path if the buffers are smaller.
+    const bool count_only = !iter_param_->materialize_results_
+        && !iter_param_->limit_param_->is_valid() && count >= 0
+        && capacity <= buffered_domain_ids_.count()
+        && capacity <= buffered_relevances_.count();
+    if (OB_UNLIKELY(dim_count < 0 || dim_count != iter_domain_ids_.count()
+        || dim_count != next_round_iter_idxes_.count()
+        || next_round_cnt_ < 0 || next_round_cnt_ > dim_count
+        || (dim_count > 0 && (OB_ISNULL(dim_iters) || OB_ISNULL(domain_ids)
+            || OB_ISNULL(next_round_iter_idxes))))) {
+      ret = OB_ERR_UNEXPECTED;
+    }
     while (OB_SUCC(ret) && count < capacity) {
       for (int64_t i = 0; OB_SUCC(ret) && i < next_round_cnt_; ++i) {
-        const int64_t idx = next_round_iter_idxes_[i];
-        auto *token_iter = static_cast<ObTextRetrievalDaaTTokenIter *>(dim_iters_->at(idx));
+        const int64_t idx = next_round_iter_idxes[i];
+        OB_ASSERT(idx >= 0 && idx < dim_count);
+        auto *token_iter = static_cast<ObTextRetrievalDaaTTokenIter *>(dim_iters[idx]);
         if (OB_ISNULL(token_iter)) {
           ret = OB_ERR_UNEXPECTED;
-        } else if (OB_FAIL(token_iter->next_doc_id(iter_domain_ids_[idx]))) {
+        } else if (OB_FAIL(token_iter->next_doc_id(domain_ids[idx]))) {
           if (OB_ITER_END == ret) {
-            iter_domain_ids_[idx] = nullptr;
+            domain_ids[idx] = nullptr;
             ret = OB_SUCCESS;
           }
         }
@@ -107,7 +125,7 @@ int ObTextDaaTIter::do_merge_batch(const int64_t capacity, int64_t &count)
       next_round_cnt_ = 0;
       const ObDatum *champion = nullptr;
       for (int64_t i = 0; OB_SUCC(ret) && i < dim_count; ++i) {
-        const ObDatum *id = iter_domain_ids_[i];
+        const ObDatum *id = domain_ids[i];
         int comparison = -1;
         if (nullptr == id) {
         } else if (nullptr != champion && OB_FAIL(merge_cmp_.compare_ids(*id, *champion, comparison))) {
@@ -116,15 +134,23 @@ int ObTextDaaTIter::do_merge_batch(const int64_t capacity, int64_t &count)
             champion = id;
             next_round_cnt_ = 0;
           }
-          next_round_iter_idxes_[next_round_cnt_++] = i;
+          next_round_iter_idxes[next_round_cnt_++] = i;
         }
       }
       if (OB_FAIL(ret)) {
       } else if (nullptr == champion) {
         ret = OB_ITER_END;
+      } else if (count_only) {
+        ++count;
       } else {
         ret = cache_result(count, *champion, 1.0);
       }
+    }
+    if (count_only) {
+      // Account rows already produced even if a later advance/compare failed.
+      const int64_t produced_count = count - initial_count;
+      input_row_cnt_ += produced_count;
+      output_row_cnt_ += produced_count;
     }
   }
   return ret;

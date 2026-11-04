@@ -140,7 +140,8 @@ public:
     int ret = OB_SUCCESS;
     if (cur_idx_ + 1 < count_) {
       ++cur_idx_;
-      id_datum = &doc_id_[cur_idx_].get_datum();
+      OB_ASSERT(cur_idx_ >= 0 && cur_idx_ < doc_id_.count());
+      id_datum = &doc_id_.get_data()[cur_idx_].get_datum();
     } else if (OB_FAIL(get_next_row())) {
     } else {
       ret = get_curr_id(id_datum);
