@@ -1,0 +1,53 @@
+[
+  {
+    "name": "count_cn",
+    "sql": "SELECT COUNT(*) FROM fts_large_bench.docs WHERE MATCH(title,content) AGAINST('全文索引 分词器')",
+    "rows": [
+      [
+        8001
+      ]
+    ]
+  },
+  {
+    "name": "count_beng",
+    "sql": "SELECT COUNT(*) FROM fts_large_bench.docs WHERE MATCH(title_en,content_en) AGAINST('database performance audit')",
+    "rows": [
+      [
+        11000
+      ]
+    ]
+  },
+  {
+    "name": "count_mixed",
+    "sql": "SELECT COUNT(*) FROM fts_large_bench.docs WHERE MATCH(content) AGAINST('数据库 database')",
+    "rows": [
+      [
+        6666
+      ]
+    ]
+  },
+  {
+    "name": "ids_ranked",
+    "sql": "SELECT id FROM fts_large_bench.docs WHERE MATCH(title,content) AGAINST('全文索引 分词器') ORDER BY id LIMIT 3",
+    "rows": [
+      [
+        1
+      ],
+      [
+        2
+      ],
+      [
+        3
+      ]
+    ]
+  },
+  {
+    "name": "limit_count",
+    "sql": "SELECT COUNT(*) FROM (SELECT id FROM fts_large_bench.docs WHERE MATCH(content) AGAINST('倒排索引 tokenizer') LIMIT 20)t",
+    "rows": [
+      [
+        20
+      ]
+    ]
+  }
+]

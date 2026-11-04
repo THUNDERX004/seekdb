@@ -1,0 +1,13 @@
+{
+  "attribution": "Parent-agent verification on 2026-11-04; not rerun by the packaging side task.",
+  "source_diff_command": "git diff --binary -- src",
+  "source_diff_matches_patch_byte_for_byte": "round11-trace-source.patch",
+  "production_patch_sha256": "40ea9aa36f6efd0559d4efad439ece943822e32c19ef2dbd90a6337fb904deaf",
+  "parent_commit": "ecbf498d120dabaa01b60b89c49aa18a6b9926a1",
+  "remote_branch": "upstream/2026-competition",
+  "remote_branch_commit": "5bce9e06d1281347ad61344e4b01fab9158c58a2",
+  "official_baseline_ancestor": true,
+  "protected_files_unchanged": true,
+  "candidate_binary_sha256": "9c239e363020a77c201c31456c940084f948d5b5741ec73472af55632c9b91da",
+  "candidate_binary_metadata": "round11-value-free-candidate-1-experiment.json"
+}

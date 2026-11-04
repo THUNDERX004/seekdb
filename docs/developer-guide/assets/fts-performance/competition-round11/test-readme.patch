@@ -1,0 +1,49 @@
+diff --git a/unittest/storage/fts/README.md b/unittest/storage/fts/README.md
+--- a/unittest/storage/fts/README.md
++++ b/unittest/storage/fts/README.md
+@@ -191,3 +191,45 @@
+ to overwrite a fixture. The lowercase pre-copy experiment was rejected; the
+ regression is retained for Unicode parser changes. See the round-9/10 evidence
+ manifests for independent fixture and executable provenance.
++
++## Value-free query materialization regression (round 11)
++
++The independently recorded fixture is `query_materialization_expected.json.gz`.
++It contains 4,416 complete-result cases from the official competition original
++`5bce9e06d1281347ad61344e4b01fab9158c58a2`, binary SHA256
++`bae4a3b9e1b4662d4021b28d5adc085764beb6cf02122eacd57b8e16b6fe1762`.
++Fixture SHA256 is
++`8bb2ccc372e011a1fc290221d601857ca5093d4cdd5fc1449eae20b73b8a2c93`.
++Never record expected results on a candidate or overwrite this fixture.
++
++On an already prepared dedicated instance, run the comparison separately from
++performance measurements:
++
++```sh
++python3 unittest/storage/fts/test_query_materialization.py --port 2891
++```
++
++The script creates and drops its isolated `fts_query_materialization_r11`
++database. It compares complete rows, IDs, expressions, counts, warnings and
++original SQL errors. Its eight tables cover signed/unsigned, binary and
++composite keys with both parser configurations. Requested modes are default,
++batch1, batch256 and batch513; a requested setting does not itself prove the
++effective optimizer plan. Candidate-1 passed all 4,416 cases and all established
++suites. The package contains the final driver as well as the earlier proposal
++copy; the proposal driver predates bool-metadata and Decimal-client fixes.
++
++The first two official-original recordings failed in client serialization and
++Decimal conversion/cleanup. Their complete logs remain alongside successful
++recording-3; packaging does not rerun any recording. LOG_DEBUG diagnostic-1
++lacked its compiled literal and cannot prove eligibility. Final LOG_TRACE
++diagnostic-2 plus the runtime excerpt observe three value-free COUNT paths with
++`materialize_results:false` and two ID/order/LIMIT controls with `true`.
++The runtime diagnostic is outside scored measurements and does not prove all
++optimizer or distributed paths.
++
++See [round-11 evidence](../../../docs/developer-guide/assets/fts-performance/competition-round11/manifest.json).
++The final patch is `round11-trace-source.patch` on parent
++`ecbf498d120dabaa01b60b89c49aa18a6b9926a1`; the earlier LOG_DEBUG patch is
++historical. Three adjacent pairs show only 0.25310035648% overall reduction,
++with tokenization 3.2676% slower. This is a small checkpoint, not stable full
++marks or a new formal platform score. All negative metrics are retained.

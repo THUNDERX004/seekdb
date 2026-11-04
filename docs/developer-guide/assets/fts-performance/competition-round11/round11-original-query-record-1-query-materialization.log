@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb\unittest\storage\fts\test_query_materialization.py", line 314, in <module>
+    main()
+    ~~~~^^
+  File "D:\Projects\OceanBase\seekdb\unittest\storage\fts\test_query_materialization.py", line 293, in main
+    actual = capture(dict(host=args.host, port=args.port, user=args.user,
+                          password=os.getenv("SEEKDB_TEST_PASSWORD", ""),
+                          charset="utf8mb4", use_unicode=False, autocommit=True,
+                          connect_timeout=10, read_timeout=180, write_timeout=180), workload)
+  File "D:\Projects\OceanBase\seekdb\unittest\storage\fts\test_query_materialization.py", line 224, in capture
+    results.append({"id": case["id"], "result": run_query(cursor, case)})
+                                                ~~~~~~~~~^^^^^^^^^^^^^^
+  File "D:\Projects\OceanBase\seekdb\unittest\storage\fts\test_query_materialization.py", line 187, in run_query
+    columns = [[cell(value) for value in column] for column in cursor.description]
+                ~~~~^^^^^^^
+  File "D:\Projects\OceanBase\seekdb\unittest\storage\fts\test_query_materialization.py", line 178, in cell
+    raise TypeError(type(value).__name__)
+TypeError: bool

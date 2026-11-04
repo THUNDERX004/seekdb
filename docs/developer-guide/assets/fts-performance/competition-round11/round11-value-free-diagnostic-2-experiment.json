@@ -1,0 +1,15 @@
+{
+  "label": "round11-value-free-diagnostic-2",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-round11-trace-value-free\\seekdb.exe",
+  "source_commit": "ecbf498d120dabaa01b60b89c49aa18a6b9926a1+round11-trace-source.patch",
+  "binary_sha256": "9c239e363020a77c201c31456c940084f948d5b5741ec73472af55632c9b91da",
+  "log_level": "DEBUG",
+  "base_dir": "C:\\Users\\11946\\AppData\\Local\\Temp\\seekdb-fts-competition-candidate",
+  "actions": [
+    {
+      "action": "materialization-diagnostic",
+      "exit_code": 0,
+      "seconds": 0.4575308999919798
+    }
+  ]
+}

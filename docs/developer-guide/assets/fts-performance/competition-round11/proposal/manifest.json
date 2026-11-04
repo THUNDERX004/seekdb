@@ -1,0 +1,293 @@
+{
+  "schema_version": 1,
+  "purpose": "round11 query-result materialization; auxiliary staging only",
+  "created_utc": "2026-11-04T07:54:50.427554+00:00",
+  "source_root": "D:\\Projects\\OceanBase\\seekdb",
+  "source_head": "36519bd8b3782c90f50565ebf6b233beba542600",
+  "source_branch": "codex/fts-performance-competition",
+  "official_baseline": "5bce9e06d1281347ad61344e4b01fab9158c58a2",
+  "source_files": [
+    {
+      "path": "src/sql/code_generator/ob_static_engine_cg.cpp",
+      "original_git_blob": "3c0e701780ebcf57343aa2b806f307e713a27c7a",
+      "original_raw_git_blob": "887a9f1774b76bf1b3d2b49c135a53e6f63458d7",
+      "original_content_sha256": "e2fba3bd3d31d6a14998bb20cd55e421de9bfa910694b984817d3e1edd564b54",
+      "original_content_bytes": 284460,
+      "original_lf_sha256": "c505e4010a2c2e2983d8c4508a1892ea2e50f4a915a3e70b8baed0a4262370e8",
+      "original_lf_git_blob": "3c0e701780ebcf57343aa2b806f307e713a27c7a",
+      "snapshot": "original/src/sql/code_generator/ob_static_engine_cg.cpp",
+      "new_sha256": "75995f8baa8a5dde120fbed4035ea360fa41338bca0ecc6e4c8227673f77babc",
+      "new_bytes": 286810,
+      "new_raw_git_blob": "5253816677daaa4cc1a26bfa0d658aff4ce30149",
+      "new_lf_git_blob": "eb8106d8675a1ddc4dda04bb900dcf079c400eba",
+      "line_endings": "CRLF"
+    },
+    {
+      "path": "src/storage/retrieval/ob_i_sparse_retrieval_iter.h",
+      "original_git_blob": "948e3a45a3f5d2759d8f9be936c27aa70757357a",
+      "original_raw_git_blob": "f997ce82132e08b9b55b1e8b1054e1f6c548706f",
+      "original_content_sha256": "f81c396c65c63aacd32e3beac434e0f13452ba75eeadf21378942b2f4122360c",
+      "original_content_bytes": 5218,
+      "original_lf_sha256": "5941d27371eae864dec72c111c188ae7c7d4914579874e894ce48d3d44078e71",
+      "original_lf_git_blob": "948e3a45a3f5d2759d8f9be936c27aa70757357a",
+      "snapshot": "original/src/storage/retrieval/ob_i_sparse_retrieval_iter.h",
+      "new_sha256": "6d878248b74b70b07ba4e96835df30eaa0e50573a0d2058aae7a8b71feb532b4",
+      "new_bytes": 5387,
+      "new_raw_git_blob": "38ca7769c452239dbdfa816569a303abef4c1179",
+      "new_lf_git_blob": "bbb7f8b23f9eee3d4a79f0849123362215dbd147",
+      "line_endings": "CRLF"
+    },
+    {
+      "path": "src/observer/composition/retrieval/ob_das_legacy_tr_merge_iter.cpp",
+      "original_git_blob": "99c79b9314c52a025b63bdf06062c94fb80f1736",
+      "original_raw_git_blob": "764fd5fb7fecdaa454d599eec66cbe0a77561387",
+      "original_content_sha256": "90c177c1ac560cfafd92002c42eee181fbbe9d7a598be71cbe7b2eec54675b97",
+      "original_content_bytes": 53016,
+      "original_lf_sha256": "b61b2ec7c950e5000a775fdaa0ba2460e6c2dc6bc57e88b51fd646efa7662c3e",
+      "original_lf_git_blob": "99c79b9314c52a025b63bdf06062c94fb80f1736",
+      "snapshot": "original/src/observer/composition/retrieval/ob_das_legacy_tr_merge_iter.cpp",
+      "new_sha256": "5d480053ba4e74540a66adaed2df2241fd9980e5065c13fdff35f4598920bd79",
+      "new_bytes": 53565,
+      "new_raw_git_blob": "fbd2948dea2cfa84fe165de1ba80f2d90ee77fdb",
+      "new_lf_git_blob": "6392a67aac146e273876cbf2e38a40f5787e44e4",
+      "line_endings": "CRLF"
+    },
+    {
+      "path": "src/storage/retrieval/ob_sparse_daat_iter.cpp",
+      "original_git_blob": "0c99f4d6c8689b8c5097376083564f46929b9eb5",
+      "original_raw_git_blob": "0c99f4d6c8689b8c5097376083564f46929b9eb5",
+      "original_content_sha256": "d78aebf8fe8f104882e10e3721c4b101a5a96402aa347f1173c7f1188aff9316",
+      "original_content_bytes": 15743,
+      "original_lf_sha256": "d78aebf8fe8f104882e10e3721c4b101a5a96402aa347f1173c7f1188aff9316",
+      "original_lf_git_blob": "0c99f4d6c8689b8c5097376083564f46929b9eb5",
+      "snapshot": "original/src/storage/retrieval/ob_sparse_daat_iter.cpp",
+      "new_sha256": "7c0b72f3d1d0127b2c7913cc81cfa8bd63a2828a485f1ab7d1d77bd3475b5d32",
+      "new_bytes": 16026,
+      "new_raw_git_blob": "fc32179426733b2d39111ce5e524a40ee996fbb5",
+      "new_lf_git_blob": "fc32179426733b2d39111ce5e524a40ee996fbb5",
+      "line_endings": "LF"
+    }
+  ],
+  "context_only_files": [
+    {
+      "path": "src/storage/fts/ik/ob_ik_char_util.h",
+      "original_git_blob": "f029b7d5f0c18b415db052249d190776fafc8723",
+      "original_raw_git_blob": "8da157e2914745790932629baa16eeb12da1d379",
+      "original_content_sha256": "cd1c9fdcfb27f42791c31be8d4912c04c083882176140f37c12f8e9f8b18cb3f",
+      "original_content_bytes": 19956,
+      "original_lf_sha256": "e429775111646c185090e6e60b4da4da245bb92fc7d0900bdc5ae494debc0215",
+      "original_lf_git_blob": "015fc571341fd878afa9bf1548b3b5cd304a5e55",
+      "snapshot": "context/src/storage/fts/ik/ob_ik_char_util.h"
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_processor.cpp",
+      "original_git_blob": "996b4665d4382a86aa737781728931d87a73bd78",
+      "original_raw_git_blob": "4d5e7f839180c52e88b64d90f8b2d30bb5732b8b",
+      "original_content_sha256": "13479e8f1438c2c8650db7815eccce43480218e5ee3d4da20b457b9d79105169",
+      "original_content_bytes": 8342,
+      "original_lf_sha256": "13479e8f1438c2c8650db7815eccce43480218e5ee3d4da20b457b9d79105169",
+      "original_lf_git_blob": "4d5e7f839180c52e88b64d90f8b2d30bb5732b8b",
+      "snapshot": "context/src/storage/fts/ik/ob_ik_processor.cpp"
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_processor.h",
+      "original_git_blob": "19a073ca51b30e92ed8d885549631341e56356d1",
+      "original_raw_git_blob": "04378651ef743883c88c6eff02359343a5c8b115",
+      "original_content_sha256": "04a621fc07d3f46a0856fa2ef0b01d4869834af674e4fe4d77177b52ce252d0d",
+      "original_content_bytes": 3000,
+      "original_lf_sha256": "04a621fc07d3f46a0856fa2ef0b01d4869834af674e4fe4d77177b52ce252d0d",
+      "original_lf_git_blob": "04378651ef743883c88c6eff02359343a5c8b115",
+      "snapshot": "context/src/storage/fts/ik/ob_ik_processor.h"
+    },
+    {
+      "path": "src/storage/retrieval/ob_text_retrieval_token_iter.cpp",
+      "original_git_blob": "354864862693b9c0465e689ce94462f2cf44da5b",
+      "original_raw_git_blob": "e89941cf49aaf570c788a3ddb8eb3c0ccbb5c44b",
+      "original_content_sha256": "7a7d33cef52f0da958586356f249ab7c807151dc49a5f1c60ecfee41900bd586",
+      "original_content_bytes": 28279,
+      "original_lf_sha256": "813b5399e1a3078ed483da77da27ae4e14602612a645d177b4ec6586406eb0e2",
+      "original_lf_git_blob": "7e25cde6016144d1ed6384c1a9f1d1368508b778",
+      "snapshot": "context/src/storage/retrieval/ob_text_retrieval_token_iter.cpp"
+    },
+    {
+      "path": "src/storage/retrieval/ob_text_retrieval_token_iter.h",
+      "original_git_blob": "1af37bf70d4ce0fb5b3d51e541b864069bc3e182",
+      "original_raw_git_blob": "f1a522cc3c3c55ba19d4f2d2a858f8eba0913c08",
+      "original_content_sha256": "b094bd2d5700ea9fe3ed36a36960c0874d3ee54744e68126d7a0dfe487e48ae9",
+      "original_content_bytes": 8068,
+      "original_lf_sha256": "57c407d563cfad08d7832c08c331eca1f75c551a6a60bdf765bdf878724dfeed",
+      "original_lf_git_blob": "ed7ee28530ff24ed6d99f1d8cefba17e18707733",
+      "snapshot": "context/src/storage/retrieval/ob_text_retrieval_token_iter.h"
+    },
+    {
+      "path": "src/data_plane/api/data_plane/fts/ob_fts_struct.h",
+      "original_git_blob": "99d06696a485dfafd0e56e71ef48c77958142e62",
+      "original_raw_git_blob": "99d06696a485dfafd0e56e71ef48c77958142e62",
+      "original_content_sha256": "1ec2e61b38494c772cac48457eb823de821447580ba77bf0196da3c4a16747f1",
+      "original_content_bytes": 3587,
+      "original_lf_sha256": "1ec2e61b38494c772cac48457eb823de821447580ba77bf0196da3c4a16747f1",
+      "original_lf_git_blob": "99d06696a485dfafd0e56e71ef48c77958142e62",
+      "snapshot": "context/src/data_plane/api/data_plane/fts/ob_fts_struct.h"
+    }
+  ],
+  "source_write_set": [
+    "src/sql/code_generator/ob_static_engine_cg.cpp",
+    "src/storage/retrieval/ob_i_sparse_retrieval_iter.h",
+    "src/observer/composition/retrieval/ob_das_legacy_tr_merge_iter.cpp",
+    "src/storage/retrieval/ob_sparse_daat_iter.cpp"
+  ],
+  "fixture_generated": false,
+  "validation": {
+    "created_utc": "2026-11-04T08:00:08.263346+00:00",
+    "source_files_unchanged": [
+      "src/sql/code_generator/ob_static_engine_cg.cpp",
+      "src/storage/retrieval/ob_i_sparse_retrieval_iter.h",
+      "src/observer/composition/retrieval/ob_das_legacy_tr_merge_iter.cpp",
+      "src/storage/retrieval/ob_sparse_daat_iter.cpp",
+      "src/storage/fts/ik/ob_ik_char_util.h",
+      "src/storage/fts/ik/ob_ik_processor.cpp",
+      "src/storage/fts/ik/ob_ik_processor.h",
+      "src/storage/retrieval/ob_text_retrieval_token_iter.cpp",
+      "src/storage/retrieval/ob_text_retrieval_token_iter.h",
+      "src/data_plane/api/data_plane/fts/ob_fts_struct.h"
+    ],
+    "python_ast": "passed",
+    "case_ids_unique": true,
+    "sql_placeholder_arity": "passed",
+    "cases": 4416,
+    "documents_per_table": 2053,
+    "tables": 8,
+    "requested_execution_modes": 4,
+    "workload_sha256": "f6b33052f9971b04bd2be834859df038a2378e5e2f8df23e005b58526047e6ea",
+    "fixture_generated": false,
+    "sql_executed": false,
+    "native_executed": false,
+    "build_executed": false,
+    "perf_executed": false,
+    "limits": "Offline checks do not validate SQL syntax/support or effective optimizer plans."
+  },
+  "new_test_files": [
+    {
+      "path": "unittest/storage/fts/test_query_materialization.py",
+      "original_exists": false,
+      "new_sha256": "26dd3359ce0f83e65c6b2c13da218a9147067e01edfc85fb9eaea2e636b90f5e"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "audit_stage.py",
+      "sha256": "a9aa8b4a6d7e01a2afc5de63732e5850e9dc815e43a4262f9de40ffa9d23ce1b",
+      "bytes": 4423
+    },
+    {
+      "path": "context/src/data_plane/api/data_plane/fts/ob_fts_struct.h",
+      "sha256": "1ec2e61b38494c772cac48457eb823de821447580ba77bf0196da3c4a16747f1",
+      "bytes": 3587
+    },
+    {
+      "path": "context/src/storage/fts/ik/ob_ik_char_util.h",
+      "sha256": "cd1c9fdcfb27f42791c31be8d4912c04c083882176140f37c12f8e9f8b18cb3f",
+      "bytes": 19956
+    },
+    {
+      "path": "context/src/storage/fts/ik/ob_ik_processor.cpp",
+      "sha256": "13479e8f1438c2c8650db7815eccce43480218e5ee3d4da20b457b9d79105169",
+      "bytes": 8342
+    },
+    {
+      "path": "context/src/storage/fts/ik/ob_ik_processor.h",
+      "sha256": "04a621fc07d3f46a0856fa2ef0b01d4869834af674e4fe4d77177b52ce252d0d",
+      "bytes": 3000
+    },
+    {
+      "path": "context/src/storage/retrieval/ob_text_retrieval_token_iter.cpp",
+      "sha256": "7a7d33cef52f0da958586356f249ab7c807151dc49a5f1c60ecfee41900bd586",
+      "bytes": 28279
+    },
+    {
+      "path": "context/src/storage/retrieval/ob_text_retrieval_token_iter.h",
+      "sha256": "b094bd2d5700ea9fe3ed36a36960c0874d3ee54744e68126d7a0dfe487e48ae9",
+      "bytes": 8068
+    },
+    {
+      "path": "original/src/observer/composition/retrieval/ob_das_legacy_tr_merge_iter.cpp",
+      "sha256": "90c177c1ac560cfafd92002c42eee181fbbe9d7a598be71cbe7b2eec54675b97",
+      "bytes": 53016
+    },
+    {
+      "path": "original/src/sql/code_generator/ob_static_engine_cg.cpp",
+      "sha256": "e2fba3bd3d31d6a14998bb20cd55e421de9bfa910694b984817d3e1edd564b54",
+      "bytes": 284460
+    },
+    {
+      "path": "original/src/storage/retrieval/ob_i_sparse_retrieval_iter.h",
+      "sha256": "f81c396c65c63aacd32e3beac434e0f13452ba75eeadf21378942b2f4122360c",
+      "bytes": 5218
+    },
+    {
+      "path": "original/src/storage/retrieval/ob_sparse_daat_iter.cpp",
+      "sha256": "d78aebf8fe8f104882e10e3721c4b101a5a96402aa347f1173c7f1188aff9316",
+      "bytes": 15743
+    },
+    {
+      "path": "prepare_stage.py",
+      "sha256": "1fa2c0346beed7ebce25c778b2eec82fa447109a1f67957cb46d594922085216",
+      "bytes": 9465
+    },
+    {
+      "path": "proposal.patch",
+      "sha256": "c1b69479ea128790b687fe060260131442211269bb4e9b4a49586178086f0b5e",
+      "bytes": 23773
+    },
+    {
+      "path": "README.md",
+      "sha256": "6191488ce37b0bdaeaa429afa6ff1aa2159b7309b9107a8fa8f84925abb149ca",
+      "bytes": 10609
+    },
+    {
+      "path": "regression.patch",
+      "sha256": "56e91be2aa0313fc1ab6f46225c76ef67482487c03c186bb833eee4523a96cd5",
+      "bytes": 17177
+    },
+    {
+      "path": "review-checks.json",
+      "sha256": "11f7f9bfd7f6370d483b7a8db454303a5b3bd429f412fb9ba40950006ac152f7",
+      "bytes": 477
+    },
+    {
+      "path": "source.patch",
+      "sha256": "deafa799537fe2873a64a0b38165b1cd871aef78388df1f30023c9b669c16a4a",
+      "bytes": 6596
+    },
+    {
+      "path": "src/observer/composition/retrieval/ob_das_legacy_tr_merge_iter.cpp",
+      "sha256": "5d480053ba4e74540a66adaed2df2241fd9980e5065c13fdff35f4598920bd79",
+      "bytes": 53565
+    },
+    {
+      "path": "src/sql/code_generator/ob_static_engine_cg.cpp",
+      "sha256": "75995f8baa8a5dde120fbed4035ea360fa41338bca0ecc6e4c8227673f77babc",
+      "bytes": 286810
+    },
+    {
+      "path": "src/storage/retrieval/ob_i_sparse_retrieval_iter.h",
+      "sha256": "6d878248b74b70b07ba4e96835df30eaa0e50573a0d2058aae7a8b71feb532b4",
+      "bytes": 5387
+    },
+    {
+      "path": "src/storage/retrieval/ob_sparse_daat_iter.cpp",
+      "sha256": "7c0b72f3d1d0127b2c7913cc81cfa8bd63a2828a485f1ab7d1d77bd3475b5d32",
+      "bytes": 16026
+    },
+    {
+      "path": "static-audit.json",
+      "sha256": "357d57d49505a459854dc758edc05bf137935ac167c342b8876b59dfbb905f82",
+      "bytes": 1178
+    },
+    {
+      "path": "unittest/storage/fts/test_query_materialization.py",
+      "sha256": "26dd3359ce0f83e65c6b2c13da218a9147067e01edfc85fb9eaea2e636b90f5e",
+      "bytes": 16636
+    }
+  ]
+}

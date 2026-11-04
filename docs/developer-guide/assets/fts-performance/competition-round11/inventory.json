@@ -1,0 +1,620 @@
+[
+  {
+    "path": "round11-first-pair-comparison.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-first-pair-comparison.json",
+    "bytes": 1582,
+    "sha256": "d6ca73661e9e58c678e04a077676566acf2a32f9a599dbe84dc80825a17c8e34"
+  },
+  {
+    "path": "round11-incremental-comparison.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-incremental-comparison.json",
+    "bytes": 1716,
+    "sha256": "d24be85dc9920504642d2a06b19b327376f71cd3e55f1cf556d7cf5f660f0a4b"
+  },
+  {
+    "path": "round11-materializing-control-1-benchmark.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-materializing-control-1-benchmark.log",
+    "bytes": 3824,
+    "sha256": "68f1f5bbb91410e9db03f699c07c37dfaa29a7f6b93c5abb0e5a448285e21c94"
+  },
+  {
+    "path": "round11-materializing-control-1-experiment.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-materializing-control-1-experiment.json",
+    "bytes": 893,
+    "sha256": "7fe29cdcfa97d8c8e3db77819ca1f9c4ea67e37af04e00768b47514e74f40ce2"
+  },
+  {
+    "path": "round11-materializing-control-1-input-validation.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-materializing-control-1-input-validation.log",
+    "bytes": 894,
+    "sha256": "462d70a09c4d65dffdbf418b467774f3645004a0e24bbd66bd97705b2002bfb6"
+  },
+  {
+    "path": "round11-materializing-control-1-report.txt",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-materializing-control-1-report.txt",
+    "bytes": 1421,
+    "sha256": "9658bd2599794beaa0f611d72d5506108d86020967aadc2c4a168171c59b625b"
+  },
+  {
+    "path": "round11-materializing-control-1-server.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-materializing-control-1-server.log",
+    "bytes": 328,
+    "sha256": "f3c3bd711a6e5ab7728601007448036176e4420349260988c871aaae2b21c2ee"
+  },
+  {
+    "path": "round11-materializing-control-2-benchmark.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-materializing-control-2-benchmark.log",
+    "bytes": 3824,
+    "sha256": "b369020abe6765afdf2422cb9fdd1e00caecab612604a21d7a9b9465ffc70c0a"
+  },
+  {
+    "path": "round11-materializing-control-2-experiment.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-materializing-control-2-experiment.json",
+    "bytes": 892,
+    "sha256": "fa9df643854eaa7809ec834ba8de99d2e762749b8e88ad011571203ae4b83d5b"
+  },
+  {
+    "path": "round11-materializing-control-2-input-validation.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-materializing-control-2-input-validation.log",
+    "bytes": 896,
+    "sha256": "fbe605c55cc55358996d777f2a5f4d8c2a0f4f57be0fe70a5b8eb9f2c5b68206"
+  },
+  {
+    "path": "round11-materializing-control-2-report.txt",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-materializing-control-2-report.txt",
+    "bytes": 1421,
+    "sha256": "4a3dac1104eb3b4696dfad69a023e0e2e1cbbdf1d5954bf777b30a1a4e1f88b0"
+  },
+  {
+    "path": "round11-materializing-control-2-server.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-materializing-control-2-server.log",
+    "bytes": 328,
+    "sha256": "f3c3bd711a6e5ab7728601007448036176e4420349260988c871aaae2b21c2ee"
+  },
+  {
+    "path": "round11-materializing-control-3-benchmark.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-materializing-control-3-benchmark.log",
+    "bytes": 3824,
+    "sha256": "74fe52630339cd62c6245d4f4f3ea4c4b904b8abae9797562b7b638c0e5c842e"
+  },
+  {
+    "path": "round11-materializing-control-3-experiment.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-materializing-control-3-experiment.json",
+    "bytes": 893,
+    "sha256": "269216b4e90d44f39632fdd9efe4c75dc0a9c6636d101fd65de86d954ff8dfd8"
+  },
+  {
+    "path": "round11-materializing-control-3-input-validation.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-materializing-control-3-input-validation.log",
+    "bytes": 896,
+    "sha256": "f7afa8ae92ebdbf854c53d22c92b66e67cc766f3ea658848a85be73dd842b4b7"
+  },
+  {
+    "path": "round11-materializing-control-3-report.txt",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-materializing-control-3-report.txt",
+    "bytes": 1421,
+    "sha256": "1c4a98fad9c86936a203e348029c28ed7859b1b807202ed7b6cc757781b6413f"
+  },
+  {
+    "path": "round11-materializing-control-3-server.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-materializing-control-3-server.log",
+    "bytes": 328,
+    "sha256": "f3c3bd711a6e5ab7728601007448036176e4420349260988c871aaae2b21c2ee"
+  },
+  {
+    "path": "round11-original-query-record-1-experiment.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-original-query-record-1-experiment.json",
+    "bytes": 435,
+    "sha256": "cbc33df56af928b53f0ff2cf919099789311af650ed684f6685c5929c641f162"
+  },
+  {
+    "path": "round11-original-query-record-1-query-materialization.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-original-query-record-1-query-materialization.log",
+    "bytes": 1265,
+    "sha256": "3fc1267134ffbf9880793c6baa9a5b448bbc3c5bf2df3bbefbea0bb46f6e5398"
+  },
+  {
+    "path": "round11-original-query-record-1-server.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-original-query-record-1-server.log",
+    "bytes": 326,
+    "sha256": "c24ee48ecc242764836ca260a3663607b1f799934f13fa1852ea43d9d1e422ed"
+  },
+  {
+    "path": "round11-original-query-record-2-experiment.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-original-query-record-2-experiment.json",
+    "bytes": 435,
+    "sha256": "73713e7ef6e4b5326c082701c22ebb7a47998a24fe8bd211ea911b356cdf34e5"
+  },
+  {
+    "path": "round11-original-query-record-2-query-materialization.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-original-query-record-2-query-materialization.log",
+    "bytes": 4317,
+    "sha256": "b47145a73ebc8cb65353c82712a4e99dec4c9ff2fda20652eab06b00441ac353"
+  },
+  {
+    "path": "round11-original-query-record-2-server.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-original-query-record-2-server.log",
+    "bytes": 326,
+    "sha256": "c24ee48ecc242764836ca260a3663607b1f799934f13fa1852ea43d9d1e422ed"
+  },
+  {
+    "path": "round11-original-query-record-3-experiment.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-original-query-record-3-experiment.json",
+    "bytes": 435,
+    "sha256": "b29e926f68362e7588b4bfd4f98987d104c061e24bc3bb7cdee7b1aade64086a"
+  },
+  {
+    "path": "round11-original-query-record-3-query-materialization.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-original-query-record-3-query-materialization.log",
+    "bytes": 147,
+    "sha256": "b963f6cf34c8ee64871889b00d23bfded71cc485057a2cc337c2af2cf254e61f"
+  },
+  {
+    "path": "round11-original-query-record-3-server.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-original-query-record-3-server.log",
+    "bytes": 326,
+    "sha256": "c24ee48ecc242764836ca260a3663607b1f799934f13fa1852ea43d9d1e422ed"
+  },
+  {
+    "path": "round11-runtime-materialization.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-runtime-materialization.log",
+    "bytes": 2486,
+    "sha256": "d1abbf346e22c20941f29729fed14bd074115942cb09c8d1ffb4529fb2b271b8"
+  },
+  {
+    "path": "round11-source.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-source.json",
+    "bytes": 454,
+    "sha256": "fb1b67a09d43c2abebb120b2427256f9b488c5068973aa6588fd9bfee2606ff6"
+  },
+  {
+    "path": "round11-source.patch",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-source.patch",
+    "bytes": 7191,
+    "sha256": "4158f606656c5c22d9184225711eb33d84ee1d0464d449f0affee7c4560732f0"
+  },
+  {
+    "path": "round11-three-pair-comparison.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-three-pair-comparison.json",
+    "bytes": 1885,
+    "sha256": "26812ba2f3dfce693e98bb56007452c86c1920d58607063507363b533cfd766c"
+  },
+  {
+    "path": "round11-trace-source.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-trace-source.json",
+    "bytes": 237,
+    "sha256": "0d23caf4e0939babe7ba1e64c2384bc0e623fa170ddd968390e6760ef2da8067"
+  },
+  {
+    "path": "round11-trace-source.patch",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-trace-source.patch",
+    "bytes": 7191,
+    "sha256": "40ea9aa36f6efd0559d4efad439ece943822e32c19ef2dbd90a6337fb904deaf"
+  },
+  {
+    "path": "round11-trace-value-free-build.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-trace-value-free-build.log",
+    "bytes": 476,
+    "sha256": "b20973d238b3777432c7b6b59e527187c52bf28290357e6895600ce065e4947b"
+  },
+  {
+    "path": "round11-value-free-build.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-build.log",
+    "bytes": 930,
+    "sha256": "fd8e6a9331bade0d05025a3eb78082e679fb99f8c042a475f7b9bb391cef3a49"
+  },
+  {
+    "path": "round11-value-free-candidate-1-benchmark.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-benchmark.log",
+    "bytes": 3821,
+    "sha256": "e1cbcbd98f97d449e3b39e2410bba2124f377a67f7120d7c7a9754955650dd96"
+  },
+  {
+    "path": "round11-value-free-candidate-1-bmp.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-bmp.log",
+    "bytes": 78,
+    "sha256": "bd1179d754626e089fd99f041d3a8114d8cc265fd858d5fd10efb3ac2ed2f29f"
+  },
+  {
+    "path": "round11-value-free-candidate-1-casecopy.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-casecopy.log",
+    "bytes": 124,
+    "sha256": "f8c82dc64b6c9f47a1dceca64d548d6d93c1c8ca61d488ae75b97276c42493f2"
+  },
+  {
+    "path": "round11-value-free-candidate-1-experiment.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-experiment.json",
+    "bytes": 2301,
+    "sha256": "b99980744c8eba1745c14fa57e8593f4f6c5ad90e8b5bc870e2f22ed0011b9c4"
+  },
+  {
+    "path": "round11-value-free-candidate-1-input-validation.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-input-validation.log",
+    "bytes": 897,
+    "sha256": "13e067b05d6858ccdea7585d0fff4d0419f628b0b6db6a5912115292a322b5a3"
+  },
+  {
+    "path": "round11-value-free-candidate-1-keytypes.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-keytypes.log",
+    "bytes": 69,
+    "sha256": "1a746b595c23d41f1bc367fdfa957fb73a05012c7e7e8815314828d0eae4be78"
+  },
+  {
+    "path": "round11-value-free-candidate-1-plans.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-plans.log",
+    "bytes": 10636,
+    "sha256": "8f91b2ae93fc19ba529d835c06ec5b618506dfd22c8b6a7f3eabdd80d9835563"
+  },
+  {
+    "path": "round11-value-free-candidate-1-query-materialization.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-query-materialization.log",
+    "bytes": 84,
+    "sha256": "1714eff32dd16c7e405cbe6089456da52bf20ab9d4372f227c7ba69406460696"
+  },
+  {
+    "path": "round11-value-free-candidate-1-ranked.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-ranked.log",
+    "bytes": 70,
+    "sha256": "a01523e38052ad5626312505aa5f45551a5630efc5b41110264a6cbc6ac0123b"
+  },
+  {
+    "path": "round11-value-free-candidate-1-report.txt",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-report.txt",
+    "bytes": 1420,
+    "sha256": "e8e1a6ad5e0da1c373c543fd42b73d11e7a230a1055fc0fbaf08e6e93ada9840"
+  },
+  {
+    "path": "round11-value-free-candidate-1-server.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-server.log",
+    "bytes": 328,
+    "sha256": "f3c3bd711a6e5ab7728601007448036176e4420349260988c871aaae2b21c2ee"
+  },
+  {
+    "path": "round11-value-free-candidate-1-test_collation.py.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-test_collation.py.log",
+    "bytes": 53,
+    "sha256": "ff3b2caa535981d84518d4486caec79bd86f0574dfe964685fb0b848aefe5c33"
+  },
+  {
+    "path": "round11-value-free-candidate-1-test_dictionary_prefixes.py.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-test_dictionary_prefixes.py.log",
+    "bytes": 74,
+    "sha256": "4f1013cbdc0f2ce96a7194cf61937f531d81d789d5ad7ac0d1c0eb169575ee4b"
+  },
+  {
+    "path": "round11-value-free-candidate-1-test_hot_path.py.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-test_hot_path.py.log",
+    "bytes": 184,
+    "sha256": "0d204ab8da768dc581aee6577549bec46145254aaf1a8bcb5c8e0eae3663cf9d"
+  },
+  {
+    "path": "round11-value-free-candidate-1-test_map_concurrency.py.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-test_map_concurrency.py.log",
+    "bytes": 74,
+    "sha256": "b12ea9937f8cc3b29b86ca2fb578e71e47afa9302ccddd24fa30538b50ed228d"
+  },
+  {
+    "path": "round11-value-free-candidate-1-test_match_batches.py.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-test_match_batches.py.log",
+    "bytes": 83,
+    "sha256": "d2d99a68d4ad2bfbc2924a50abeec9360c1acc93c647194f788bef0e6d43d688"
+  },
+  {
+    "path": "round11-value-free-candidate-1-test_stopword_concurrency.py.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-test_stopword_concurrency.py.log",
+    "bytes": 106,
+    "sha256": "c2c3398fb81fc8a289f0a715cf90eb21889482819f821553124014a400173f15"
+  },
+  {
+    "path": "round11-value-free-candidate-1-test_tokenize_config.py.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-1-test_tokenize_config.py.log",
+    "bytes": 75,
+    "sha256": "a1febcccfc843a075e757e833a7179b3aa38b9f21249fd9955f9d7273c58b4f6"
+  },
+  {
+    "path": "round11-value-free-candidate-2-benchmark.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-2-benchmark.log",
+    "bytes": 3821,
+    "sha256": "0d7b8ab4c4e07b25cc46ba9ca5b96229520eff273ffe8bf02e7209dfb76b84d2"
+  },
+  {
+    "path": "round11-value-free-candidate-2-experiment.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-2-experiment.json",
+    "bytes": 849,
+    "sha256": "5455d0939c4ac53b71da1abb395aed5043a18fa140d3c4b9e54ae6aaa817a00e"
+  },
+  {
+    "path": "round11-value-free-candidate-2-input-validation.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-2-input-validation.log",
+    "bytes": 896,
+    "sha256": "d32f2a85c123d282fec6ce6297f8fd6dd62cf6828e0234b28fe301ecfd5109d5"
+  },
+  {
+    "path": "round11-value-free-candidate-2-report.txt",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-2-report.txt",
+    "bytes": 1420,
+    "sha256": "5465ad029ea3208cf0e663f5b7676193fa009538b3aebc7de65463d213d87b5f"
+  },
+  {
+    "path": "round11-value-free-candidate-2-server.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-2-server.log",
+    "bytes": 328,
+    "sha256": "f3c3bd711a6e5ab7728601007448036176e4420349260988c871aaae2b21c2ee"
+  },
+  {
+    "path": "round11-value-free-candidate-3-benchmark.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-3-benchmark.log",
+    "bytes": 3821,
+    "sha256": "956b9a2daefe1b0380f2738f543e91026c05469fe8210f088ed79faf401ee44a"
+  },
+  {
+    "path": "round11-value-free-candidate-3-experiment.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-3-experiment.json",
+    "bytes": 849,
+    "sha256": "7e645c7b61e08b27ef9655bd4734ee4d017926194f1c858cc3b6ab401613155d"
+  },
+  {
+    "path": "round11-value-free-candidate-3-input-validation.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-3-input-validation.log",
+    "bytes": 896,
+    "sha256": "107bcac9e643dffb65401c2f6938520a2e56da9a82aa438bf514403679aa78ca"
+  },
+  {
+    "path": "round11-value-free-candidate-3-report.txt",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-3-report.txt",
+    "bytes": 1420,
+    "sha256": "c65e9d2f1302fd5d9652b18e01f42dd1c473a5d8da236c5ad9f5fed7a2fa5c74"
+  },
+  {
+    "path": "round11-value-free-candidate-3-server.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-candidate-3-server.log",
+    "bytes": 328,
+    "sha256": "f3c3bd711a6e5ab7728601007448036176e4420349260988c871aaae2b21c2ee"
+  },
+  {
+    "path": "round11-value-free-diagnostic-1-experiment.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-diagnostic-1-experiment.json",
+    "bytes": 620,
+    "sha256": "8434cc48d920944b4cfb9b7094c981c174a1e2342ac6b3d037a83137bf52c811"
+  },
+  {
+    "path": "round11-value-free-diagnostic-1-materialization-diagnostic.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-diagnostic-1-materialization-diagnostic.log",
+    "bytes": 1146,
+    "sha256": "9d66a4ace159e852da06a9d019246448455f1804cf871f244b407f7cf1943e2e"
+  },
+  {
+    "path": "round11-value-free-diagnostic-1-server.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-diagnostic-1-server.log",
+    "bytes": 328,
+    "sha256": "f3c3bd711a6e5ab7728601007448036176e4420349260988c871aaae2b21c2ee"
+  },
+  {
+    "path": "round11-value-free-diagnostic-2-experiment.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-diagnostic-2-experiment.json",
+    "bytes": 587,
+    "sha256": "33e143bf57f27033e11c15617b7e51b3b6742ccbab7b749f30f7b81863ea2259"
+  },
+  {
+    "path": "round11-value-free-diagnostic-2-materialization-diagnostic.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-diagnostic-2-materialization-diagnostic.log",
+    "bytes": 1146,
+    "sha256": "9d66a4ace159e852da06a9d019246448455f1804cf871f244b407f7cf1943e2e"
+  },
+  {
+    "path": "round11-value-free-diagnostic-2-server.log",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-value-free-diagnostic-2-server.log",
+    "bytes": 328,
+    "sha256": "f3c3bd711a6e5ab7728601007448036176e4420349260988c871aaae2b21c2ee"
+  },
+  {
+    "path": "proposal/audit_stage.py",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\audit_stage.py",
+    "bytes": 4423,
+    "sha256": "a9aa8b4a6d7e01a2afc5de63732e5850e9dc815e43a4262f9de40ffa9d23ce1b"
+  },
+  {
+    "path": "proposal/context/src/data_plane/api/data_plane/fts/ob_fts_struct.h",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\context\\src\\data_plane\\api\\data_plane\\fts\\ob_fts_struct.h",
+    "bytes": 3587,
+    "sha256": "1ec2e61b38494c772cac48457eb823de821447580ba77bf0196da3c4a16747f1"
+  },
+  {
+    "path": "proposal/context/src/storage/fts/ik/ob_ik_char_util.h",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\context\\src\\storage\\fts\\ik\\ob_ik_char_util.h",
+    "bytes": 19956,
+    "sha256": "cd1c9fdcfb27f42791c31be8d4912c04c083882176140f37c12f8e9f8b18cb3f"
+  },
+  {
+    "path": "proposal/context/src/storage/fts/ik/ob_ik_processor.cpp",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\context\\src\\storage\\fts\\ik\\ob_ik_processor.cpp",
+    "bytes": 8342,
+    "sha256": "13479e8f1438c2c8650db7815eccce43480218e5ee3d4da20b457b9d79105169"
+  },
+  {
+    "path": "proposal/context/src/storage/fts/ik/ob_ik_processor.h",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\context\\src\\storage\\fts\\ik\\ob_ik_processor.h",
+    "bytes": 3000,
+    "sha256": "04a621fc07d3f46a0856fa2ef0b01d4869834af674e4fe4d77177b52ce252d0d"
+  },
+  {
+    "path": "proposal/context/src/storage/retrieval/ob_text_retrieval_token_iter.cpp",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\context\\src\\storage\\retrieval\\ob_text_retrieval_token_iter.cpp",
+    "bytes": 28279,
+    "sha256": "7a7d33cef52f0da958586356f249ab7c807151dc49a5f1c60ecfee41900bd586"
+  },
+  {
+    "path": "proposal/context/src/storage/retrieval/ob_text_retrieval_token_iter.h",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\context\\src\\storage\\retrieval\\ob_text_retrieval_token_iter.h",
+    "bytes": 8068,
+    "sha256": "b094bd2d5700ea9fe3ed36a36960c0874d3ee54744e68126d7a0dfe487e48ae9"
+  },
+  {
+    "path": "proposal/manifest.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\manifest.json",
+    "bytes": 13786,
+    "sha256": "288c9395770ea854b6faa29b19671c15673af193a9923567c088fb1ebed372f8"
+  },
+  {
+    "path": "proposal/original/src/observer/composition/retrieval/ob_das_legacy_tr_merge_iter.cpp",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\original\\src\\observer\\composition\\retrieval\\ob_das_legacy_tr_merge_iter.cpp",
+    "bytes": 53016,
+    "sha256": "90c177c1ac560cfafd92002c42eee181fbbe9d7a598be71cbe7b2eec54675b97"
+  },
+  {
+    "path": "proposal/original/src/sql/code_generator/ob_static_engine_cg.cpp",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\original\\src\\sql\\code_generator\\ob_static_engine_cg.cpp",
+    "bytes": 284460,
+    "sha256": "e2fba3bd3d31d6a14998bb20cd55e421de9bfa910694b984817d3e1edd564b54"
+  },
+  {
+    "path": "proposal/original/src/storage/retrieval/ob_i_sparse_retrieval_iter.h",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\original\\src\\storage\\retrieval\\ob_i_sparse_retrieval_iter.h",
+    "bytes": 5218,
+    "sha256": "f81c396c65c63aacd32e3beac434e0f13452ba75eeadf21378942b2f4122360c"
+  },
+  {
+    "path": "proposal/original/src/storage/retrieval/ob_sparse_daat_iter.cpp",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\original\\src\\storage\\retrieval\\ob_sparse_daat_iter.cpp",
+    "bytes": 15743,
+    "sha256": "d78aebf8fe8f104882e10e3721c4b101a5a96402aa347f1173c7f1188aff9316"
+  },
+  {
+    "path": "proposal/prepare_stage.py",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\prepare_stage.py",
+    "bytes": 9465,
+    "sha256": "1fa2c0346beed7ebce25c778b2eec82fa447109a1f67957cb46d594922085216"
+  },
+  {
+    "path": "proposal/proposal.patch",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\proposal.patch",
+    "bytes": 23773,
+    "sha256": "c1b69479ea128790b687fe060260131442211269bb4e9b4a49586178086f0b5e"
+  },
+  {
+    "path": "proposal/README.md",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\README.md",
+    "bytes": 10609,
+    "sha256": "6191488ce37b0bdaeaa429afa6ff1aa2159b7309b9107a8fa8f84925abb149ca"
+  },
+  {
+    "path": "proposal/regression.patch",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\regression.patch",
+    "bytes": 17177,
+    "sha256": "56e91be2aa0313fc1ab6f46225c76ef67482487c03c186bb833eee4523a96cd5"
+  },
+  {
+    "path": "proposal/review-checks.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\review-checks.json",
+    "bytes": 477,
+    "sha256": "11f7f9bfd7f6370d483b7a8db454303a5b3bd429f412fb9ba40950006ac152f7"
+  },
+  {
+    "path": "proposal/source.patch",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\source.patch",
+    "bytes": 6596,
+    "sha256": "deafa799537fe2873a64a0b38165b1cd871aef78388df1f30023c9b669c16a4a"
+  },
+  {
+    "path": "proposal/src/observer/composition/retrieval/ob_das_legacy_tr_merge_iter.cpp",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\src\\observer\\composition\\retrieval\\ob_das_legacy_tr_merge_iter.cpp",
+    "bytes": 53565,
+    "sha256": "5d480053ba4e74540a66adaed2df2241fd9980e5065c13fdff35f4598920bd79"
+  },
+  {
+    "path": "proposal/src/sql/code_generator/ob_static_engine_cg.cpp",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\src\\sql\\code_generator\\ob_static_engine_cg.cpp",
+    "bytes": 286810,
+    "sha256": "75995f8baa8a5dde120fbed4035ea360fa41338bca0ecc6e4c8227673f77babc"
+  },
+  {
+    "path": "proposal/src/storage/retrieval/ob_i_sparse_retrieval_iter.h",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\src\\storage\\retrieval\\ob_i_sparse_retrieval_iter.h",
+    "bytes": 5387,
+    "sha256": "6d878248b74b70b07ba4e96835df30eaa0e50573a0d2058aae7a8b71feb532b4"
+  },
+  {
+    "path": "proposal/src/storage/retrieval/ob_sparse_daat_iter.cpp",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\src\\storage\\retrieval\\ob_sparse_daat_iter.cpp",
+    "bytes": 16026,
+    "sha256": "7c0b72f3d1d0127b2c7913cc81cfa8bd63a2828a485f1ab7d1d77bd3475b5d32"
+  },
+  {
+    "path": "proposal/static-audit.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\static-audit.json",
+    "bytes": 1178,
+    "sha256": "357d57d49505a459854dc758edc05bf137935ac167c342b8876b59dfbb905f82"
+  },
+  {
+    "path": "proposal/unittest/storage/fts/test_query_materialization.py",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-proposal\\unittest\\storage\\fts\\test_query_materialization.py",
+    "bytes": 16636,
+    "sha256": "26dd3359ce0f83e65c6b2c13da218a9147067e01edfc85fb9eaea2e636b90f5e"
+  },
+  {
+    "path": "helpers/apply-round11.py",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\apply-round11.py",
+    "bytes": 1892,
+    "sha256": "06f08ea83e96e319fc71f17a14f74ae35620c453b26e1b7fa1b0296266cc5d57"
+  },
+  {
+    "path": "helpers/fix-query-fixture-client.py",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\fix-query-fixture-client.py",
+    "bytes": 870,
+    "sha256": "2aef764e22d11f1e7844657e270e73c2a82bfc236ec275e69af539cd0bdb6c69"
+  },
+  {
+    "path": "helpers/diagnose-materialization.py",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\diagnose-materialization.py",
+    "bytes": 1490,
+    "sha256": "99c8b654fdfddab1d26e66d45529145b5b1b591f9b0a9e9ca150b39287f66b3f"
+  },
+  {
+    "path": "regression/unittest/storage/fts/query_materialization_expected.json.gz",
+    "source": "D:\\Projects\\OceanBase\\seekdb\\unittest\\storage\\fts\\query_materialization_expected.json.gz",
+    "bytes": 1657996,
+    "sha256": "8bb2ccc372e011a1fc290221d601857ca5093d4cdd5fc1449eae20b73b8a2c93"
+  },
+  {
+    "path": "regression/unittest/storage/fts/test_query_materialization.py",
+    "source": "D:\\Projects\\OceanBase\\seekdb\\unittest\\storage\\fts\\test_query_materialization.py",
+    "bytes": 17087,
+    "sha256": "fcbf477f2856d24b386fe12ac8a5e2e1c796289d21ae2e44cf3d835cbf5a143a"
+  },
+  {
+    "path": "packaging/package-round11.py",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-package\\package-round11.py",
+    "bytes": 16938,
+    "sha256": "31a2ba992353f4dd3b7fe13c20951753907c94f67223df8a3a9c80692c45222e"
+  },
+  {
+    "path": "packaging/README.md",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-package\\README.md",
+    "bytes": 3965,
+    "sha256": "669c52a40f7cb6bbaa04b82dbdcc36308e972932ff26cc079415e72816dbcde3"
+  },
+  {
+    "path": "packaging/report-en.md",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-package\\report-en.md",
+    "bytes": 6706,
+    "sha256": "3ebfe48d5bbb2e80c0de29daf26ffe500c129d52d36b9b0507d7dce384e66dca"
+  },
+  {
+    "path": "packaging/report-zh-CN.md",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-package\\report-zh-CN.md",
+    "bytes": 6177,
+    "sha256": "df80d7d70a2f221b1731aa155d7a282d6baa0fe4eade32b41788c4a4adfcfb02"
+  },
+  {
+    "path": "packaging/test-readme-addition.md",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-package\\test-readme-addition.md",
+    "bytes": 2343,
+    "sha256": "7ed7f577b247fe68550087f3975b667c71d288431c3c5f6c7ea437ed49fa9c63"
+  },
+  {
+    "path": "packaging/parent-attestation.json",
+    "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round11-package\\parent-attestation.json",
+    "bytes": 774,
+    "sha256": "7ab451a7da7782e6f2cd5e9fcb2d3e374e00cbe11188ef07cc1584b648c533b0"
+  }
+]

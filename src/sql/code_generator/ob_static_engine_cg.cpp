@@ -790,6 +790,47 @@ int ObStaticEngineCG::generate_spec_final(ObLogicalOperator &op, ObOpSpec &spec)
     }
   }
 
+  // Only a complete, value-free IR root may discard its external ID output.
+  // Keep the child scan's ID expression and metadata for retrieval/merging.
+  if (OB_SUCC(ret) && PHY_TABLE_SCAN == spec.type_
+      && log_op_def::LOG_TABLE_SCAN == op.get_type()) {
+    ObLogTableScan &log_tsc = static_cast<ObLogTableScan &>(op);
+    ObTableScanSpec &tsc_spec = static_cast<ObTableScanSpec &>(spec);
+    ObTableScanCtDef &tsc_ctdef = tsc_spec.tsc_ctdef_;
+    ObDASScanCtDef &scan_ctdef = tsc_ctdef.scan_ctdef_;
+    ObDASBaseCtDef *root = tsc_ctdef.attach_spec_.attach_ctdef_;
+    if (spec.output_.empty() && spec.filters_.empty()
+        && log_tsc.get_access_exprs().empty()
+        && !log_tsc.get_index_back() && !tsc_spec.is_index_global_
+        && !tsc_ctdef.use_index_merge_ && OB_ISNULL(tsc_ctdef.lookup_ctdef_)
+        && !tsc_ctdef.is_das_keep_order_ && !tsc_ctdef.ordering_used_by_parent_
+        && OB_ISNULL(scan_ctdef.group_id_expr_)
+        && OB_ISNULL(scan_ctdef.trans_info_expr_)
+        && OB_ISNULL(scan_ctdef.pd_expr_spec_.trans_info_expr_)
+        && scan_ctdef.pd_expr_spec_.pd_storage_aggregate_output_.empty()
+        && OB_ISNULL(tsc_ctdef.calc_part_id_expr_)
+        && tsc_ctdef.global_index_rowkey_exprs_.empty()
+        && OB_ISNULL(tsc_spec.pdml_partition_id_)
+        && !tsc_spec.report_col_checksum_ && !tsc_spec.can_be_paused_
+        && !tsc_spec.is_scan_resumable_
+        && OB_NOT_NULL(root) && DAS_OP_IR_SCAN == root->op_type_
+        && 1 == root->children_cnt_ && OB_NOT_NULL(root->children_)
+        && root->children_[0] == &scan_ctdef) {
+      ObDASIRScanCtDef &ir_ctdef = static_cast<ObDASIRScanCtDef &>(*root);
+      if (ObMatchAgainstMode::NATURAL_LANGUAGE_MODE == ir_ctdef.mode_flag_
+          && !ir_ctdef.need_calc_relevance()
+          && !ir_ctdef.need_proj_relevance_score()
+          && OB_ISNULL(ir_ctdef.match_filter_) && !ir_ctdef.has_pushdown_topk()
+          && OB_NOT_NULL(ir_ctdef.inv_scan_domain_id_col_)
+          && 1 == ir_ctdef.result_output_.count()
+          && ir_ctdef.result_output_.at(0) == ir_ctdef.inv_scan_domain_id_col_) {
+        // An empty existing output array carries the dependency contract; no
+        // new serialized flag, expression generation, or ID-meta removal.
+        ir_ctdef.result_output_.clear();
+      }
+    }
+  }
+
   if (log_op_def::LOG_SET == op.get_type()
       && !static_cast<ObLogSet &>(op).is_recursive_union()
       && spec.is_vectorized()) {

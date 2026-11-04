@@ -1,0 +1,20 @@
+[
+  {
+    "path": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-round11-trace-value-free\\seekdb.exe",
+    "expected_sha256": "9c239e363020a77c201c31456c940084f948d5b5741ec73472af55632c9b91da",
+    "role": "final LOG_TRACE candidate",
+    "experiment_sha256": "9c239e363020a77c201c31456c940084f948d5b5741ec73472af55632c9b91da",
+    "observed_sha256": "9c239e363020a77c201c31456c940084f948d5b5741ec73472af55632c9b91da",
+    "bytes": 104888320,
+    "diagnostic_literal_present": true
+  },
+  {
+    "path": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-round11-value-free\\seekdb.exe",
+    "expected_sha256": "64bbff2c706fc2a85b88c73f8170b217f60d1669f5f3fd2dadb0c51b8cc53ecd",
+    "role": "historical LOG_DEBUG trial",
+    "experiment_sha256": "64bbff2c706fc2a85b88c73f8170b217f60d1669f5f3fd2dadb0c51b8cc53ecd",
+    "observed_sha256": "64bbff2c706fc2a85b88c73f8170b217f60d1669f5f3fd2dadb0c51b8cc53ecd",
+    "bytes": 104887296,
+    "diagnostic_literal_present": false
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "label": "round11-value-free-candidate-3",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-round11-trace-value-free\\seekdb.exe",
+  "source_commit": "ecbf498d120dabaa01b60b89c49aa18a6b9926a1+40ea9aa36f6efd0559d4efad439ece943822e32c19ef2dbd90a6337fb904deaf",
+  "binary_sha256": "9c239e363020a77c201c31456c940084f948d5b5741ec73472af55632c9b91da",
+  "log_level": "WARN",
+  "base_dir": "C:\\Users\\11946\\AppData\\Local\\Temp\\seekdb-fts-competition-candidate",
+  "actions": [
+    {
+      "action": "benchmark",
+      "exit_code": 0,
+      "seconds": 33.06533979999949
+    },
+    {
+      "action": "input-validation",
+      "exit_code": 0,
+      "seconds": 0.11619440000504255
+    }
+  ],
+  "report": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase\u6bd4\u8d5b\\setup\\fts\\round11-value-free-candidate-3-report.txt"
+}

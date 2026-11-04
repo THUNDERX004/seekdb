@@ -1,0 +1,22 @@
+{
+  "reports": [
+    {
+      "path": "docs/developer-guide/en/fts-performance.md",
+      "base_raw_sha256": "d61c7aae0782df3684746caf114b72b4105fd732ae9147b75e5dce6ee2f96c58",
+      "base_lf_sha256": "d61c7aae0782df3684746caf114b72b4105fd732ae9147b75e5dce6ee2f96c58",
+      "result_lf_sha256": "3f565557788b5515e82b12d14b9220d66aeadea242ebac6fb98195c9025b0b68"
+    },
+    {
+      "path": "docs/developer-guide/zh-CN/fts-performance.md",
+      "base_raw_sha256": "7fdbf389985f25e04354fd1ca9aef547b2bba560ac245cd897a82694721d7e6f",
+      "base_lf_sha256": "7fdbf389985f25e04354fd1ca9aef547b2bba560ac245cd897a82694721d7e6f",
+      "result_lf_sha256": "c57ed61c8a565f330f5733d944ccd14d106345a420ace2e9dcc117efd7d86be5"
+    }
+  ],
+  "test_readme": {
+    "path": "unittest/storage/fts/README.md",
+    "base_raw_sha256": "3c8441193e540771ee4907cc4649eb8e8d0bdf6a0f058e73e24ccfcede92453d",
+    "base_lf_sha256": "3c8441193e540771ee4907cc4649eb8e8d0bdf6a0f058e73e24ccfcede92453d",
+    "result_lf_sha256": "0d8a0b088a67fc16c7e5d8224fde82da73ff2d4253b70f0bb6b9619fe4f920f8"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "created_utc": "2026-11-04T08:00:08.263346+00:00",
+  "source_files_unchanged": [
+    "src/sql/code_generator/ob_static_engine_cg.cpp",
+    "src/storage/retrieval/ob_i_sparse_retrieval_iter.h",
+    "src/observer/composition/retrieval/ob_das_legacy_tr_merge_iter.cpp",
+    "src/storage/retrieval/ob_sparse_daat_iter.cpp",
+    "src/storage/fts/ik/ob_ik_char_util.h",
+    "src/storage/fts/ik/ob_ik_processor.cpp",
+    "src/storage/fts/ik/ob_ik_processor.h",
+    "src/storage/retrieval/ob_text_retrieval_token_iter.cpp",
+    "src/storage/retrieval/ob_text_retrieval_token_iter.h",
+    "src/data_plane/api/data_plane/fts/ob_fts_struct.h"
+  ],
+  "python_ast": "passed",
+  "case_ids_unique": true,
+  "sql_placeholder_arity": "passed",
+  "cases": 4416,
+  "documents_per_table": 2053,
+  "tables": 8,
+  "requested_execution_modes": 4,
+  "workload_sha256": "f6b33052f9971b04bd2be834859df038a2378e5e2f8df23e005b58526047e6ea",
+  "fixture_generated": false,
+  "sql_executed": false,
+  "native_executed": false,
+  "build_executed": false,
+  "perf_executed": false,
+  "limits": "Offline checks do not validate SQL syntax/support or effective optimizer plans."
+}

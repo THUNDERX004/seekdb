@@ -1,0 +1,63 @@
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb\unittest\storage\fts\test_query_materialization.py", line 224, in capture
+    results.append({"id": case["id"], "result": run_query(cursor, case)})
+                                                ~~~~~~~~~^^^^^^^^^^^^^^
+  File "D:\Projects\OceanBase\seekdb\unittest\storage\fts\test_query_materialization.py", line 186, in run_query
+    cursor.execute(case["sql"], tuple(case["params"]))
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\11946\Documents\ChatGPT\OceanBase比赛\.venv\Lib\site-packages\pymysql\cursors.py", line 153, in execute
+    result = self._query(query)
+  File "C:\Users\11946\Documents\ChatGPT\OceanBase比赛\.venv\Lib\site-packages\pymysql\cursors.py", line 322, in _query
+    conn.query(q)
+    ~~~~~~~~~~^^^
+  File "C:\Users\11946\Documents\ChatGPT\OceanBase比赛\.venv\Lib\site-packages\pymysql\connections.py", line 575, in query
+    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
+                          ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\11946\Documents\ChatGPT\OceanBase比赛\.venv\Lib\site-packages\pymysql\connections.py", line 826, in _read_query_result
+    result.read()
+    ~~~~~~~~~~~^^
+  File "C:\Users\11946\Documents\ChatGPT\OceanBase比赛\.venv\Lib\site-packages\pymysql\connections.py", line 1210, in read
+    self._read_result_packet(first_packet)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\11946\Documents\ChatGPT\OceanBase比赛\.venv\Lib\site-packages\pymysql\connections.py", line 1287, in _read_result_packet
+    self._read_rowdata_packet()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\11946\Documents\ChatGPT\OceanBase比赛\.venv\Lib\site-packages\pymysql\connections.py", line 1338, in _read_rowdata_packet
+    rows.append(self._read_row_from_packet(packet))
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\11946\Documents\ChatGPT\OceanBase比赛\.venv\Lib\site-packages\pymysql\connections.py", line 1358, in _read_row_from_packet
+    data = converter(data)
+TypeError: conversion from bytes to Decimal is not supported
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb\unittest\storage\fts\test_query_materialization.py", line 314, in <module>
+    main()
+    ~~~~^^
+  File "D:\Projects\OceanBase\seekdb\unittest\storage\fts\test_query_materialization.py", line 293, in main
+    actual = capture(dict(host=args.host, port=args.port, user=args.user,
+                          password=os.getenv("SEEKDB_TEST_PASSWORD", ""),
+                          charset="utf8mb4", use_unicode=False, autocommit=True,
+                          connect_timeout=10, read_timeout=180, write_timeout=180), workload)
+  File "D:\Projects\OceanBase\seekdb\unittest\storage\fts\test_query_materialization.py", line 226, in capture
+    cursor.execute("DROP DATABASE IF EXISTS " + DATABASE)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\11946\Documents\ChatGPT\OceanBase比赛\.venv\Lib\site-packages\pymysql\cursors.py", line 153, in execute
+    result = self._query(query)
+  File "C:\Users\11946\Documents\ChatGPT\OceanBase比赛\.venv\Lib\site-packages\pymysql\cursors.py", line 322, in _query
+    conn.query(q)
+    ~~~~~~~~~~^^^
+  File "C:\Users\11946\Documents\ChatGPT\OceanBase比赛\.venv\Lib\site-packages\pymysql\connections.py", line 575, in query
+    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
+                          ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\11946\Documents\ChatGPT\OceanBase比赛\.venv\Lib\site-packages\pymysql\connections.py", line 826, in _read_query_result
+    result.read()
+    ~~~~~~~~~~~^^
+  File "C:\Users\11946\Documents\ChatGPT\OceanBase比赛\.venv\Lib\site-packages\pymysql\connections.py", line 1203, in read
+    first_packet = self.connection._read_packet()
+  File "C:\Users\11946\Documents\ChatGPT\OceanBase比赛\.venv\Lib\site-packages\pymysql\connections.py", line 764, in _read_packet
+    raise err.InternalError(
+    ...<2 lines>...
+    )
+pymysql.err.InternalError: Packet sequence number wrong - got 5 expected 1

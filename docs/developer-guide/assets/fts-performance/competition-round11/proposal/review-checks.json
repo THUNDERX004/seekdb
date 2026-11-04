@@ -1,0 +1,9 @@
+{
+  "source_head": "36519bd8b3782c90f50565ebf6b233beba542600",
+  "official_baseline_ancestor": true,
+  "official_remote_branch_verified": "5bce9e06d1281347ad61344e4b01fab9158c58a2",
+  "git_apply_check_whitespace_error_all": "passed; read-only; no application",
+  "source_diff_review": "Four disjoint source targets only; default materialization enabled; existing buffers and iteration/count/error flow retained",
+  "sql_or_cpp_execution": false,
+  "fixture_generated": false
+}

@@ -1,0 +1,44 @@
+========================================
+FTS Large Benchmark Report
+========================================
+timestamp:              2026-11-04 16:27:14
+label:                  round11-materializing-control-2
+git_head:               ecbf498d1
+git_dirty:              1
+rows:                   20000
+batch:                  500
+rounds:                 3000
+query_rounds:           200
+samples:                3
+warmup:                 30
+skip_load:              0
+----------------------------------------
+select1_avg_ms:         0.0645
+select1_stdev_ms:       0.0005
+raw_load_sec:           0.418
+raw_load_rows_per_sec:  47846.9
+build_ik_all_sec:       6.362
+build_ik_content_sec:   5.016
+build_beng_en_sec:      2.893
+build_total_sec:        14.450
+----------------------------------------
+tokenize_ik_avg_ms:     0.1397
+tokenize_ik_median_ms:  0.1435
+tokenize_ik_stdev_ms:   0.0056
+tokenize_beng_avg_ms:   0.0998
+tokenize_beng_median_ms:0.0999
+tokenize_beng_stdev_ms: 0.0009
+----------------------------------------
+query_cn_hits:          8001
+query_cn_avg_ms:        1.0737
+query_cn_stdev_ms:      0.0141
+query_beng_hits:        11000
+query_beng_avg_ms:      1.2766
+query_beng_stdev_ms:    0.0199
+query_mixed_hits:       7332
+query_mixed_avg_ms:     1.0880
+query_mixed_stdev_ms:   0.0255
+query_limit_hits:       20
+query_limit_avg_ms:     2.1883
+query_limit_stdev_ms:   0.0376
+========================================

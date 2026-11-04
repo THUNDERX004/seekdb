@@ -1,0 +1,13 @@
+{
+  "label": "round11-original-query-record-3",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-competition-baseline\\seekdb.exe",
+  "source_commit": "5bce9e06d1281347ad61344e4b01fab9158c58a2",
+  "binary_sha256": "bae4a3b9e1b4662d4021b28d5adc085764beb6cf02122eacd57b8e16b6fe1762",
+  "actions": [
+    {
+      "action": "query-materialization",
+      "exit_code": 0,
+      "seconds": 31.711265300007653
+    }
+  ]
+}

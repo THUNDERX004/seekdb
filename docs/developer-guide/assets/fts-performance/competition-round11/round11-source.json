@@ -1,0 +1,7 @@
+{
+  "parent": "ecbf498d120dabaa01b60b89c49aa18a6b9926a1",
+  "patch": "round11-source.patch",
+  "sha256": "4158f606656c5c22d9184225711eb33d84ee1d0464d449f0affee7c4560732f0",
+  "changes": "Prune external materialization for value-free root natural-language IR consumers; existing serialized output array, no new serialized flag.",
+  "validation": "Pending full build, official-original fixture comparison, runtime eligibility and full benchmark."
+}

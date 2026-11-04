@@ -1,0 +1,48 @@
+{
+  "controls": [
+    "round11-materializing-control-1"
+  ],
+  "candidates": [
+    "round11-value-free-candidate-1"
+  ],
+  "control_mean": {
+    "build_ik_all_sec": 6.374,
+    "build_ik_content_sec": 5.009,
+    "build_beng_en_sec": 2.789,
+    "tokenize_ik_avg_ms": 0.1302,
+    "tokenize_beng_avg_ms": 0.1099,
+    "query_cn_avg_ms": 0.99,
+    "query_beng_avg_ms": 1.296,
+    "query_mixed_avg_ms": 1.0595,
+    "query_limit_avg_ms": 2.1941
+  },
+  "candidate_mean": {
+    "build_ik_all_sec": 6.434,
+    "build_ik_content_sec": 4.905,
+    "build_beng_en_sec": 2.791,
+    "tokenize_ik_avg_ms": 0.1482,
+    "tokenize_beng_avg_ms": 0.1087,
+    "query_cn_avg_ms": 1.0031,
+    "query_beng_avg_ms": 1.3695,
+    "query_mixed_avg_ms": 1.0659,
+    "query_limit_avg_ms": 2.1698
+  },
+  "per_metric_reduction": {
+    "build_ik_all_sec": -0.009413241292751895,
+    "build_ik_content_sec": 0.02076262727091238,
+    "build_beng_en_sec": -0.0007171029042667421,
+    "tokenize_ik_avg_ms": -0.13824884792626713,
+    "tokenize_beng_avg_ms": 0.010919017288444022,
+    "query_cn_avg_ms": -0.013232323232323262,
+    "query_beng_avg_ms": -0.0567129629629628,
+    "query_mixed_avg_ms": -0.006040585181689373,
+    "query_limit_avg_ms": 0.011075156100451289
+  },
+  "per_category_reduction": {
+    "build": 0.0035440943579645814,
+    "tokenize": -0.06366491531891155,
+    "query": -0.016227678819131036
+  },
+  "overall_reduction": -0.025449499926692667,
+  "note": "Local comparison only. All listed runs retained; no SELECT1 subtraction and no negative clipping."
+}

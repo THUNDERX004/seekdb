@@ -1,0 +1,6 @@
+[0/2] Re-checking globbed directories...
+[1/4] Building CXX object src/observer/CMakeFiles/ob_server.dir/composition/retrieval/ob_das_legacy_tr_merge_iter.cpp.obj
+[2/4] Linking CXX static library src\observer\oceanbase_static.lib
+[3/4] Linking CXX executable src\observer\seekdb.exe
+-- BundleRuntimeDllsWindows: unresolved (likely system) VCRUNTIME140_1.dll
+-- BundleRuntimeDllsWindows: bundled 12 DLLs -> D:/Projects/OceanBase/seekdb/build_fts_competition/src/observer

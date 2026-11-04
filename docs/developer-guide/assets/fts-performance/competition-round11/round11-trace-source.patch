@@ -1,0 +1,135 @@
+diff --git a/src/observer/composition/retrieval/ob_das_legacy_tr_merge_iter.cpp b/src/observer/composition/retrieval/ob_das_legacy_tr_merge_iter.cpp
+index 99c79b931..7d305ce06 100644
+--- a/src/observer/composition/retrieval/ob_das_legacy_tr_merge_iter.cpp
++++ b/src/observer/composition/retrieval/ob_das_legacy_tr_merge_iter.cpp
+@@ -382,6 +382,15 @@ int ObDASLegacyTRMergeIter::create_sparse_retrieval_iter()
+   sr_iter_param_.relevance_proj_expr_ = ir_ctdef_->relevance_proj_col_;
+   sr_iter_param_.filter_expr_ = ir_ctdef_->match_filter_;
+   sr_iter_param_.topk_limit_ = topk_limit_;
++  // CG clears only a value-free top-level IR root's external output array.
++  // Other algorithms and functional lookup retain their existing projection.
++  sr_iter_param_.materialize_results_ = !(daat_mode_ && !topk_mode_
++      && !function_lookup_mode_ && ir_ctdef_->result_output_.empty()
++      && ObMatchAgainstMode::NATURAL_LANGUAGE_MODE == ir_ctdef_->mode_flag_
++      && !ir_ctdef_->need_calc_relevance()
++      && !ir_ctdef_->need_proj_relevance_score()
++      && OB_ISNULL(ir_ctdef_->match_filter_) && !ir_ctdef_->has_pushdown_topk());
++  LOG_TRACE("text retrieval result materialization", K_(sr_iter_param));
+   if (OB_NOT_NULL(ir_ctdef_->field_boost_expr_)) {
+     ObDatum *boost_datum = nullptr;
+     if (OB_FAIL(ir_ctdef_->field_boost_expr_->eval(*ir_rtdef_->eval_ctx_, boost_datum))) {
+diff --git a/src/sql/code_generator/ob_static_engine_cg.cpp b/src/sql/code_generator/ob_static_engine_cg.cpp
+index 3c0e70178..eb8106d86 100644
+--- a/src/sql/code_generator/ob_static_engine_cg.cpp
++++ b/src/sql/code_generator/ob_static_engine_cg.cpp
+@@ -790,6 +790,47 @@ int ObStaticEngineCG::generate_spec_final(ObLogicalOperator &op, ObOpSpec &spec)
+     }
+   }
+ 
++  // Only a complete, value-free IR root may discard its external ID output.
++  // Keep the child scan's ID expression and metadata for retrieval/merging.
++  if (OB_SUCC(ret) && PHY_TABLE_SCAN == spec.type_
++      && log_op_def::LOG_TABLE_SCAN == op.get_type()) {
++    ObLogTableScan &log_tsc = static_cast<ObLogTableScan &>(op);
++    ObTableScanSpec &tsc_spec = static_cast<ObTableScanSpec &>(spec);
++    ObTableScanCtDef &tsc_ctdef = tsc_spec.tsc_ctdef_;
++    ObDASScanCtDef &scan_ctdef = tsc_ctdef.scan_ctdef_;
++    ObDASBaseCtDef *root = tsc_ctdef.attach_spec_.attach_ctdef_;
++    if (spec.output_.empty() && spec.filters_.empty()
++        && log_tsc.get_access_exprs().empty()
++        && !log_tsc.get_index_back() && !tsc_spec.is_index_global_
++        && !tsc_ctdef.use_index_merge_ && OB_ISNULL(tsc_ctdef.lookup_ctdef_)
++        && !tsc_ctdef.is_das_keep_order_ && !tsc_ctdef.ordering_used_by_parent_
++        && OB_ISNULL(scan_ctdef.group_id_expr_)
++        && OB_ISNULL(scan_ctdef.trans_info_expr_)
++        && OB_ISNULL(scan_ctdef.pd_expr_spec_.trans_info_expr_)
++        && scan_ctdef.pd_expr_spec_.pd_storage_aggregate_output_.empty()
++        && OB_ISNULL(tsc_ctdef.calc_part_id_expr_)
++        && tsc_ctdef.global_index_rowkey_exprs_.empty()
++        && OB_ISNULL(tsc_spec.pdml_partition_id_)
++        && !tsc_spec.report_col_checksum_ && !tsc_spec.can_be_paused_
++        && !tsc_spec.is_scan_resumable_
++        && OB_NOT_NULL(root) && DAS_OP_IR_SCAN == root->op_type_
++        && 1 == root->children_cnt_ && OB_NOT_NULL(root->children_)
++        && root->children_[0] == &scan_ctdef) {
++      ObDASIRScanCtDef &ir_ctdef = static_cast<ObDASIRScanCtDef &>(*root);
++      if (ObMatchAgainstMode::NATURAL_LANGUAGE_MODE == ir_ctdef.mode_flag_
++          && !ir_ctdef.need_calc_relevance()
++          && !ir_ctdef.need_proj_relevance_score()
++          && OB_ISNULL(ir_ctdef.match_filter_) && !ir_ctdef.has_pushdown_topk()
++          && OB_NOT_NULL(ir_ctdef.inv_scan_domain_id_col_)
++          && 1 == ir_ctdef.result_output_.count()
++          && ir_ctdef.result_output_.at(0) == ir_ctdef.inv_scan_domain_id_col_) {
++        // An empty existing output array carries the dependency contract; no
++        // new serialized flag, expression generation, or ID-meta removal.
++        ir_ctdef.result_output_.clear();
++      }
++    }
++  }
++
+   if (log_op_def::LOG_SET == op.get_type()
+       && !static_cast<ObLogSet &>(op).is_recursive_union()
+       && spec.is_vectorized()) {
+diff --git a/src/storage/retrieval/ob_i_sparse_retrieval_iter.h b/src/storage/retrieval/ob_i_sparse_retrieval_iter.h
+index 948e3a45a..bbb7f8b23 100644
+--- a/src/storage/retrieval/ob_i_sparse_retrieval_iter.h
++++ b/src/storage/retrieval/ob_i_sparse_retrieval_iter.h
+@@ -112,7 +112,8 @@ struct ObSparseRetrievalMergeParam
+       filter_expr_(nullptr),
+       topk_limit_(0),
+       field_boost_(1.0),
+-      max_batch_size_(1)
++      max_batch_size_(1),
++      materialize_results_(true)
+   {}
+   ~ObSparseRetrievalMergeParam() {}
+   bool need_project_relevance() const { return relevance_proj_expr_ != nullptr; }
+@@ -120,7 +121,7 @@ struct ObSparseRetrievalMergeParam
+   bool need_pushdown_topk() const { return topk_limit_ > 0; }
+   TO_STRING_KV(KPC_(dim_weights), KPC(limit_param_), KP_(eval_ctx),
+       KP_(id_proj_expr), KP_(relevance_expr), KP_(relevance_proj_expr), KP_(filter_expr),
+-      K_(topk_limit), K_(max_batch_size));
++      K_(topk_limit), K_(max_batch_size), K_(materialize_results));
+   const ObIArray<double> *dim_weights_; // score weight for each dimension
+   const common::ObLimitParam *limit_param_;
+   sql::ObEvalCtx *eval_ctx_;
+@@ -131,6 +132,8 @@ struct ObSparseRetrievalMergeParam
+   int64_t topk_limit_;
+   double field_boost_;
+   int64_t max_batch_size_;
++  // Runtime only. The ID expression remains mandatory for internal metadata.
++  bool materialize_results_;
+ };
+ 
+ class ObISparseRetrievalMergeIter
+diff --git a/src/storage/retrieval/ob_sparse_daat_iter.cpp b/src/storage/retrieval/ob_sparse_daat_iter.cpp
+index 0c99f4d6c..fc3217942 100644
+--- a/src/storage/retrieval/ob_sparse_daat_iter.cpp
++++ b/src/storage/retrieval/ob_sparse_daat_iter.cpp
+@@ -402,8 +402,10 @@ int ObSRDaaTIterImpl::cache_result(int64_t &count, const ObDatum &id_datum, cons
+   } else if (OB_UNLIKELY(count >= buffered_domain_ids_.count() || count >= buffered_relevances_.count())) {
+     ret = OB_INVALID_ARGUMENT;
+   } else {
+-    buffered_domain_ids_[count].from_datum(id_datum);
+-    buffered_relevances_[count] = relevance;
++    if (iter_param_->materialize_results_) {
++      buffered_domain_ids_[count].from_datum(id_datum);
++      buffered_relevances_[count] = relevance;
++    }
+     ++count;
+     ++output_row_cnt_;
+     if (limit_param->is_valid() && output_row_cnt_ >= limit) {
+@@ -421,7 +423,12 @@ int ObSRDaaTIterImpl::project_results(const int64_t count)
+   ObEvalCtx *eval_ctx = iter_param_->eval_ctx_;
+   ObEvalCtx::BatchInfoScopeGuard guard(*eval_ctx);
+ 
+-  if (eval_ctx->is_vectorized()) {
++  if (!iter_param_->materialize_results_) {
++    // Preserve the scalar cardinality contract even without datum writes.
++    if (!eval_ctx->is_vectorized() && OB_UNLIKELY(1 != count)) {
++      ret = OB_ERR_UNEXPECTED;
++    }
++  } else if (eval_ctx->is_vectorized()) {
+     sql::ObBitVector &id_evaluated_flags = id_proj_expr->get_evaluated_flags(*eval_ctx);
+     for (int64_t i = 0; i < count; ++i) {
+       guard.set_batch_idx(i);

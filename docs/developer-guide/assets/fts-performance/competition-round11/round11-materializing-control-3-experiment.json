@@ -1,0 +1,21 @@
+{
+  "label": "round11-materializing-control-3",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-round10-utf8-prepare\\seekdb.exe",
+  "source_commit": "36519bd8b3782c90f50565ebf6b233beba542600+db05a9104441c7ceebacbcbccfc7fef0358ea4091c1df3f4fab0587a04599820=ecbf498d120dabaa01b60b89c49aa18a6b9926a1-src",
+  "binary_sha256": "4b5da29dccff5458257668e17e6209676e751363213b649faebbbdbaf35e2a82",
+  "log_level": "WARN",
+  "base_dir": "C:\\Users\\11946\\AppData\\Local\\Temp\\seekdb-fts-competition-candidate",
+  "actions": [
+    {
+      "action": "benchmark",
+      "exit_code": 0,
+      "seconds": 32.489377000005334
+    },
+    {
+      "action": "input-validation",
+      "exit_code": 0,
+      "seconds": 0.10722600000735838
+    }
+  ],
+  "report": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase\u6bd4\u8d5b\\setup\\fts\\round11-materializing-control-3-report.txt"
+}
