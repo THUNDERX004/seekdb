@@ -1,5 +1,13 @@
 # Full-text performance optimization
 
+## Round-13 sort-cache experiment (2026-11-04)
+
+Decision: **reject the sort descriptor cache** and restore both production files. Three full adjacent pairs against the saved parent show only **0.4536%** equal-category time reduction, while the query category is **2.9049% slower** and the first two pairs regress overall. The small aggregate gain comes from build/tokenize movements unrelated to the sort-only change and is not a stable FTS benefit. There is no new formal score.
+
+Before rejection, the candidate built successfully, matched all 315 official-original complete SQL results, metadata and warnings, and passed a direct production-linked initialization test (12 invalid-count cases, 8 valid initializations and 8 resets). Plans included ordinary SORT, TOP-N SORT, MERGE GROUP BY, windows and text retrieval. Forcing `enable_newsort` on caused the original executable connection to drop; those failed recordings are preserved and that mode is excluded, while default, rowset-size and encode-off cases remain.
+
+The [round-13 evidence manifest](../assets/fts-performance/competition-round13/manifest.json) includes both exact source snapshots, the candidate patch and executable identity, original fixture and plans, the native linker receipt, all six complete benchmark reports and failed original attempts. The rejected cache is not present in the production source.
+
 ## Round-12 checkpoint (2026-11-04)
 
 Decision: **reject** the derived ASCII stopword shortcut. Three full adjacent parent/candidate comparisons show **-4.0261%** equal-category time reduction: build 0.5244%, tokenize -7.0180%, query -5.5846%. These are local incremental results; there is no new formal score and no demonstrated full marks.
