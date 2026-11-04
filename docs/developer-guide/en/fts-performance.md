@@ -1,5 +1,15 @@
 # Full-text performance optimization
 
+## Round 16 lazy DDL rows (2026-11-04)
+
+Decision: **reject**. Three full serial pairs show build +2.6705%, tokenize -3.9781%, query +1.6349% and equal-category overall only **+0.1091%** time reduction. Pair totals are -1.6662%, -1.3330%, +3.0223%; repeatable benefit is unproven. Both DAS production files were restored and their raw original SHA256 values verified. This checkpoint archives evidence only; no new formal score or 50/50 result exists.
+
+The candidate retained parsing, map iteration order and four-column tuples while emitting through one reusable row. It removed bulk row/pointer-array construction. Existing four-cell rows already fit inline storage; one heap allocation per token was not removed. Longer map retention and the doc-ID snapshot also have costs. A separate complete DEBUG official run passed and exact segment/row TRACE messages prove execution of this path. Its perturbed timings are excluded.
+
+The production-linked native differential passed **180 cases, 2,646 complete tuple comparisons, 2,022 stored rows and 241,483 checks**, including poisoned inputs and lifecycle transitions. Its oracle is the unchanged eager function in the same binary, sharing current parser/map dependencies, with ngram only. It does not establish an independent-original oracle, allocation-failure injection, concurrency, forced spill or Linux coverage. The initial missing-public-type compile failure is preserved; after a test-only include fix, compilation, linking and execution actually passed. The candidate also passed ranked, key-type and seven established SQL suites.
+
+All six scored reports use unchanged complete official parameters, WARN level and matching inherited affinity to logical CPUs 0..3. Keep them separate from older unrestricted series. Every negative is retained, SELECT1 is not subtracted and hits remain 8001/11000/7332/20. [Round 16 evidence](../assets/fts-performance/competition-round16/manifest.json) preserves 98 gzip-protected byte-exact artifacts and hashes: reports, exact patch/original/candidate sources, failures, native receipts, audits and bounded runtime excerpts. The 7.18GB DEBUG runtime stream and database files are excluded; its hash and excerpt provenance remain.
+
 ## Round 15 IK chain-directory experiment (2026-11-04)
 
 Decision: **reject** the small-array chain directory. Three full pairs show build +0.6844%, tokenize -0.1953%, query -4.3628%, and equal-category overall **-1.2912%** time reduction. Pair totals are -4.0185%, +0.7303%, -1.0909%. The unscored engine-only IK diagnostic improves about 6.74%; scored IK TOKENIZE means are equal. Retain unchanged BENG fluctuations without assigning a cause.
