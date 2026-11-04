@@ -32,6 +32,7 @@
 #include "sql/resolver/dml/ob_stmt_expr_visitor.h"
 #include "data_plane/access/ob_tablet_scan.h"
 #include "query/vector/ob_vector_index_param.h"
+#include "sql/engine/basic/ob_file_scan_utils.h"
 
 namespace oceanbase
 {
@@ -47,6 +48,13 @@ enum MulModeTableType {
   OB_ORA_JSON_TABLE_TYPE, // 1
   OB_ORA_XML_TABLE_TYPE = 2,
   OB_UNNEST_TABLE_TYPE = 3,
+  OB_FILE_CSV_TABLE_TYPE = 4,
+  OB_FILE_JSON_TABLE_TYPE = 5,
+  OB_FILE_PARQUET_TABLE_TYPE = 6,
+  OB_FILE_GLOB_TABLE_TYPE = 7,
+  OB_FILE_CSV_DESCRIBE_TABLE_TYPE = 8,
+  OB_FILE_JSON_DESCRIBE_TABLE_TYPE = 9,
+  OB_FILE_PARQUET_DESCRIBE_TABLE_TYPE = 10,
 };
 
 typedef struct ObJtColBaseInfo
@@ -92,13 +100,21 @@ typedef struct ObJsonTableDef {
     : all_cols_(),
       doc_exprs_(),
       table_type_(MulModeTableType::INVALID_TABLE_TYPE),
-      namespace_arr_() {}
+      namespace_arr_(),
+      file_path_(),
+      file_options_(),
+      file_stat_(),
+      file_row_count_(0) {}
 
   int deep_copy(const ObJsonTableDef& src, ObIRawExprCopier &expr_copier, ObIAllocator* allocator);
   common::ObSEArray<ObJtColBaseInfo*, 4, common::ModulePageAllocator, true> all_cols_;
   common::ObSEArray<ObRawExpr*, 1, common::ModulePageAllocator, true> doc_exprs_;
   MulModeTableType table_type_;
   common::ObSEArray<ObString, 16, common::ModulePageAllocator, true> namespace_arr_;
+  ObString file_path_;
+  file_sql::FileOptions file_options_;
+  file_sql::FileStat file_stat_;
+  int64_t file_row_count_;
 } ObJsonTableDef;
 
 struct ObValuesTableDef {
@@ -222,7 +238,24 @@ struct TableItem
   bool is_has_sample_info() const { return sample_info_ != nullptr; }
   bool is_joined_table() const { return JOINED_TABLE == type_; }
   bool is_function_table() const { return FUNCTION_TABLE == type_; }
-  bool is_json_table() const { return JSON_TABLE == type_; }  // json_table_def_->table_type_ == MulModeTableType::OB_ORA_JSON_TABLE_TYPE
+  bool is_json_table() const
+  {
+    return JSON_TABLE == type_ && OB_NOT_NULL(json_table_def_)
+        && (MulModeTableType::OB_ORA_JSON_TABLE_TYPE == json_table_def_->table_type_
+            || MulModeTableType::OB_ORA_XML_TABLE_TYPE == json_table_def_->table_type_
+            || MulModeTableType::OB_UNNEST_TABLE_TYPE == json_table_def_->table_type_);
+  }
+  bool is_file_table() const
+  {
+    return JSON_TABLE == type_ && OB_NOT_NULL(json_table_def_)
+        && (MulModeTableType::OB_FILE_CSV_TABLE_TYPE == json_table_def_->table_type_
+            || MulModeTableType::OB_FILE_JSON_TABLE_TYPE == json_table_def_->table_type_
+            || MulModeTableType::OB_FILE_PARQUET_TABLE_TYPE == json_table_def_->table_type_
+            || MulModeTableType::OB_FILE_GLOB_TABLE_TYPE == json_table_def_->table_type_
+            || MulModeTableType::OB_FILE_CSV_DESCRIBE_TABLE_TYPE == json_table_def_->table_type_
+            || MulModeTableType::OB_FILE_JSON_DESCRIBE_TABLE_TYPE == json_table_def_->table_type_
+            || MulModeTableType::OB_FILE_PARQUET_DESCRIBE_TABLE_TYPE == json_table_def_->table_type_);
+  }
   bool is_values_table() const { return VALUES_TABLE == type_; }//used to mark values statement: values row(1,2), row(3,4);
 
   bool is_lateral_table() const { return LATERAL_TABLE == type_; }

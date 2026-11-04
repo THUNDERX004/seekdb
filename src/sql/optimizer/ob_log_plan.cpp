@@ -2268,7 +2268,8 @@ int ObLogPlan::allocate_json_table_path(JsonTablePath *json_table_path,
     op->set_table_name(table_item->get_table_name());
     ObJsonTableDef* tbl_def = table_item->get_json_table_def();
 
-    if (OB_FAIL(op->add_values_expr(json_table_path->value_exprs_))) {
+    if (table_item->is_json_table()
+        && OB_FAIL(op->add_values_expr(json_table_path->value_exprs_))) {
     } else if (OB_ISNULL(tbl_def)) {
       ret = OB_ERR_UNEXPECTED;
     } else if (OB_FAIL(append(op->get_origin_cols_def(), tbl_def->all_cols_))) {
@@ -2279,6 +2280,12 @@ int ObLogPlan::allocate_json_table_path(JsonTablePath *json_table_path,
     } else if (OB_FAIL(op->set_column_param_default_arr(json_table_path->column_param_default_exprs_))) {
     } else {
       op->set_table_type(tbl_def->table_type_);
+      if (table_item->is_file_table()) {
+        op->set_file_table_info(tbl_def->file_path_,
+                                tbl_def->file_options_,
+                                tbl_def->file_stat_,
+                                tbl_def->file_row_count_);
+      }
       out_access_path_op = op;
     }
   }

@@ -186,7 +186,7 @@ int TableItem::deep_copy(ObIRawExprCopier &expr_copier,
   ddl_table_id_ = other.ddl_table_id_;
   ref_query_ = other.ref_query_;
   SampleInfo *buf = NULL;
-  if (is_json_table() 
+  if ((other.is_json_table() || other.is_file_table())
       && OB_FAIL(deep_copy_json_table_def(*other.json_table_def_, expr_copier, allocator))) {
   } else if (OB_FAIL(expr_copier.copy(other.snapshot_query_expr_, snapshot_query_expr_))) {
   } else if (OB_FAIL(expr_copier.copy(other.function_table_expr_, function_table_expr_))) {
@@ -1557,6 +1557,7 @@ int ObDMLStmt::formalize_stmt_expr_reference(ObRawExprFactory *expr_factory,
         ret = OB_ERR_UNEXPECTED;
       } else if (table_item->is_function_table() ||
                  table_item->is_json_table() ||
+                 table_item->is_file_table() ||
                  table_item->for_update_ ||
                  table_item->is_values_table()) {
         if (OB_FAIL(set_sharable_expr_reference(*column_item.expr_, ExplicitedRefType::REF_BY_NORMAL))) {
@@ -4442,6 +4443,13 @@ int ObJsonTableDef::deep_copy(const ObJsonTableDef& src, ObIRawExprCopier &expr_
   for (size_t i = 0; OB_SUCC(ret) && i < src.namespace_arr_.count(); i ++) {
     if (OB_FAIL(ob_write_string(*allocator, src.namespace_arr_.at(i), ns_str))) {
     } else if (OB_FAIL(namespace_arr_.push_back(ns_str))) {
+    }
+  }
+  if (OB_SUCC(ret)) {
+    file_options_ = src.file_options_;
+    file_stat_ = src.file_stat_;
+    file_row_count_ = src.file_row_count_;
+    if (OB_FAIL(ob_write_string(*allocator, src.file_path_, file_path_))) {
     }
   }
 

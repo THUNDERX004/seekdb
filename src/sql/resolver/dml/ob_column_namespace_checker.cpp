@@ -319,7 +319,7 @@ int ObColumnNamespaceChecker::check_column_exists(const TableItem &table_item, c
     } else {
       is_exist = true;
     }
-  } else if (table_item.is_json_table()) {
+  } else if (table_item.is_json_table() || table_item.is_file_table()) {
     if (OB_FAIL(ObResolverUtils::check_json_table_column_exists(table_item,
                                                                 params_,
                                                                 col_name,

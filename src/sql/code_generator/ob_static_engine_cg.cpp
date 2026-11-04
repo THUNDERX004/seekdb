@@ -5460,8 +5460,10 @@ int ObStaticEngineCG::generate_spec(ObLogSelectInto &op, ObSelectIntoSpec &spec,
   } else if (OB_FAIL(spec.external_properties_.store_str(op.get_external_properties()))) {
   } else if (OB_FAIL(spec.user_vars_.init(op.get_user_vars().count()))) {
   } else if (OB_FAIL(spec.select_exprs_.init(op.get_select_exprs().count()))) {
+  } else if (OB_FAIL(spec.header_names_.init(op.get_select_exprs().count()))) {
   } else {
     ObString var;
+    const ObSelectStmt *select_stmt = static_cast<const ObSelectStmt *>(op.get_stmt());
     for (int64_t i = 0; OB_SUCC(ret) && i < op.get_user_vars().count(); ++i) {
       var.reset();
       if (OB_FAIL(ob_write_string(alloc, op.get_user_vars().at(i), var))) {
@@ -5471,10 +5473,21 @@ int ObStaticEngineCG::generate_spec(ObLogSelectInto &op, ObSelectIntoSpec &spec,
     for (int64_t i = 0; OB_SUCC(ret) && i < op.get_select_exprs().count(); ++i) {
       ObExpr *rt_expr = nullptr;
       const ObRawExpr* select_expr = op.get_select_exprs().at(i);
-      if (OB_ISNULL(select_expr)) {
+      const ObString *header_name = NULL;
+      var.reset();
+      if (OB_ISNULL(select_stmt)
+          || OB_UNLIKELY(i >= select_stmt->get_select_item_size())) {
+        ret = OB_ERR_UNEXPECTED;
+      } else if (OB_ISNULL(select_expr)) {
         ret = OB_ERR_UNEXPECTED;
       } else if (OB_FAIL(generate_rt_expr(*select_expr, rt_expr))) {
       } else if (OB_FAIL(spec.select_exprs_.push_back(rt_expr))) {
+      } else if (OB_FALSE_IT(
+          header_name = select_stmt->get_select_item(i).alias_name_.empty()
+              ? &select_stmt->get_select_item(i).expr_name_
+              : &select_stmt->get_select_item(i).alias_name_)) {
+      } else if (OB_FAIL(ob_write_string(alloc, *header_name, var))) {
+      } else if (OB_FAIL(spec.header_names_.push_back(var))) {
       }
     }
     if (OB_SUCC(ret)) {
@@ -5542,7 +5555,9 @@ int ObStaticEngineCG::generate_spec(ObLogJsonTable &op, ObJsonTableSpec &spec,
   int ret = OB_SUCCESS;
   if (OB_ISNULL(op.get_stmt())) {
     ret = OB_ERR_UNEXPECTED;
-  } else if (OB_FAIL(spec.value_exprs_.init(op.get_value_expr().count()))
+  } else if (OB_FAIL(op.is_file_table_path()
+                     ? OB_SUCCESS
+                     : spec.value_exprs_.init(op.get_value_expr().count()))
           || OB_FAIL(spec.column_exprs_.init(op.get_stmt()->get_column_size()))
           || OB_FAIL(spec.emp_default_exprs_.init(op.get_stmt()->get_column_size()))
           || OB_FAIL(spec.err_default_exprs_.init(op.get_stmt()->get_column_size()))
@@ -5550,7 +5565,9 @@ int ObStaticEngineCG::generate_spec(ObLogJsonTable &op, ObJsonTableSpec &spec,
           || OB_FAIL(spec.namespace_def_.init(op.get_ns_size()))) {
   } else if (OB_UNLIKELY(op.get_num_of_child() > 1)) {
     ret = OB_ERR_UNEXPECTED;
-  } else if (op.get_value_expr().empty()) {
+  } else if (op.is_file_table_path() && op.get_value_expr().count() > 0) {
+    ret = OB_ERR_UNEXPECTED;
+  } else if (!op.is_file_table_path() && op.get_value_expr().empty()) {
     ret = OB_ERR_UNEXPECTED;
   } else {
     for (int64_t i = 0; OB_SUCC(ret) && i < op.get_value_expr().count(); ++i) {
@@ -5569,8 +5586,16 @@ int ObStaticEngineCG::generate_spec(ObLogJsonTable &op, ObJsonTableSpec &spec,
   }
   if (OB_SUCC(ret)) {
     spec.table_type_ = op.get_table_type();  // table func type
+    if (op.is_file_table_path()) {
+      spec.file_options_ = op.get_file_options();
+      spec.file_stat_ = op.get_file_stat();
+      spec.file_row_count_ = op.get_file_row_count();
+      if (OB_FAIL(ob_write_string(alloc, op.get_file_path(), spec.file_path_))) {
+      }
+    }
 
-    if (OB_FAIL(spec.dup_origin_column_defs(op.get_origin_cols_def()))) {
+    if (OB_FAIL(ret)) {
+    } else if (OB_FAIL(spec.dup_origin_column_defs(op.get_origin_cols_def()))) {
     }
 
     for (int64_t i = 0; OB_SUCC(ret) && i < op.get_output_exprs().count(); ++i) {

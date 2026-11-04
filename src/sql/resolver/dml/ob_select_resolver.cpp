@@ -1651,7 +1651,7 @@ int ObSelectResolver::expand_target_list(
   } else if (table_item.is_function_table()) {
     if (OB_FAIL(resolve_all_function_table_columns(table_item, &column_items))) {
     }
-  } else if (table_item.is_json_table()) {
+  } else if (table_item.is_json_table() || table_item.is_file_table()) {
     if (OB_FAIL(resolve_all_json_table_columns(table_item, &column_items))) {
     }
   } else if (table_item.is_values_table()) {

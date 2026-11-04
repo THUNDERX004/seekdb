@@ -15,6 +15,8 @@
  */
 
 #define USING_LOG_PREFIX SQL
+#include <cctype>
+
 #include "config_bridge.h"
 #include "sql/ob_sql.h"
 #include "lib/json/ob_json_print_utils.h"
@@ -50,6 +52,90 @@ using namespace pl;
 
 namespace sql
 {
+
+namespace
+{
+
+bool is_sql_identifier_char(const char c)
+{
+  return std::isalnum(static_cast<unsigned char>(c))
+      || '_' == c || '$' == c;
+}
+
+bool match_sql_keyword(const char *sql,
+                       const int64_t len,
+                       const int64_t pos,
+                       const char *keyword)
+{
+  const int64_t keyword_len = static_cast<int64_t>(strlen(keyword));
+  bool matched = pos >= 0 && pos + keyword_len <= len;
+  for (int64_t i = 0; matched && i < keyword_len; ++i) {
+    matched = std::tolower(static_cast<unsigned char>(sql[pos + i]))
+        == std::tolower(static_cast<unsigned char>(keyword[i]));
+  }
+  return matched
+      && (pos == 0 || !is_sql_identifier_char(sql[pos - 1]))
+      && (pos + keyword_len == len
+          || !is_sql_identifier_char(sql[pos + keyword_len]));
+}
+
+bool contains_file_sql_function(const ObString &sql)
+{
+  static const char *const function_names[] = {
+      "read_csv", "read_json", "read_ndjson", "read_parquet", "glob"};
+  bool found = false;
+  const char *text = sql.ptr();
+  const int64_t len = sql.length();
+  char quote = '\0';
+  for (int64_t i = 0; !found && i < len; ++i) {
+    const char c = text[i];
+    if ('\0' != quote) {
+      if (c == quote) {
+        if (i + 1 < len && text[i + 1] == quote) {
+          ++i;
+        } else {
+          quote = '\0';
+        }
+      } else if ('\\' == c && i + 1 < len) {
+        ++i;
+      }
+      continue;
+    } else if ('\'' == c || '"' == c || '`' == c) {
+      quote = c;
+      continue;
+    } else if ('-' == c && i + 1 < len && '-' == text[i + 1]) {
+      while (i + 1 < len && '\n' != text[i + 1]) {
+        ++i;
+      }
+      continue;
+    } else if ('#' == c) {
+      while (i + 1 < len && '\n' != text[i + 1]) {
+        ++i;
+      }
+      continue;
+    } else if ('/' == c && i + 1 < len && '*' == text[i + 1]) {
+      i += 2;
+      while (i + 1 < len && !('*' == text[i] && '/' == text[i + 1])) {
+        ++i;
+      }
+      ++i;
+      continue;
+    }
+    for (size_t j = 0; !found && j < ARRAYSIZEOF(function_names); ++j) {
+      const char *name = function_names[j];
+      if (match_sql_keyword(text, len, i, name)) {
+        int64_t next = i + static_cast<int64_t>(strlen(name));
+        while (next < len && std::isspace(static_cast<unsigned char>(text[next]))) {
+          ++next;
+        }
+        found = next < len && '(' == text[next];
+      }
+    }
+  }
+  return found;
+}
+
+} // namespace
 
 const int64_t ObSql::max_error_length = 80;
 const int64_t ObSql::SQL_MEM_SIZE_LIMIT = 1024 * 1024 * 64;
@@ -1944,10 +2030,29 @@ OB_INLINE int ObSql::handle_text_query(const ObString &stmt, ObSqlCtx &context, 
 
   ObIAllocator &allocator = THIS_WORKER.get_sql_arena_allocator();
   ObSQLSessionInfo &session = result.get_session();
+  const char *copy_ptr = trimed_stmt.ptr();
+  const bool is_copy_statement =
+      trimed_stmt.length() >= 4
+      && 0 == STRNCASECMP(copy_ptr, "copy", 4)
+      && (trimed_stmt.length() == 4
+          || (copy_ptr[4] != '_'
+              && !isalnum(static_cast<unsigned char>(copy_ptr[4]))));
+  const bool uses_file_sql =
+      is_copy_statement || contains_file_sql_function(trimed_stmt);
+  if (OB_SUCC(ret) && is_copy_statement) {
+    bool file_sql_enabled = false;
+    if (OB_FAIL(session.get_sys_variable(share::SYS_VAR_ENABLE_FILE_SQL,
+                                         file_sql_enabled))) {
+    } else if (!file_sql_enabled) {
+      ret = OB_NOT_SUPPORTED;
+      LOG_USER_ERROR(OB_NOT_SUPPORTED, "enable_file_sql is off");
+    }
+  }
   
   ObExecContext& ectx = result.get_exec_context();
   int get_plan_err = OB_SUCCESS; //used for judge whether add plan to plan cache
-  bool use_plan_cache = session.get_local_ob_enable_plan_cache();
+  bool use_plan_cache =
+      session.get_local_ob_enable_plan_cache() && !uses_file_sql;
   ObPlanCacheCtx *pc_ctx = NULL;
   bool is_begin_commit_stmt = false;
 
@@ -1963,6 +2068,9 @@ OB_INLINE int ObSql::handle_text_query(const ObString &stmt, ObSqlCtx &context, 
                                          allocator,
                                          context,
                                          ectx);
+    if (uses_file_sql) {
+      pc_ctx->should_add_plan_ = false;
+    }
     if (trimed_stmt.length() == 6) {
       // Whether it is a COMMIT statement
       is_begin_commit_stmt = (0 == STRNCASECMP(trimed_stmt.ptr(), "commit", 6)

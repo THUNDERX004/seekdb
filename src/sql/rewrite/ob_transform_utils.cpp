@@ -10907,7 +10907,7 @@ int ObTransformUtils::check_is_json_constraint(ObTransformerCtx *ctx,
     ret = OB_ERR_UNEXPECTED;
   } else if (OB_ISNULL(table = stmt->get_table_item_by_id(col_item.table_id_))) {
     ret = OB_ERR_UNEXPECTED;
-  } else if (table->is_json_table() || table->is_temp_table() 
+  } else if (table->is_json_table() || table->is_file_table() || table->is_temp_table()
               || table->is_generated_table() || table->is_function_table()) {
     ObColumnRefRawExpr* col_expr = col_item.get_expr();
     if (OB_NOT_NULL(col_expr)) {
@@ -11141,7 +11141,7 @@ int ObTransformUtils::get_column_node_from_table(ObTransformerCtx *ctx,
             && OB_NOT_NULL(tmp_table_item->ref_query_)) {
           if (OB_FAIL(stmt->get_column_items(tmp_table_item->table_id_, column_list))) {
           }
-        } else if (tmp_table_item->is_json_table()) {
+        } else if (tmp_table_item->is_json_table() || tmp_table_item->is_file_table()) {
           ret = OB_SUCCESS;
           if (OB_FAIL(ObTransformUtils::get_columnitem_from_json_table(stmt, tmp_table_item, column_list))) {
           }

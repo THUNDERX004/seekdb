@@ -43,6 +43,7 @@
 .cursor/
 .codegraph/
 /.obdev
+/.local/
 /.settings/
 BROWSE
 Build (GNU)

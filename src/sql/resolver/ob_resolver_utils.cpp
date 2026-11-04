@@ -220,7 +220,7 @@ int ObResolverUtils::check_json_table_column_exists(const TableItem &table_item,
   int ret = OB_SUCCESS;
   ObSEArray<ObString, 16> column_names;
   bool exist = false;
-  CK(table_item.is_json_table());
+  CK(table_item.is_json_table() || table_item.is_file_table());
   CK (OB_NOT_NULL(table_item.json_table_def_));
 
   ObJsonTableDef* jt_def = table_item.json_table_def_;
@@ -6063,8 +6063,7 @@ int ObResolverUtils::check_secure_path(const common::ObString &secure_file_priv,
     MEMCPY(buf, secure_file_priv.ptr(), secure_file_priv.length());
 
     struct stat path_stat;
-    stat(buf, &path_stat);
-    if (0 == S_ISDIR(path_stat.st_mode)) {
+    if (0 != stat(buf, &path_stat) || 0 == S_ISDIR(path_stat.st_mode)) {
       ret = OB_ERR_NO_PRIVILEGE;
     } else {
       MEMSET(buf, 0, sizeof(buf));
@@ -6076,7 +6075,7 @@ int ObResolverUtils::check_secure_path(const common::ObString &secure_file_priv,
       ObCStringHelper helper;
       if (NULL == (real_secure_file = ::realpath(helper.convert(secure_file_priv), buf))) {
 #endif
-        // pass
+        ret = OB_ERR_NO_PRIVILEGE;
       } else {
         ObString secure_file_priv_tmp(real_secure_file);
         const int64_t pos = secure_file_priv_tmp.length();
@@ -6118,8 +6117,8 @@ int ObResolverUtils::check_secure_path(const common::ObString &secure_file_priv,
     for (int i = 0; OB_ERR_NO_PRIVILEGE == ret && i < list_size; i++) {
       const char * const secure_file_path = server_secure_path_allowlist[i];
       struct stat path_stat;
-      stat(secure_file_path, &path_stat);
-      if (0 == S_ISDIR(path_stat.st_mode)) {
+      if (0 != stat(secure_file_path, &path_stat)
+          || 0 == S_ISDIR(path_stat.st_mode)) {
         // continue
       } else {
         MEMSET(buf, 0, sizeof(buf));
