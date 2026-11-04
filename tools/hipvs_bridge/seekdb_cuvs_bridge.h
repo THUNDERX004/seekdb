@@ -1,14 +1,15 @@
 #ifndef SEEKDB_CUVS_BRIDGE_H
 #define SEEKDB_CUVS_BRIDGE_H
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* One-shot: build a CAGRA index over base (n x dim, row-major f32) on the GPU and
- * search queries (nq x dim), writing top-k uint32 neighbor ids to out_ids
+/* One-shot: build a CAGRA index over base (n x dim, row-major f32) on the GPU
+ * and search queries (nq x dim), writing top-k uint32 neighbor ids to out_ids
  * (length nq*topk). Returns 0 on success, non-zero on error. */
-int seekdb_cuvs_cagra_knn(const float* base, long n, long dim,
-                          const float* query, long nq, long topk,
-                          unsigned int* out_ids);
+int seekdb_cuvs_cagra_knn(const float *base, long n, long dim,
+                          const float *query, long nq, long topk,
+                          unsigned int *out_ids);
 
 /* Build-once / search-many (used by seekdb's ob_vsag_adaptor GPU path).
  *  - seekdb_cuvs_build: builds a CAGRA index on the GPU from base (n x dim,
@@ -18,13 +19,25 @@ int seekdb_cuvs_cagra_knn(const float* base, long n, long dim,
  *    cols), writing uint32 row offsets to out_ids[nq*topk] and (if non-NULL) L2
  *    distances to out_dist[nq*topk]. Returns 0 on success.
  *  - seekdb_cuvs_free: releases the handle.
- * All ROCm/cuVS state lives inside the .so; seekdb only ever sees these C symbols. */
-void* seekdb_cuvs_build(const float* base, long n, long dim);
-int   seekdb_cuvs_search(void* handle, const float* query, long nq, long topk,
-                         unsigned int* out_ids, float* out_dist);
-void  seekdb_cuvs_free(void* handle);
-int seekdb_cuvs_serialize(void* handle, const char* filename);
-void* seekdb_cuvs_deserialize(const char* filename, long n, long dim);
+ * All ROCm/cuVS state lives inside the .so; seekdb only ever sees these C
+ * symbols. */
+void *seekdb_cuvs_build(const float *base, long n, long dim);
+int seekdb_cuvs_search(void *handle, const float *query, long nq, long topk,
+                       unsigned int *out_ids, float *out_dist);
+void seekdb_cuvs_free(void *handle);
+int seekdb_cuvs_serialize(void *handle, const char *filename);
+void *seekdb_cuvs_deserialize(const char *filename, long n, long dim);
+
+/* Compact snapshot helpers. The graph is the only data already owned by the
+ * CAGRA index that must be copied out; seekdb already persists the exact
+ * source vectors and external ids. */
+int seekdb_cuvs_graph_info(void *handle, uint64_t *n, uint64_t *graph_degree,
+                           uint64_t *graph_bytes);
+int seekdb_cuvs_copy_graph(void *handle, void *out_graph, uint64_t graph_bytes);
+void *seekdb_cuvs_deserialize_from_graph(const void *graph,
+                                         uint64_t graph_bytes,
+                                         uint64_t graph_degree,
+                                         const float *base, long n, long dim);
 #ifdef __cplusplus
 }
 #endif

@@ -1,6 +1,6 @@
 # hipVS/cuVS GPU vector backend
 
-Status: **Phase 1 implemented and review-gated** on AMD `gfx1100` with ROCm
+Status: **competition V5 successor candidate** for AMD `gfx1100` with ROCm
 7.2.4. This directory documents the current integration and its reproducible
 validation assets. Historical feasibility experiments remain available in Git
 history rather than in the product-facing tree.
@@ -47,7 +47,21 @@ seekdb_cuvs_build
 seekdb_cuvs_search
 seekdb_cuvs_free
 seekdb_cuvs_cagra_knn
+seekdb_cuvs_graph_info
+seekdb_cuvs_copy_graph
+seekdb_cuvs_deserialize_from_graph
 ```
+
+The `OBCUVS03` snapshot stores the final adjacency graph directly. seekdb
+already persists the source FP32 vectors and external ids, so restoring uses
+the official `cuvsCagraIndexFromArgs` path instead of serializing a second copy
+of the dataset through a temporary file. `OBCUVS02` snapshots remain readable.
+
+The build uses the contest-required degree-128 output graph and degree-256
+intermediate graph. NN-Descent is bounded to 20 iterations for 128-dimensional
+data and 32 iterations above 128 dimensions; the former baseline always ran
+100 iterations. Search parameters and device-side query/result buffers are
+reused by the bridge handle.
 
 Build seekdb with the resulting library:
 
@@ -118,20 +132,18 @@ The runner validates:
 - threshold-triggered CAGRA rebuild;
 - one-call `batch_knn`, row cardinality, and recall for Top-10 and Top-100;
 - GPU device file descriptors and hidden-GPU fallback;
+- compact adjacency-graph persistence and same-process graph reconstruction;
 - bounded observer cleanup and closed ports.
 
 The runner writes a machine-readable `summary.json` into its evidence directory.
-Results for a specific candidate belong in that pull request's description or a
-validation comment rather than in the source tree.
+Machine-specific measurements stay in that evidence directory; the reproducible
+method and candidate status are recorded in [`PERFORMANCE.md`](PERFORMANCE.md).
 The no-GPU DDL contract remains covered by
 [`vector_index_cuvs_ddl.test`](../../tools/deploy/mysql_test/test_suite/vector_index/t/vector_index_cuvs_ddl.test).
 
 ## Current limitations
 
 - Phase 1 supports dense float32 L2 indexes only.
-- GPU indexes are process-local and rebuilt lazily; persistence and cache reuse
-  are follow-up work.
 - The explicit batch API rebuilds its CAGRA index per call.
 - GPU validation is manual because upstream CI has no compatible GPU runner.
-- Multi-GPU, long-duration, and snapshot-reload coverage are out of scope for
-  this phase.
+- Multi-GPU and long-duration coverage are out of scope for this phase.
