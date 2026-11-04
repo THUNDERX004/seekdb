@@ -1,5 +1,44 @@
 # Full-text performance optimization
 
+## Round 18 bounded count-union checkpoint (2026-11-04)
+
+Decision: **retain this bounded incremental checkpoint**. The existing natural-language, score-free union for at most three dimensions preserves champion selection and deduplication. Only unmaterialized results with no valid pushed LIMIT/OFFSET increment the local count directly; input/output counters receive the produced-row delta before return. Materialized and valid LIMIT/OFFSET paths retain `cache_result`. Saved token-ID access uses `get_data` with the index assertion and refill path retained; borrowed array views remain local. SQL equality does not prove every internal invariant or error path.
+
+Three complete serial pairs use the unchanged official parameters `ROWS=20000 BATCH=500 ROUNDS=3000 QUERY_ROUNDS=200 SAMPLES=3 WARMUP=30 SKIP_LOAD=0`, WARN and matching logical CPU 0–3 affinity. All hits remain 8001/11000/7332/20. SELECT1 is not subtracted. The preserved `count-comparison-3pair.json` uses ratios of per-metric run means, category arithmetic means and equal category weighting; all negatives remain. Positive reduction means faster:
+
+| Metric | Control mean | Candidate mean | Time reduction |
+| --- | ---: | ---: | ---: |
+| build_ik_all_sec | 7.591333 | 6.973333 | +8.140862% |
+| build_ik_content_sec | 5.327667 | 5.291667 | +0.675718% |
+| build_beng_en_sec | 3.003 | 2.970667 | +1.076701% |
+| tokenize_ik_avg_ms | 0.1467333 | 0.1540667 | -4.997728% |
+| tokenize_beng_avg_ms | 0.1116667 | 0.1085333 | +2.805970% |
+| query_cn_avg_ms | 1.0139 | 0.984 | +2.949009% |
+| query_beng_avg_ms | 1.2888 | 1.182833 | +8.222119% |
+| query_mixed_avg_ms | 1.108333 | 0.9920667 | +10.490226% |
+| query_limit_avg_ms | 2.369433 | 2.417567 | -2.031428% |
+
+Category reductions: **build +3.297760%, tokenize -1.095879%, query +4.907481%**; equal-category overall **+2.369788%**. Untouched build/tokenize fluctuations are not causal gains from this query change. This is local incremental evidence, not cumulative improvement from the official baseline, statistical significance, a new formal score or proof of 50/50.
+
+| Complete pair | Query reduction | Equal-category overall |
+| --- | ---: | ---: |
+| 1 | +5.695043% | +1.941551% |
+| 2 | +4.498129% | +0.364383% |
+| 3 | +4.479829% | +4.773081% |
+
+Candidate a1 passed **4,416 materialization cases, 432 ranked cases / 142,692 rows, 192 key-type cases / 68,852 rows and seven established suites**, according to logs and zero action exit statuses. Both pinned control and candidate passed the new independent SQL test: **131 explicit ASCII BENG documents, 96 query/batch groups, 36 prepared count executions and 709 exact comparisons per binary**. Complete ordered IDs are checked against Python OR membership, alongside unlimited direct/derived `COUNT(*)`, `COUNT(id)` and positive LIMIT/OFFSET controls. Queries cover 1/2/3/4/8/9 terms, overlap, disjoint/missing postings, duplicates and all/no hits. Requested `rowsets_max_rows` values are 1/2/3/7/16/64. Hints and SQL results do not prove effective internal capacities, internal input/output or batch counters, physical branch selection, error injection, native equivalence or concurrency safety. Prepared rebinding is not an instrumented internal rescan; existing ranked fixtures remain unchanged.
+
+Unscored cycle-selected IP diagnosis is separate from benchmark intervals. Preflight CN has only 12 samples (4 target / 8 external). Full CN records **1,814 = 432 target + 1,382 external**, and BENG **2,188 = 621 + 1,567**. Build2 phase samples are only **356/268/148**, with target **139/106/51** and external 217/162/97: weak, small build evidence. These are instantaneous RIP observations after selected thread-cycle deltas, not stacks, CPU utilization, per-symbol CPU shares or a full bottleneck-cost measurement.
+
+Build1 performed sampling but **report serialization failed with `TypeError: Object of type Decimal is not JSON serializable` (exit 1)**. Its truncated invalid JSON and full traceback are retained exactly; partial `status: complete` text is not a successful receipt. The parent converted byte-total metadata to integers only after exact source/copy totals and binary/null-safe row equality checks; build2 then produced a complete report (exit 0). No broad Decimal coercion or benchmark change was added. Current helper bytes are archived; the failed source revision was not independently frozen. Prior no-op restoration and actual seven-task control rebuild logs are referenced in round17 evidence, not duplicated.
+
+[Round 18 exact-byte evidence](../assets/fts-performance/competition-round18/manifest.json) contains all six reports/metadata/logs, all candidate-a1 regressions, both focused SQL outcomes, exact original/candidate snapshots, patch/static report, candidate build log, current auxiliary harness snapshots and all five profile attempts including failed partial output. Raw/gzip SHA256 preserve LF/CRLF and exact bytes. Historical proposal/preparation status text retains its original meaning; later parent execution is recorded separately. Binaries, PDB/DLL/LIB/OBJ, runtime/data, secrets and unfinished stringdiff are excluded.
+
+The live two-file candidate was independently hash-checked against staged snapshots at archival. Control executable SHA256: `ddd423ff4e7b7da6b80ac9cb034dbed8e7c76be24eb41f7b2764c7741a72896a`; candidate: `b271980a025bf9b20086e69f116ec2c24f164d21edd814b4e03d418cadd239fc`. Commit labels alone do not identify dirty-tree builds; exact source/binary pins accompany them. The archival sidecar performs no seekdb build, SQL/native/performance run, production change or Git operation. Only the earlier user-supplied formal result exists; **no new formal score or full marks is established**.
+
+Historical runtime source_commit labels remain acd6333eb344fda9f51c02db20ab233789ade1eb. The parent reports the retained source and focused SQL test committed/pushed and remote-verified at 55d2be86621360fefce3d6fe41f22a96556cdf27; this is separate provenance, not a relabeling or rerun of those binaries.
+
+
 ## Round 17 BMW saturation-bound experiment (2026-11-04)
 
 Decision: **reject both V1 and V2**. V1 replaced the full per-term block-stat prepass with the existing BM25 query-token saturation bound while retaining actual scores and local block bounds, but changed ordered Boolean LIMIT results. V2 restricted the shortcut to natural-language mode, non-function lookups, no dimension weights and unit field boost, retaining nonnegative-count, finite-positive-average and finite-positive-bound guards. V2 passed the existing correctness checks but regressed the target query. A numeric upper bound does not establish traversal, ordering or performance compatibility.

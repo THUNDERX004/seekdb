@@ -305,3 +305,28 @@ This suite issues parameterized SELECTs on dedicated port 2891 and creates no
 tables. Input phrase counts do not assert a particular internal directory size.
 See round-15 decision.json for fixture SHA256 and provenance. The small-array
 production experiment was rejected after a 1.2912% full-benchmark regression.
+
+## Count-union accounting regression (round 18)
+
+```sh
+python3 unittest/storage/fts/test_count_union_accounting.py --port 2891
+```
+
+Requires PyMySQL; defaults to 2891 and refuses 2881 before connecting. Optional
+password: `SEEKDB_TEST_PASSWORD`. Creates/drops only
+`fts_count_union_accounting`, including cleanup on test failure. No recording
+mode or expected fixture is used or overwritten.
+
+Independent Python OR membership for 131 explicit ASCII BENG documents checks
+complete ordered IDs, unlimited direct/derived `COUNT(*)`, `COUNT(id)` and positive
+LIMIT/OFFSET controls. Six requested `rowsets_max_rows` values 1/2/3/7/16/64 give
+96 query/batch groups, spanning 1/2/3/4/8/9 terms, overlap/disjoint/missing
+postings, duplicates and all/no hits. Both pinned round18 control and candidate
+passed 709 exact result comparisons each, including 36 prepared counts and one
+exact inserted-corpus check.
+
+Hints/SQL equality do not prove actual iterator capacity, physical branch,
+internal input/output or batch counters, error injection, concurrency or native
+coverage. Prepared rebinding is not an instrumented internal rescan. Existing
+ranking/score fixtures remain unchanged. See the bilingual round18 report and
+[exact-byte evidence](../../../docs/developer-guide/assets/fts-performance/competition-round18/manifest.json).
