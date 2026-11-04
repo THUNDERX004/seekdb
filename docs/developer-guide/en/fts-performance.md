@@ -1,5 +1,22 @@
 # Full-text performance optimization
 
+## Round 14 rejected experiments (2026-11-04)
+
+Both production experiments were restored. Each has three serial, complete pairs against the same-configuration parent executable. Reductions use ratios of the three metric means, followed by equal category weighting; all negative values remain.
+
+| Experiment | Build | Tokenize | Query | Overall time reduction |
+| --- | ---: | ---: | ---: | ---: |
+| Same-collation stopword conversion shortcut | 1.7601% | -2.7078% | -2.2793% | **-1.0757%** |
+| Batched TOKENIZE JSON result nodes | 0.1237% | -0.9232% | 1.8809% | **0.3605%** |
+
+Only one JSON pair has a positive overall result; a repeatable tokenize benefit is not established. Earlier stopword comparisons used a configuration-mismatched control and are excluded. The historical average of paired ratios is retained separately from the ratio-of-means result. SELECT1 is not subtracted and no fastest sample is selected. Official workloads, SQL, timers, scoring and build files are unchanged.
+
+The new `test_tokenize_json_nodes.py` compares all ordered JSON bytes, column metadata, warnings and original SQL errors for 1,560 cases. Its fixture was independently recorded on the official-original executable SHA256 `bae4a3b9e1b4662d4021b28d5adc085764beb6cf02122eacd57b8e16b6fe1762`; fixture SHA256 is `e87f9ca69192116ed37cb376e4a55b18da1b7e47b9f30a306a5d51388c4771ab`. The JSON candidate passed all cases and the seven established FTS suites. Stable ASCII aliases, boolean metadata and VARCHAR input for the original server's unsupported IK LONGTEXT locators were corrected before recording; the full corpus remains. IK untyped NULL retains original error 1235.
+
+The native failure-injection helper is an unexecuted design. Its build attempt failed before compilation because `build-settings.json` was absent; no native lifetime or failure-path pass is claimed. The stopword candidate passed 2,064 SQL cases without a new direct native check. Its exact source patch was not retained, limiting source reproducibility of that rejected experiment.
+
+[Round 14 evidence](../assets/fts-performance/competition-round14/manifest.json) retains all twelve full runs, microbenchmarks, failed attempts, exact JSON source patch/snapshots, binary identities and limitations. The independent fixture lives in the established unittest directory. The only formal result remains the user's earlier 21.099/100 raw score, about **10.55/50** weighted. No new formal result or full marks is claimed.
+
 ## Round-13 sort-cache experiment (2026-11-04)
 
 Decision: **reject the sort descriptor cache** and restore both production files. Three full adjacent pairs against the saved parent show only **0.4536%** equal-category time reduction, while the query category is **2.9049% slower** and the first two pairs regress overall. The small aggregate gain comes from build/tokenize movements unrelated to the sort-only change and is not a stable FTS benefit. There is no new formal score.

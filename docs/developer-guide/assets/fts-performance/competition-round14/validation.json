@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-04",
+  "parent_commit": "f602f6d7f0b4fc3377b038b67fe622cd04cd2146",
+  "decision": "Both production experiments rejected and restored before the next experiment",
+  "json_candidate_binary_sha256": "104a228d0c9f6b26087824d7ff4a10d3d96f1398a617a1e500f9d9bae54a2321",
+  "json_sql_original_record": {
+    "label": "r14-json-original-complete",
+    "cases": 1560,
+    "binary_sha256": "bae4a3b9e1b4662d4021b28d5adc085764beb6cf02122eacd57b8e16b6fe1762",
+    "exit_code": 0
+  },
+  "json_sql_candidate_compare": {
+    "label": "r14-json-candidate-complete",
+    "cases": 1560,
+    "exit_code": 0,
+    "comparison": "complete ordered JSON, metadata, warnings and SQL errors"
+  },
+  "fixture": {
+    "path": "unittest\\storage\\fts\\tokenize_json_nodes_expected.json.gz",
+    "sha256": "e87f9ca69192116ed37cb376e4a55b18da1b7e47b9f30a306a5d51388c4771ab",
+    "workload_sha256": "73cadde932120c8feff41fb138a920fbbf1c0455638a45c83e1127a1b3c0b3bc"
+  },
+  "fixture_corrections_before_successful_original_record": [
+    "ASCII alias prevents original-server truncation of expression field names inside UTF8",
+    "VARCHAR(32768) input retains full corpus; original IK rejects LONGTEXT locators with 1210",
+    "Boolean column metadata is serialized explicitly",
+    "Only IK untyped NULL retains original 1235 unsupported binary-charset error"
+  ],
+  "native_status": "Build attempt failed before compile/link because build-settings.json was absent; no native runtime or native byte differential",
+  "native_draft_limit": "Archived README describes intended capture, not an accomplished capture; no build-settings.json exists",
+  "source_restore_check": "git diff --exit-code for JSON helper, JSON header and stopword cpp passed before round15 edits",
+  "stopword_exact_source_limit": "No exact round14 stopword patch was saved; binary identities and measurements survive, so this rejected experiment is not fully source-reproducible",
+  "formal_score": "Only user-provided 21.099191573256494/100 (10.549595786628247/50) exists; no new formal evaluation",
+  "parameter_and_metric_validation": "Six complete reports per experiment, unchanged official workload; retain all negative reductions"
+}

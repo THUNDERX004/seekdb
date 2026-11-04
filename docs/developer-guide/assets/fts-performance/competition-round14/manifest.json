@@ -1,0 +1,1418 @@
+{
+  "schema_version": 1,
+  "files": [
+    {
+      "path": "raw/r14-json-candidate-b1-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b1-experiment.json",
+      "source_bytes": 1591,
+      "source_sha256": "8583cac4dbb33bc952ae588864bb598dcb3e70979dcaa86d6d857c5a79e9e176",
+      "bytes": 613,
+      "sha256": "621706131f924a1970b2fef063a391b7dfdeeea35045622b616b67cb31d97583",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b2-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b2-experiment.json",
+      "source_bytes": 767,
+      "source_sha256": "c59d806cf1ea350adbb08f8a2641b42ce6a5e6fcd699ac0cd7dbc1e96b1bf460",
+      "bytes": 444,
+      "sha256": "ed56cf8b5fd7bf38c0a9a202572fcb7d874f91d5c9e3bae60db9be9d7834e3f6",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b3-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b3-experiment.json",
+      "source_bytes": 768,
+      "source_sha256": "627e3551d8f0cd76f48be756a505fce67a6417bdd725abcbb79e21b7bd584764",
+      "bytes": 445,
+      "sha256": "67ccadca64365e24262d9d3840046e3a450815e6e3ca8242b8290fe08e978eec",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-control-b1-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-control-b1-experiment.json",
+      "source_bytes": 755,
+      "source_sha256": "f931f106a656cb22701751be4af7e4e6df9addbc70934fb1739c05650eb8ed43",
+      "bytes": 437,
+      "sha256": "24ea30cca483be1023937af3e09cbd57e49781b3a109ec624d44caf7b3744325",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-control-b2-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-control-b2-experiment.json",
+      "source_bytes": 755,
+      "source_sha256": "cf2b008116deb0224bf1e9c05ccbd5dac4d0a12cfe1757119388c9bfc58516e6",
+      "bytes": 438,
+      "sha256": "7995eec2b9dcf05a1bad6021635d5d3baa3cb55055266c3dc2cba65f7df6b050",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-control-b3-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-control-b3-experiment.json",
+      "source_bytes": 756,
+      "source_sha256": "d9bd29ae6e9d891da0716e5163773026c2b08b83deca4db79a4b9e74dae208d7",
+      "bytes": 439,
+      "sha256": "bddf93a0fb6409403f387d33a5158ca436440db3019440a6aa09d0d683b4af7e",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-b1-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-b1-experiment.json",
+      "source_bytes": 766,
+      "source_sha256": "789f3077728e54c46bbadf55817bb08c5f7b9bf2a97346b27f7916a61c166633",
+      "bytes": 442,
+      "sha256": "f886b3c3341952f510c90a25d30b58c4a2f3336a9277b343f6e62ce65b47cfe7",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-b2-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-b2-experiment.json",
+      "source_bytes": 767,
+      "source_sha256": "e91f19f2d8b55cd7f0badb16b80959698279679b5a8843ed77c078dfa0bbedbe",
+      "bytes": 443,
+      "sha256": "8481b601c992dddd01035040c8c8c0a98d03351f1a086febb7d3ebd62dc79dbf",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-b3-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-b3-experiment.json",
+      "source_bytes": 766,
+      "source_sha256": "9f70e9085be1924b32c0769a7b7c55d6193a10b38fd18ea557c803e9420969df",
+      "bytes": 443,
+      "sha256": "5d0eebc6fa80baca2ce8f58e35b85aafe62ef43cf22d6d8b9e8cf6fdd73557a9",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-m1-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-m1-experiment.json",
+      "source_bytes": 524,
+      "source_sha256": "b6726df390a63a3b9baa6d7e5beba9d395a566c394a77470127eaea3cbcfcc48",
+      "bytes": 356,
+      "sha256": "af1c53bab93414be3c9c6b69270c8d5f8279e40f70162d5fb745e286cbd7535e",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-m1-micro.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-m1-micro.json",
+      "source_bytes": 263,
+      "source_sha256": "d22428807d9063bb2f44440c852230684f53034ffadd6986d8b93eb2ccd48460",
+      "bytes": 200,
+      "sha256": "b685b3382e18b5f4aaf45176b665c4637d568c6e995669cd1a3fc79b8cf7d043",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-m2-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-m2-experiment.json",
+      "source_bytes": 524,
+      "source_sha256": "f4bbb9d8c2ae316af26b0f58eb2cd629071c9618d20d1ab639326186dcd7012f",
+      "bytes": 356,
+      "sha256": "4214fc8e1ad59b68423e8a94dab45f5592d9662b65f14d4b21c2b92a208cff33",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-m2-micro.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-m2-micro.json",
+      "source_bytes": 262,
+      "source_sha256": "6dabcf2e62e42918cbfb43a6dac05f1f80be3dd662cc1278025b493f41d8ab69",
+      "bytes": 192,
+      "sha256": "a4cab8a1da0888915df7912c26fab18aa4400f79f4ab0fef1289088378aee63b",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-m3-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-m3-experiment.json",
+      "source_bytes": 524,
+      "source_sha256": "c2302361d2258abeab55dd06478918904b17fd7362a44819caf0332542fd3737",
+      "bytes": 356,
+      "sha256": "7459265b447b1edafbcfd727882717a5d026863fdf018be5c910eae8f4b0ccc4",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-m3-micro.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-m3-micro.json",
+      "source_bytes": 262,
+      "source_sha256": "75cbcc7d7c6332984ee3f118ee078f50992e23c8531ad19d2bdf0fbf81970376",
+      "bytes": 194,
+      "sha256": "fa55831114ab61ac5e79e078685e56f4cfc3411a031fc493c8f54838c8fa2438",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-micro-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-micro-experiment.json",
+      "source_bytes": 646,
+      "source_sha256": "45270d200c18708280f9b9c560238bd163e26b464ebee9100c748a8bb809ea42",
+      "bytes": 392,
+      "sha256": "6ad083272230ad11fcf19332a51c07a49fe6fb4ebb9d9ac8c8318303ce1fb3a2",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-micro-micro.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-micro-micro.json",
+      "source_bytes": 262,
+      "source_sha256": "84fd2fc062e3e61848a31b2890789ffec0681dd0379a25c232e6fa1be598b6ee",
+      "bytes": 190,
+      "sha256": "7dd4ae89bd61fb7afb27c6f01b5cbf9833c0b92422de538ee9650b30397bdf8e",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-b1-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-b1-experiment.json",
+      "source_bytes": 759,
+      "source_sha256": "4811fa1125a1d593f467461935010b6e631dca4b9f98ff2dabdc5c41a899bc81",
+      "bytes": 444,
+      "sha256": "b5484723592a0f959f65350f97cf75b2826fda253791181f4c7ab658a8f3bd59",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-b2-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-b2-experiment.json",
+      "source_bytes": 758,
+      "source_sha256": "560bd88cc4982829eba1d591128ca9a843f0df554fdbff895743dad5c7d9a180",
+      "bytes": 444,
+      "sha256": "06d455c70e3388be968598befb05a77032ea6b7c971d0dcc7627077d5958d9e1",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-b3-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-b3-experiment.json",
+      "source_bytes": 757,
+      "source_sha256": "1a1582680df7fd99c55ea3722e7916f6d70827504a39025726cdfce395429a50",
+      "bytes": 443,
+      "sha256": "037c5334191c28ccbfcea448c9d30913c239e1786a29fdddd8df4cde0f451904",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-m1-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-m1-experiment.json",
+      "source_bytes": 518,
+      "source_sha256": "d7c8e867d70e4e7229c301f2a4f737d6948a42496271e07b85cb1d2416f30b37",
+      "bytes": 354,
+      "sha256": "efe3e5852d6ab9322bac52a1c88a512ad0627dd6720f980dc155ca1dc15dc96c",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-m1-micro.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-m1-micro.json",
+      "source_bytes": 260,
+      "source_sha256": "48e8ad6a9fd0ed7c7c8dcb7acb98083de6c1e76d983103a78520aa1dbc5dc6bc",
+      "bytes": 193,
+      "sha256": "db84c2e280e3b613762096268a8479645dee5485f800b589bb3fd5da98d69215",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-m2-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-m2-experiment.json",
+      "source_bytes": 518,
+      "source_sha256": "e49dfb1a5144080ff341550508b77eacf5af52301b3b9b38e31cad5a9fb31fe6",
+      "bytes": 354,
+      "sha256": "536a50501dd24ab3842de3aabbb39cd7e7a71b0a01c7a7a1c0198224ddc9896b",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-m2-micro.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-m2-micro.json",
+      "source_bytes": 262,
+      "source_sha256": "3346089306a8003cbe656993643f9866ac56defeaf12a9784ba036b907b28402",
+      "bytes": 193,
+      "sha256": "50cea5409cadf82f499cc8e0c54d55029e5f3479b4495024f4a1830e628028bf",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-m3-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-m3-experiment.json",
+      "source_bytes": 517,
+      "source_sha256": "0970a43eacb7b452fdc73e048033338dc84511d308483d329414121fe7c92b97",
+      "bytes": 354,
+      "sha256": "08b5470ccf5a5626e05c3629b15dfb8c1565e2be3ff8538ed91e20c26d4b5104",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-m3-micro.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-m3-micro.json",
+      "source_bytes": 262,
+      "source_sha256": "431c4694d5fec257cabd14b06deab5e648dfd3361b9f3e780a5dacc59b007545",
+      "bytes": 193,
+      "sha256": "5e7eab4d827e5becf3e7f9955c0c43dc99bd887f0db0761be8208b3ab4256ff0",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-micro-experiment.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-micro-experiment.json",
+      "source_bytes": 530,
+      "source_sha256": "304c9397788b9b3a819be73dc15eb2e7693bfad7031ea4fbc2312637f99aafd7",
+      "bytes": 352,
+      "sha256": "d48f1fb87658469c891ec594c043085bf4577e35b7c5e6599076cb030d27d3d4",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-micro-micro.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-micro-micro.json",
+      "source_bytes": 261,
+      "source_sha256": "cab01b06ec79be53c828a11aad588964e22656fac3efc10f41e2b05675e00f35",
+      "bytes": 191,
+      "sha256": "cffe0d6323eb11231f5f9cffa76409fc284424877a52f65fbaf56d8693e11571",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b1-benchmark.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b1-benchmark.log",
+      "source_bytes": 3794,
+      "source_sha256": "e7873851dc3772c1edec9b6f4ed9a8adeae8669d35a5975fc0f6bd01f2dc5e52",
+      "bytes": 1207,
+      "sha256": "9730bfe46b8e5f96e54d795d8b92111307cef4a562ff7f7d7cb03c959fba708d",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b1-input-validation.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b1-input-validation.log",
+      "source_bytes": 895,
+      "source_sha256": "3c09f1ea491ff563e86e1c031eaa1b624d24aa3d55d4221710327b09ccf3a278",
+      "bytes": 361,
+      "sha256": "91d2a7772f2403812bb4c265fd325666ba273bba60ad332cca58633bb5c85f3f",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b1-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b1-server.log",
+      "source_bytes": 328,
+      "source_sha256": "572198a91f87472379f2cd1278f91211eb8d5387dc48dd025ca00a9a71a215f1",
+      "bytes": 228,
+      "sha256": "40a06ca20250e74b7ec1abd70bc4103c07ad29d301ab31ca060f3280c6d5a5c3",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b1-test_collation.py.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b1-test_collation.py.log",
+      "source_bytes": 53,
+      "source_sha256": "ff3b2caa535981d84518d4486caec79bd86f0574dfe964685fb0b848aefe5c33",
+      "bytes": 72,
+      "sha256": "e807bcf959531947cd7723ce154f35377dfa06b929fc18ff5e9e05f673beb029",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b1-test_dictionary_prefixes.py.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b1-test_dictionary_prefixes.py.log",
+      "source_bytes": 74,
+      "source_sha256": "4f1013cbdc0f2ce96a7194cf61937f531d81d789d5ad7ac0d1c0eb169575ee4b",
+      "bytes": 93,
+      "sha256": "f9cbf4e18749c6a890bf69373554d73aa76f5f49d64ddc7cd6bbdecff09a8790",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b1-test_hot_path.py.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b1-test_hot_path.py.log",
+      "source_bytes": 184,
+      "source_sha256": "0d204ab8da768dc581aee6577549bec46145254aaf1a8bcb5c8e0eae3663cf9d",
+      "bytes": 162,
+      "sha256": "e7c8a3ff76440b29f1fdeed40cf7932090cb102129cc1609004243635cbb6f8f",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b1-test_map_concurrency.py.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b1-test_map_concurrency.py.log",
+      "source_bytes": 74,
+      "source_sha256": "b12ea9937f8cc3b29b86ca2fb578e71e47afa9302ccddd24fa30538b50ed228d",
+      "bytes": 92,
+      "sha256": "f381bd5610ca8b8fe667da1fdaac2191706bf2ec11e10f25326ccce7cc76023d",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b1-test_match_batches.py.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b1-test_match_batches.py.log",
+      "source_bytes": 83,
+      "source_sha256": "d2d99a68d4ad2bfbc2924a50abeec9360c1acc93c647194f788bef0e6d43d688",
+      "bytes": 103,
+      "sha256": "0a7c9974ccb627588ec7550d80f6c03605b910e03114e4f4a334cfa33905f3fb",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b1-test_stopword_concurrency.py.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b1-test_stopword_concurrency.py.log",
+      "source_bytes": 106,
+      "source_sha256": "c2c3398fb81fc8a289f0a715cf90eb21889482819f821553124014a400173f15",
+      "bytes": 116,
+      "sha256": "d4ab57539671da868ad387bde38a37f99adc38dddc572c73a1dc72686688fc6c",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b1-test_tokenize_config.py.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b1-test_tokenize_config.py.log",
+      "source_bytes": 75,
+      "source_sha256": "a1febcccfc843a075e757e833a7179b3aa38b9f21249fd9955f9d7273c58b4f6",
+      "bytes": 93,
+      "sha256": "e16d0a9ba1277da5fc3bc76acda6a7673c769ef68922c7ee4076ad7dfa0d06eb",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b2-benchmark.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b2-benchmark.log",
+      "source_bytes": 3794,
+      "source_sha256": "c8fa1606577b9065f0d5b498f08a6a4778cd51ec17114696b92504743a163c19",
+      "bytes": 1200,
+      "sha256": "130ae3db9075d4ca26bcfe4ab90fa2bfa2e2d4711bbc503b1c91f5e11bbf54fb",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b2-input-validation.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b2-input-validation.log",
+      "source_bytes": 897,
+      "source_sha256": "839de47f55a952e5228f4a05730e033ea4b74ffc83461e6fc491dbe18c9df685",
+      "bytes": 363,
+      "sha256": "4c914c31a0d33b3fe497a7cee4927db9133e82767afd3135cd97c2aa458e9a15",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b2-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b2-server.log",
+      "source_bytes": 328,
+      "source_sha256": "007f8fc1a0140ef2d929f18f1e92aca630fdbb839a832efd4fecfd3b387969ea",
+      "bytes": 229,
+      "sha256": "79bbf1522420d4ad8fd58471ce3ca2228703185a42e25c4f679a1f0759467c02",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b3-benchmark.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b3-benchmark.log",
+      "source_bytes": 3794,
+      "source_sha256": "1dcc3c62670a5f84891ba3f4a83c9fb2f740c399d256f047a63244d7f71f8348",
+      "bytes": 1200,
+      "sha256": "867f5b629f791f2da4320c9ed76866e9a873fc4a5f9dad503a0a8d53f0972f95",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b3-input-validation.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b3-input-validation.log",
+      "source_bytes": 895,
+      "source_sha256": "7361a1fde4c184942a229cd9c9268371a26ee6853b2c09c25f4c4c9b1ed55ac7",
+      "bytes": 361,
+      "sha256": "2ab92939e87f19352f778815b6d0493255d9f70f684f9c6b7e03b646806e2a5a",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b3-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b3-server.log",
+      "source_bytes": 328,
+      "source_sha256": "d85511c2cd2064bf6a581b87df9aaea109ff92ed761d9a8723ecfab6bb82d067",
+      "bytes": 228,
+      "sha256": "53c2bcf46c4474caa13c136447da29e9e3f5378ad0e0027f63d298319e0857e1",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-control-b1-benchmark.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-control-b1-benchmark.log",
+      "source_bytes": 3788,
+      "source_sha256": "8c77925ed8a24478f0d647ab8bd3714863849922b40136972e3ab83b56580826",
+      "bytes": 1202,
+      "sha256": "53c47f4f92e84f16a46db5ba72a2fddf693a0954fe5de3a19139d8d134efc0ce",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-control-b1-input-validation.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-control-b1-input-validation.log",
+      "source_bytes": 894,
+      "source_sha256": "8df3441df1b13ecdaa1141f0d3341484fcbaeb083c4569a2a785fcb755b749d3",
+      "bytes": 359,
+      "sha256": "4533690b98dbe050f7839e9203eb50f3b0b87e04cd6dcee1584d8dbb0d319f86",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-control-b1-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-control-b1-server.log",
+      "source_bytes": 324,
+      "source_sha256": "05d872a25b6c7bc3b03d2bf5f9c555bf33791803f6ff8ad4ad3d767173a5d20d",
+      "bytes": 227,
+      "sha256": "9495c4fdbfe2c174190d88d009c884dd2c7d2d50f06033e954555e8825ff385b",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-control-b2-benchmark.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-control-b2-benchmark.log",
+      "source_bytes": 3788,
+      "source_sha256": "0b169aa43be5d6bc68ff130c0833a47a73b8be65066d3940115223ee5ae30c63",
+      "bytes": 1197,
+      "sha256": "cbf32e678de39612a2879d867d3d95c10082f38cfbcc7e14a34948d77a014fdf",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-control-b2-input-validation.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-control-b2-input-validation.log",
+      "source_bytes": 895,
+      "source_sha256": "eca0dd07491f9de00aaa77d9525478136af2ca5b96227d3d8cf27ba270143dc1",
+      "bytes": 361,
+      "sha256": "7f8c9c8b6ab592607078a017308ff9ddbe4e600a1807d623e4460235fd88bc19",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-control-b2-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-control-b2-server.log",
+      "source_bytes": 324,
+      "source_sha256": "f5a91ec7d85c6f2bdc80ff35e981f8129d79808a883fc83d8978d3dcc0f9d57b",
+      "bytes": 228,
+      "sha256": "2632984666a01137c41702f9f3f6626438c2d179656af3ea6f99eecee49d3180",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-control-b3-benchmark.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-control-b3-benchmark.log",
+      "source_bytes": 3788,
+      "source_sha256": "1d477c5637a76798f740edcb86739002d4b96c47d59f40d2a80b28ccfdb529b5",
+      "bytes": 1197,
+      "sha256": "c3dcf19098470c12c0b526d67b22cba84453a5cda4fee65e2293e01f7796ef0a",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-control-b3-input-validation.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-control-b3-input-validation.log",
+      "source_bytes": 896,
+      "source_sha256": "fed0ceb363717bc9f9df99f3b1aa5b37f9374d4acdf438cd339758b321a871fe",
+      "bytes": 362,
+      "sha256": "b54d0b4dcf961b5403617bdb58059dd68dbc204a1930bca5d40629c3ec79c13b",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-control-b3-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-control-b3-server.log",
+      "source_bytes": 324,
+      "source_sha256": "96d1dec277279d95e8d4fc0eba1344bdb7103458a0eb45ea17aa6746d244ae5e",
+      "bytes": 228,
+      "sha256": "d06d1e5e3b5d6eb5d0cf098228f935eb6c3f336f6d08705085f443e2a262d09c",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-b1-benchmark.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-b1-benchmark.log",
+      "source_bytes": 3806,
+      "source_sha256": "769b52df80b3b0f3cc2f247117eccf73b37c036cd3482a6f8904f2d2269e9a27",
+      "bytes": 1200,
+      "sha256": "86dea68c9e9a58b763ad50ee7d7116157a2fc86cc7a7895686168016f5515b13",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-b1-input-validation.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-b1-input-validation.log",
+      "source_bytes": 896,
+      "source_sha256": "f7c58a170b3561fe0577b9fb02d8eb7bb55fcb751148f5d76ad3e823db5eb467",
+      "bytes": 362,
+      "sha256": "d7acab9bed71dac2af87998f2ff7b3960985bda64b4ebc84c31b30432cdfcbc8",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-b1-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-b1-server.log",
+      "source_bytes": 318,
+      "source_sha256": "b6668ac3af58351a673bf569db97b2ece7b73b0f10db9af298c4168886d5840e",
+      "bytes": 226,
+      "sha256": "fd8d431c9540451389046bab95ec3da093db12676f84c2ee8b8d1785ee5f9a41",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-b2-benchmark.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-b2-benchmark.log",
+      "source_bytes": 3806,
+      "source_sha256": "bf50949119adac622379f8c672811f22fd420a2ade761c6516e4c79edf1c98c4",
+      "bytes": 1194,
+      "sha256": "5ed473730a5a52feb33fe8de3ca7186dae0a423b00176c255946d665a5c08d4e",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-b2-input-validation.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-b2-input-validation.log",
+      "source_bytes": 897,
+      "source_sha256": "4e10b61de9bc3a5f746cee8309dbcb1dcd75fd56302a0cdcb2d56d373ddc8d31",
+      "bytes": 363,
+      "sha256": "4a90b4bce70e4f198aa7d2862a7c84ca210ceeab32e458a77313d2d9a37d13f1",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-b2-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-b2-server.log",
+      "source_bytes": 318,
+      "source_sha256": "d44e8a7bef0bbfa460a902beb54375d55aba2d68376bc3656ea68e2133de12cc",
+      "bytes": 226,
+      "sha256": "15ccfd63d54bf50bdea72f86af25573259145b25a1c5c89e056f7ac256139d3c",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-b3-benchmark.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-b3-benchmark.log",
+      "source_bytes": 3806,
+      "source_sha256": "54d36881834cd7e63ccca6ca8b28c8c99e42d8eac405ed99b7a72bc8d8fb5ec7",
+      "bytes": 1206,
+      "sha256": "64cbb9bd323afc1920904d404a540c43a6932a66b3539819271a45593538d130",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-b3-input-validation.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-b3-input-validation.log",
+      "source_bytes": 896,
+      "source_sha256": "00ac0e03ed121a2a4940682b90b646d6ace0439d14fcab28697a2ac7b6139891",
+      "bytes": 363,
+      "sha256": "051f00e4f0ffb23764d2cd94c27859bf5826717dec10a445eb7812fcc132c367",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-b3-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-b3-server.log",
+      "source_bytes": 318,
+      "source_sha256": "ffe97a488f586c6fc336b0b8118c365c653dbb6864017df30b8074b6957b886c",
+      "bytes": 226,
+      "sha256": "6da028da6332a0a3d2313969cffbc6f450318f5ed9d9273fa54beb64a20a1a71",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-m1-micro.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-m1-micro.log",
+      "source_bytes": 263,
+      "source_sha256": "d22428807d9063bb2f44440c852230684f53034ffadd6986d8b93eb2ccd48460",
+      "bytes": 200,
+      "sha256": "b685b3382e18b5f4aaf45176b665c4637d568c6e995669cd1a3fc79b8cf7d043",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-m1-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-m1-server.log",
+      "source_bytes": 318,
+      "source_sha256": "7ae6c7cf85deb4bf9f013f8c876b93d3db93cadf9caf13e7f13301657dbb26ec",
+      "bytes": 226,
+      "sha256": "d7e0460536f481b551cb1b4da84a1de21644cdd7ecc2810e9518b7942c3a6c59",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-m2-micro.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-m2-micro.log",
+      "source_bytes": 262,
+      "source_sha256": "6dabcf2e62e42918cbfb43a6dac05f1f80be3dd662cc1278025b493f41d8ab69",
+      "bytes": 192,
+      "sha256": "a4cab8a1da0888915df7912c26fab18aa4400f79f4ab0fef1289088378aee63b",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-m2-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-m2-server.log",
+      "source_bytes": 318,
+      "source_sha256": "0e5282a4ab3a3b78c63c3039238800dd1d1b204410969237c02ee34f41faa2cc",
+      "bytes": 227,
+      "sha256": "0ac573cebed59ec87132b472e22dae5d5ddf208debfb2ea553629cd0dee5bd43",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-m3-micro.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-m3-micro.log",
+      "source_bytes": 262,
+      "source_sha256": "75cbcc7d7c6332984ee3f118ee078f50992e23c8531ad19d2bdf0fbf81970376",
+      "bytes": 194,
+      "sha256": "fa55831114ab61ac5e79e078685e56f4cfc3411a031fc493c8f54838c8fa2438",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-m3-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-m3-server.log",
+      "source_bytes": 318,
+      "source_sha256": "f925284e1d1029bddbf23262673530524f8cbefa37684de7a3c580da6d85a232",
+      "bytes": 226,
+      "sha256": "c5c735aee0d08b1645680b102ccf831f5420f088ba310c07b24a399241332c69",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-micro-micro.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-micro-micro.log",
+      "source_bytes": 262,
+      "source_sha256": "84fd2fc062e3e61848a31b2890789ffec0681dd0379a25c232e6fa1be598b6ee",
+      "bytes": 190,
+      "sha256": "7dd4ae89bd61fb7afb27c6f01b5cbf9833c0b92422de538ee9650b30397bdf8e",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-micro-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-micro-server.log",
+      "source_bytes": 328,
+      "source_sha256": "f3c3bd711a6e5ab7728601007448036176e4420349260988c871aaae2b21c2ee",
+      "bytes": 228,
+      "sha256": "02f36ddfd38541ec2462b5f01eeb8e8b298d33652ac56ec97c55372a71b47af5",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-micro-stopword-ascii.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-micro-stopword-ascii.log",
+      "source_bytes": 49,
+      "source_sha256": "ef7983c6fb03132962a07e3c82faf2180d2a482e81fc80564539cecd9fa11f12",
+      "bytes": 69,
+      "sha256": "a77f1e8884c27d47c05fa1e25d0c79871632c332fb85a56c1003bf6923e0f4f4",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-b1-benchmark.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-b1-benchmark.log",
+      "source_bytes": 3800,
+      "source_sha256": "4481455a9b4b7e6e31c9902662764af11531d5a979e193f20d50f6b2ca5d9bd3",
+      "bytes": 1201,
+      "sha256": "71e40660f8e1c4266e07850e5bd39ea65b1123b6efbd0db1504de0c87dc02716",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-b1-input-validation.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-b1-input-validation.log",
+      "source_bytes": 897,
+      "source_sha256": "78fd56c9dc0c24811d09f31de7d52f0e8e1938df91cc6b302644b0a920bbfa6b",
+      "bytes": 360,
+      "sha256": "caffc583234d9a1bfdb8387c70aee96f2791f6290e6c0dcb2cd3717056d12bb9",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-b1-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-b1-server.log",
+      "source_bytes": 314,
+      "source_sha256": "e31e1ee8f746bb851cf178a01c2ffbc015d7a78d06ee488f7fc2e35aba8a58e2",
+      "bytes": 225,
+      "sha256": "532cb0353eaa0634d8390dcbcde074cc0d0ec07017de39a63c12011af42e6c57",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-b2-benchmark.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-b2-benchmark.log",
+      "source_bytes": 3800,
+      "source_sha256": "9b0f708cb8bbfe46fd008e2da1af77793a8ee1fceeba9e3c3e9ab36d4bc3c8ad",
+      "bytes": 1204,
+      "sha256": "0a812ee87285642bd20371280173776dfdd8e5d0bf4d6e39689673f71e260d72",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-b2-input-validation.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-b2-input-validation.log",
+      "source_bytes": 897,
+      "source_sha256": "465a406e13855161b98bfb6d6ceb3a63a8145657c91357220d15257624bb4c48",
+      "bytes": 361,
+      "sha256": "c23cfc204e46774032f9c349babf6c5fc3528348580065392c120a40b603f4c5",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-b2-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-b2-server.log",
+      "source_bytes": 314,
+      "source_sha256": "f67a12d7e6a46de9a06368638c95b0c5fbc81aa3df1e86886aac69bdfbe6b1eb",
+      "bytes": 226,
+      "sha256": "c58f8379a060a2ac3cf500e0d932d70305080b839db575d1321606e38d19c62c",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-b3-benchmark.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-b3-benchmark.log",
+      "source_bytes": 3800,
+      "source_sha256": "0e143b8b65c9590655011e0d4d81cc6af42a17ddf8171e05278b93e1a7352d59",
+      "bytes": 1191,
+      "sha256": "71567434db10588e8be7be42e0bf2fc53f9c869fb56a58fdefe22277eef9f0a2",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-b3-input-validation.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-b3-input-validation.log",
+      "source_bytes": 896,
+      "source_sha256": "4999db3b448f3c2683b3cda875c270359406afd150003742ffc14d47baaaf24e",
+      "bytes": 361,
+      "sha256": "3870fb6f4ed9d4d01cd287ed8bf3a48ecdc24d744297cf057c05801587e1d754",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-b3-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-b3-server.log",
+      "source_bytes": 314,
+      "source_sha256": "0cf9af499d4e254f38b807e2af615765abfa02316b2c8e63322f8a2d9ff4293a",
+      "bytes": 226,
+      "sha256": "f2693b32495691cd03ae77cad9a95c0b38b86095fddf7778698c395460e01602",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-m1-micro.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-m1-micro.log",
+      "source_bytes": 260,
+      "source_sha256": "48e8ad6a9fd0ed7c7c8dcb7acb98083de6c1e76d983103a78520aa1dbc5dc6bc",
+      "bytes": 193,
+      "sha256": "db84c2e280e3b613762096268a8479645dee5485f800b589bb3fd5da98d69215",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-m1-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-m1-server.log",
+      "source_bytes": 314,
+      "source_sha256": "d98705881c0bdd5b2011f97c079af8679e912692af9beddeea3aed19480bd4e5",
+      "bytes": 226,
+      "sha256": "8f83a663c9cfca3154828e3653854ccb72b919bc553f6c61137f58576dd6c3ae",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-m2-micro.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-m2-micro.log",
+      "source_bytes": 262,
+      "source_sha256": "3346089306a8003cbe656993643f9866ac56defeaf12a9784ba036b907b28402",
+      "bytes": 193,
+      "sha256": "50cea5409cadf82f499cc8e0c54d55029e5f3479b4495024f4a1830e628028bf",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-m2-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-m2-server.log",
+      "source_bytes": 314,
+      "source_sha256": "afe48f70068f58a5159f4d207424891e3f1a0f04c302ff69c9aba0927976e4f3",
+      "bytes": 226,
+      "sha256": "e5b59e8f778b48f9702af66e64517b4b52eaaad1a7953bd1763a5049ad9c9d85",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-m3-micro.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-m3-micro.log",
+      "source_bytes": 262,
+      "source_sha256": "431c4694d5fec257cabd14b06deab5e648dfd3361b9f3e780a5dacc59b007545",
+      "bytes": 193,
+      "sha256": "5e7eab4d827e5becf3e7f9955c0c43dc99bd887f0db0761be8208b3ab4256ff0",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-m3-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-m3-server.log",
+      "source_bytes": 314,
+      "source_sha256": "724d12d44383b6d2aa0e086c6adc1152779b09e3451f9958da3d3b58ee175edd",
+      "bytes": 226,
+      "sha256": "cdc09997c37d66387d1f7f9dffdbd53f768ddab75affb733164b5c3fe454e22e",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-micro-micro.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-micro-micro.log",
+      "source_bytes": 261,
+      "source_sha256": "cab01b06ec79be53c828a11aad588964e22656fac3efc10f41e2b05675e00f35",
+      "bytes": 191,
+      "sha256": "cffe0d6323eb11231f5f9cffa76409fc284424877a52f65fbaf56d8693e11571",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-micro-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-micro-server.log",
+      "source_bytes": 338,
+      "source_sha256": "ba729dd657f356e037bfd5ee375e13dc91fcf59870c05f655708374b7fa6dcdf",
+      "bytes": 232,
+      "sha256": "30793f0896a828372834f156349883d6622ed415f81b35cfa1d88f765df14cdb",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b1-report.txt.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b1-report.txt",
+      "source_bytes": 1411,
+      "source_sha256": "4539fda3cf0c5630e0ca6871f72e067ba60fe7117d6ce326093e23961a95f7b2",
+      "bytes": 470,
+      "sha256": "771608b46e2fcc9bac5844bb2fa72a38c5bc0848a6a4bb02e654de5a85821129",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b2-report.txt.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b2-report.txt",
+      "source_bytes": 1411,
+      "source_sha256": "48a321038e7a1104bc7c3cb33d8c1743997fb92c37cd5fd45529971c090ad2e1",
+      "bytes": 474,
+      "sha256": "9edb134704531fcd05d851bd53683a94bedb54639bed1dcf2d328930b11238be",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-candidate-b3-report.txt.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-candidate-b3-report.txt",
+      "source_bytes": 1411,
+      "source_sha256": "83f39829cb32f774a44d838949b718c7a89eb4881cb30c9f31efa364f41f7041",
+      "bytes": 471,
+      "sha256": "766a105ac1d2ead62661ce9f1c1e3f4470d6d83adbd272b4fa88e33daf30a286",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-control-b1-report.txt.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-control-b1-report.txt",
+      "source_bytes": 1409,
+      "source_sha256": "3a5dba57811195d83119e9baf5e4ae2dc65ae84962a9bf96d9487586266fd797",
+      "bytes": 468,
+      "sha256": "d4ef3a6b18c4313118a9eff4035fbbd4b0b34b105007a8161fc660d5d1846b11",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-control-b2-report.txt.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-control-b2-report.txt",
+      "source_bytes": 1409,
+      "source_sha256": "93e5dbdf8ea6cea4a29a97fd6e1ad0b9109f1c6149db5134670ccddb5bc020f0",
+      "bytes": 471,
+      "sha256": "2b4a89b3513c45eb6ea7b407e014ec5082ba6856341368eb20ed9247bc40e349",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-json-control-b3-report.txt.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-json-control-b3-report.txt",
+      "source_bytes": 1409,
+      "source_sha256": "d67c46475c7f5b3199ae2a7b5796e628ed88a5f6a42f4a7d892f7766db5dbd70",
+      "bytes": 469,
+      "sha256": "6004e3669850ed4591d423f5b01bf684e79e654a8bfc2d20ce02b06535e08a2f",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-b1-report.txt.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-b1-report.txt",
+      "source_bytes": 1415,
+      "source_sha256": "87678d27f2e36d0f64553059c127fa6eb08c4d7fa1764b5e2a4b15dfae25cbea",
+      "bytes": 471,
+      "sha256": "e1728113e63ff84fb18ad39594649f6b5d61e03a76e3f2af4b7a0d7f82ef5430",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-b2-report.txt.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-b2-report.txt",
+      "source_bytes": 1415,
+      "source_sha256": "995cada2c4385590df7523f2804e703424ced4c9eb58bb15c0370e1ca08bfca2",
+      "bytes": 472,
+      "sha256": "f744ff208403020d607ee52441f878d940d71ad6a1fe551e98a6027a1c95c0e6",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-candidate-b3-report.txt.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-candidate-b3-report.txt",
+      "source_bytes": 1415,
+      "source_sha256": "978fceb8b8656c4d77366bebe2aa29e8700fd9de0c72ddb50cd14e9d3c91c0ab",
+      "bytes": 472,
+      "sha256": "c5dbe76d0a244f905cd9a60b9e9802cf5a5d2999eece9395994f2be960522c6a",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-b1-report.txt.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-b1-report.txt",
+      "source_bytes": 1413,
+      "source_sha256": "215226a7c273cd61eff4eb7ba3f97e91c47c0b2d0f12570f61c8b0edd8e6642b",
+      "bytes": 469,
+      "sha256": "503eaed9e7ca15a0eeec25a0706a87d376b5de45f3b7b9d2d4fbbbd50dc2f30a",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-b2-report.txt.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-b2-report.txt",
+      "source_bytes": 1413,
+      "source_sha256": "3805f94e9af533e88779835b9e3506ffdd6d395672679879336c9cb9994ce492",
+      "bytes": 474,
+      "sha256": "2357a2e89485592a0f6b9642e869af828e5c31fc1a8e9166fb0e89d36a2076f3",
+      "gzip": true
+    },
+    {
+      "path": "raw/r14-stopword-control-b3-report.txt.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\r14-stopword-control-b3-report.txt",
+      "source_bytes": 1413,
+      "source_sha256": "c21a37b7ef37ad9fe42994dc030086f17ac63e1b7a63262add10b42119e9c465",
+      "bytes": 474,
+      "sha256": "2826da598082375964487b2bf071e20e29f4ed5e378c133ed43d953ded426610",
+      "gzip": true
+    },
+    {
+      "path": "raw/round14-control-build.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-control-build.log",
+      "source_bytes": 474,
+      "source_sha256": "598ef951c004d13e8a65eafef5cb413c309b7b210859b62fc06f99f29c3ff616",
+      "bytes": 318,
+      "sha256": "1eb65218bf39d76972a93d16a60703eb6a03567e130509242ab92d50f15ecabd",
+      "gzip": true
+    },
+    {
+      "path": "raw/round14-json-build.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-json-build.log",
+      "source_bytes": 15741,
+      "source_sha256": "741f1f59fabfd75f35b444f9238194bc11d10fd1c1b4f177662f0ca85606864c",
+      "bytes": 1627,
+      "sha256": "ae2856128e97ccc8fd3a22d16ad9d92ee9faa82e1acda2bd83d499f399e92b1e",
+      "gzip": true
+    },
+    {
+      "path": "raw/round14-stopword-build.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-stopword-build.log",
+      "source_bytes": 3086,
+      "source_sha256": "95231a770dcd5f916f62ab0f7eb20e22df624ca4f74ba1566b4c30b47298a574",
+      "bytes": 586,
+      "sha256": "7b713eb6b892d1a12cabfa1290192004e728261f8964986a08db61f972afcbaa",
+      "gzip": true
+    },
+    {
+      "path": "round14-stopword-evidence/package.py.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-stopword-evidence\\package.py",
+      "source_bytes": 26055,
+      "source_sha256": "0281297d3f8ed967ab017cf0af5c04e7fcec94c61c8dde101f6edeb74f9a8844",
+      "bytes": 8675,
+      "sha256": "7c3cd8cd9ef228be95a6fccefdc7f5d1f4e439d6179392481c43167db3ae05e1",
+      "gzip": true
+    },
+    {
+      "path": "round14-stopword-evidence/raw-artifacts-manifest.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-stopword-evidence\\raw-artifacts-manifest.json",
+      "source_bytes": 17077,
+      "source_sha256": "22508824ce990eedd3cfb481e51316eef6ccf2415717a0e51d36fe718b1b5bd3",
+      "bytes": 3843,
+      "sha256": "171cc415f6bfdd76205c56909df0b8422d8dd2fd31d8abad8073917670f53ffd",
+      "gzip": true
+    },
+    {
+      "path": "round14-stopword-evidence/README.md.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-stopword-evidence\\README.md",
+      "source_bytes": 8859,
+      "source_sha256": "6d63ad31df0d45773be992aebf568d4c61f1fe97943166c15d5249d98e8bdaf2",
+      "bytes": 4093,
+      "sha256": "97feaffe12a4517584d383ff8296ebf1f6b130f2220439c2116e6496b6d596ae",
+      "gzip": true
+    },
+    {
+      "path": "round14-stopword-evidence/summary.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-stopword-evidence\\summary.json",
+      "source_bytes": 25679,
+      "source_sha256": "bc3f831c008221fac65e4d6a8c7ef373af44a8e55025d7da1ff4c6e3f4c83d12",
+      "bytes": 5721,
+      "sha256": "fec504863eb3a11b74ea51ff33b1bb95f2d215d9ead492adbe2477beb3c5d1c5",
+      "gzip": true
+    },
+    {
+      "path": "round14-json-evidence/comparison.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-json-evidence\\comparison.json",
+      "source_bytes": 33757,
+      "source_sha256": "484b9e1bfe6d00e9207d4e48a0f41d9866ddab1f4294a357b1ee08d380340295",
+      "bytes": 7559,
+      "sha256": "a618bf6377d81c461eb3eae7c93145108a6f55010d91f57fe85817ed6f20c45c",
+      "gzip": true
+    },
+    {
+      "path": "round14-json-evidence/README.md.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-json-evidence\\README.md",
+      "source_bytes": 8441,
+      "source_sha256": "c2da9303abf5d7ccf70e1ca34d751e1fdd15ab02bfc9aa0ad3017015de297788",
+      "bytes": 3942,
+      "sha256": "a9bb78919f123852c88bcd51d67c7e8aa2dd83cbce0592df1b0721aa8071fc87",
+      "gzip": true
+    },
+    {
+      "path": "round14-json-evidence/summarize.py.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-json-evidence\\summarize.py",
+      "source_bytes": 25403,
+      "source_sha256": "7b6e5d3fac78b8cf875c612347054ee583fa5405d696a53e0721277237267527",
+      "bytes": 8387,
+      "sha256": "99e3978f5275e19ac5d20d2a357fb39dbda50064814a257346c04080ca750b5d",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/audit_stage.py.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\audit_stage.py",
+      "source_bytes": 8765,
+      "source_sha256": "efc4cef3eb6f0617f2f430e67a80a74b536ff859f5a04bf4bfafa506cb2e8683",
+      "bytes": 3006,
+      "sha256": "9e3ab44d85b3ee0077eebda23d9a9f584385b7634663614f68af9901653a992e",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/manifest.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\manifest.json",
+      "source_bytes": 6619,
+      "source_sha256": "f481ba1ee0c440005376f323141446d643d89c867bf4a36579db6bd9caa96ee7",
+      "bytes": 2301,
+      "sha256": "e9b9454e66bcfc810a5f5d45045f44205d368acba32efb6c0bcff53153ece8cf",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/original/src/oblib/common/json_type/ob_json_tree.h.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\original\\src\\oblib\\common\\json_type\\ob_json_tree.h",
+      "source_bytes": 30952,
+      "source_sha256": "f7fd75187cf022901b9a9e4366778e7fb002231e003cb52974584583451e1ed0",
+      "bytes": 5458,
+      "sha256": "b6f1e72df80c99164f5293353bb1a2cbfe7f4b44154c4d0a7b1bbcd95d8e702e",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/original/src/storage/fts/ob_fts_parser_helper.cpp.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\original\\src\\storage\\fts\\ob_fts_parser_helper.cpp",
+      "source_bytes": 16394,
+      "source_sha256": "191c8b361cfef10bb7288edaad5fdd8aa2822108860c00cd6ae210e568396df3",
+      "bytes": 3858,
+      "sha256": "cc05e17c17421b0d1219bf0e3106dc8d4643cc4fe9d0a98f657dc5282fa2a3e9",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/original-input-diagnostic.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\original-input-diagnostic.json",
+      "source_bytes": 8064,
+      "source_sha256": "5314998ce756f4e8f504220e947f4fa6d8656a0bea680c7f5e6af054629d18a8",
+      "bytes": 509,
+      "sha256": "1724051bdb0c79c562dbad7b4212ddd4f255ef6d16e503339e45af5fd687c31f",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/prepare_stage.py.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\prepare_stage.py",
+      "source_bytes": 9920,
+      "source_sha256": "b554af1d7b0bfa623ad0c68b4d583cdf2c3b958129d90c8b6600974cedf63638",
+      "bytes": 3276,
+      "sha256": "6d5de8c4b35441eb319062ba853a86d76276eb55a31de5fa56387c8d1e26e5c6",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/probe_original.py.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\probe_original.py",
+      "source_bytes": 2126,
+      "source_sha256": "7bf79598168475f7c9c56dad4e7c7c9fb3fbd1de9d27e954d00220b36c501c1a",
+      "bytes": 947,
+      "sha256": "66aa9a8115c822e3ac611669a79148fe6a035049a39403d04fedbe4396c0a799",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-candidate-complete-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-candidate-complete-server.log",
+      "source_bytes": 334,
+      "source_sha256": "34e6af4f225a88f29f98ab814f19e6c9f4d3aa427161e4da5ffd53c81179cb6b",
+      "bytes": 232,
+      "sha256": "e34b1f95b0ef92124a7f8beed472bda4a0c8e6fffec4630d5733fa69503a375f",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-ascii-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-ascii-server.log",
+      "source_bytes": 286,
+      "source_sha256": "726ed44642aa6b08db7718791e33423f4a689c194b646b016ee50f5ec896c762",
+      "bytes": 235,
+      "sha256": "ab72c645cc95e45de41822a23a4fe5c5d4bd73c9fadfd5b443c3a0e3279b490c",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-authorized-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-authorized-server.log",
+      "source_bytes": 438,
+      "source_sha256": "8367ae91e55786b6656d09524d466052b92bf62cff871809ac80433ffd77bf1f",
+      "bytes": 268,
+      "sha256": "73207412a0187d4a8bf4bc54cb48e0a43a05852cf48e171c57e735256d7bbab2",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-complete-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-complete-server.log",
+      "source_bytes": 332,
+      "source_sha256": "8398efe64cfd9ae12cde608471c61b3c39dec9ce42458b8e3ee078664cb66185",
+      "bytes": 233,
+      "sha256": "86a21fae1cba65799c71690adb46c278301ecbbd8334fbf0ff53da4f658677b7",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-host-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-host-server.log",
+      "source_bytes": 324,
+      "source_sha256": "c0317223797c57d5237766eb75291702b98f40a241fa2e7a40f398868693a248",
+      "bytes": 229,
+      "sha256": "4a688219688c2f8e4f910f8fcb8e84a8cf5283cd2ced04340bf0947cc485e070",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-metadata-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-metadata-server.log",
+      "source_bytes": 332,
+      "source_sha256": "db46d342b676abee118640a704710399ab460985c1b19ab28f0667186fc16eb8",
+      "bytes": 232,
+      "sha256": "2a10397e87a68f9a23e265127c018718431c273c6da2dfcadf7d5b324937e22c",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-probe-alias-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-probe-alias-server.log",
+      "source_bytes": 338,
+      "source_sha256": "5ce373bcf95dc3f002baec2a88f095219d30c3265e049e9dcd056e0a07940617",
+      "bytes": 234,
+      "sha256": "487d2ccd30ad2bff23e404d95bd7f15776d8166093a124cf1457927dbd90f9cd",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-probe-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-probe-server.log",
+      "source_bytes": 326,
+      "source_sha256": "8a284b11658d78aa627aab1584bd2b7fedfc97b3892c83b19be4a84548d57d71",
+      "bytes": 230,
+      "sha256": "39341813f1fd334eb32b5609a92eb3473a47a71dc000b442507f3edfca6b1e87",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-retry-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-retry-server.log",
+      "source_bytes": 418,
+      "source_sha256": "e2c7cbf1996323d47d6f0828b79242fab07be918a7e4176d59e3274115376f81",
+      "bytes": 263,
+      "sha256": "51d8bdfa373f08c2193516729917d8c9de10749d5bdec34c03bbab1e1ef53410",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-server.log",
+      "source_bytes": 446,
+      "source_sha256": "ce3e681195fea4a18846f9369d1a4125a20292f5199791e0838e90a998cb2ebc",
+      "bytes": 273,
+      "sha256": "bf6ded49364fa2b3961265ea7dc993fc41754dee149b2e409381ceba69fa3326",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-temp-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-temp-server.log",
+      "source_bytes": 324,
+      "source_sha256": "2949199296bd7c51f5f4509dbb934fe8bd6243ddda0364166650387cda4dae52",
+      "bytes": 230,
+      "sha256": "cf7dd409d5d5348cfe7bfeb65034a1c9d6c365049d139ed183c493b5049d00af",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-varchar-server.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-varchar-server.log",
+      "source_bytes": 330,
+      "source_sha256": "c65e070c4cdcd8933f034571c5e3371a7e21c38cfbe250cc0bda6c2f8c7a53f8",
+      "bytes": 232,
+      "sha256": "b4f88e763c1daae15de512345a75409f577ac879e0b2ac83619e23d860492954",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/README.md.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\README.md",
+      "source_bytes": 12621,
+      "source_sha256": "52a813e00e6f9542edeb0b60eb56602d1fcf373f4ef19d75aa818f36f06fc6ac",
+      "bytes": 5781,
+      "sha256": "9d38e3222dcbb77718aa4f9d4bf00b14501718411bbe74144f98c1a88c1aa85d",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/REGRESSION.md.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\REGRESSION.md",
+      "source_bytes": 7362,
+      "source_sha256": "3317c3cf4f0d7166844230ad657e85fae18934454036ea75b2a01c6b322dd6d0",
+      "bytes": 3533,
+      "sha256": "a41e1d260c9e43d279589262547545ec977b018f368dc9b7048285113c42176e",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/regression.patch.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\regression.patch",
+      "source_bytes": 16150,
+      "source_sha256": "ecef48ce36d862b38c904580ec5f0dce6720ea240d371b4b12094958a551cb7c",
+      "bytes": 5240,
+      "sha256": "5604d61b0bb25850774b20e618d554b9522d78d88699297f2c8df2d4121fe6b5",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/run_fixture.py.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\run_fixture.py",
+      "source_bytes": 4119,
+      "source_sha256": "687079dcdd4665550663e124708ae18f673180d61fd44c026c59cecdd1ca7fb4",
+      "bytes": 1619,
+      "sha256": "19f5cf3f4e5e02779a4482045c943e38dc726b1903f07c4184663a3f06bc1893",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/source.patch.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\source.patch",
+      "source_bytes": 7572,
+      "source_sha256": "1a9cfcf4c5be69808c66b7dbf5b5b189acbf2582a65556826c99dfa0915c0266",
+      "bytes": 2175,
+      "sha256": "c247a08da3097494cb1ada8dd6d410bccd8aa36996c9d1535f8e214f4fe0c82b",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/src/oblib/common/json_type/ob_json_tree.h.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\src\\oblib\\common\\json_type\\ob_json_tree.h",
+      "source_bytes": 31233,
+      "source_sha256": "5176ceb1c13b3e3037d63d748124f3c2f771620044346a39e71c2dd9c7f92ee9",
+      "bytes": 5577,
+      "sha256": "6c4b7ea9789c874041140ad406d062bd7ee90340ebac7f533df63444bff4c5e6",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/src/storage/fts/ob_fts_parser_helper.cpp.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\src\\storage\\fts\\ob_fts_parser_helper.cpp",
+      "source_bytes": 18054,
+      "source_sha256": "b76eeeb9bf9a8be6ad803dd3c4053d457c9fc6e4ceaf0d3b3186560a40db5b88",
+      "bytes": 4476,
+      "sha256": "ca8cdae40137f3ae6f5a0c22c97919385c7353ce1201919a28dd2db83312407f",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/static-audit.json.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\static-audit.json",
+      "source_bytes": 1524,
+      "source_sha256": "d9e05947182dd4be37e4904e5fe2b41c550dbc0e60d26e17146190100b42e01b",
+      "bytes": 708,
+      "sha256": "5797786105d854d122b3936f3ae17a3dd8dcda6fffdeeb48ef17664c71034c3f",
+      "gzip": true
+    },
+    {
+      "path": "round14-tokenize-proposal/unittest/storage/fts/test_tokenize_json_nodes.py.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\unittest\\storage\\fts\\test_tokenize_json_nodes.py",
+      "source_bytes": 16528,
+      "source_sha256": "1d00c482136cba3ae644ae062eb809d144622c8302640f48628d20b0234250d2",
+      "bytes": 5427,
+      "sha256": "cfdc8bf42df83cf1e5f8a81c45bd9b2e1bacaea7b6a3b57c030da5ddbb350f3b",
+      "gzip": true
+    },
+    {
+      "path": "round14-json-native/build_tokenize_json_nodes.ps1.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-json-native\\build_tokenize_json_nodes.ps1",
+      "source_bytes": 1115,
+      "source_sha256": "932ee13e7907bb1c9dd166771bbb281f2d6a77f0fc44e3231e11080b9fc0b4e1",
+      "bytes": 624,
+      "sha256": "5427eae83b7f14884058f4f67a776f60f2738dcc9470d2e84adb084be52f09af",
+      "gzip": true
+    },
+    {
+      "path": "round14-json-native/prepare_tokenize_json_nodes.py.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-json-native\\prepare_tokenize_json_nodes.py",
+      "source_bytes": 19559,
+      "source_sha256": "02bd1c4bd90ae6f075686cfc23d051dececb319e131eed1020b0ee4faddbee0a",
+      "bytes": 6102,
+      "sha256": "9290f6db3c19624393449a25e627dac37f785d444da218e22c45e3318e0524bb",
+      "gzip": true
+    },
+    {
+      "path": "round14-json-native/README.md.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-json-native\\README.md",
+      "source_bytes": 11537,
+      "source_sha256": "33e286a8fbf9164864d1a53c1e82283ac10dfd7ce55f3e20e87db7ad66a5de15",
+      "bytes": 4993,
+      "sha256": "613301d24ba1e7ef7f81380f42befcdc7c9ff74971c39a3017df1c5cbdcaa91e",
+      "gzip": true
+    },
+    {
+      "path": "round14-json-native/run_tokenize_json_nodes.py.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-json-native\\run_tokenize_json_nodes.py",
+      "source_bytes": 13849,
+      "source_sha256": "3ba1044e78daa4ea96eec0d4a7fd36c46f707faf3dd43a3b23c858fa1aab6206",
+      "bytes": 4428,
+      "sha256": "abc3eae7d6d43cb14598d01cc2e610e64959af6d8a16c029249414c2ad370271",
+      "gzip": true
+    },
+    {
+      "path": "round14-json-native/test_tokenize_json_nodes.cpp.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-json-native\\test_tokenize_json_nodes.cpp",
+      "source_bytes": 17792,
+      "source_sha256": "21377aa2b865224152b9a497b9a180f811a13d80de2c43955e637de19b58476a",
+      "bytes": 5521,
+      "sha256": "499d3776f8ac566a7ca0910df7af728186a816b9e53dbfd5f458e118c802d524",
+      "gzip": true
+    },
+    {
+      "path": "round14-lifetime-audit/report.md.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-lifetime-audit\\report.md",
+      "source_bytes": 5660,
+      "source_sha256": "5a2bf4571ce66162c33a6b07ce61743ae7ad75258702a9a9b06d20d4ac68dc1e",
+      "bytes": 3078,
+      "sha256": "c05c654d05f94b8c6dae027e57624507cb1a0df055e6788262f1a4aa5c6c60c8",
+      "gzip": true
+    },
+    {
+      "path": "round14-profile-audit/report.md.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-profile-audit\\report.md",
+      "source_bytes": 8993,
+      "source_sha256": "44ccaa375d5088212d02328857245b8064612f225e2ee70c0d503734f8fb701c",
+      "bytes": 4231,
+      "sha256": "d1e7385821a4e74d253a092552a3a9321d052d5a78f1e966b6e45b0ad55cb483",
+      "gzip": true
+    },
+    {
+      "path": "round14-profile-audit/sources.md.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-profile-audit\\sources.md",
+      "source_bytes": 5859,
+      "source_sha256": "bbfb53fa2740aa19bbdf5d908561d0def7ae4be82fdca3e39b8c3d9e9d4e81ab",
+      "bytes": 3177,
+      "sha256": "363d084aee86f3047eed46fbd2d3b342f2dc8ee0e23abe1a3047b2f002b05d0d",
+      "gzip": true
+    },
+    {
+      "path": "harness/build-competition.ps1.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\build-competition.ps1",
+      "source_bytes": 2110,
+      "source_sha256": "8df51aa03298827bf909608f8f02e1b10e70489d4d8a7a8ccf64222e723dba21",
+      "bytes": 953,
+      "sha256": "774a3633f6569e0bd4a1b0df8258dab0a3c9029f4e30d40e92b369c522b01e4e",
+      "gzip": true
+    },
+    {
+      "path": "harness/experiment-competition.py.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\experiment-competition.py",
+      "source_bytes": 12324,
+      "source_sha256": "3f18e55795ea64743500e0c95804b06af84be3f0781b2e07c6628bdc9d4f17a8",
+      "bytes": 3160,
+      "sha256": "b601c1b5b87a6435cadbb99b1341e97e5fe85ab7fe14da2d11f7000ecfd7060d",
+      "gzip": true
+    },
+    {
+      "path": "harness/micro-competition.py.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\micro-competition.py",
+      "source_bytes": 1560,
+      "source_sha256": "a19a64d5f03d581fd84a7de52d41aed3bfc5816594daeb5dec42195f823421b2",
+      "bytes": 1015,
+      "sha256": "93bef80a4d20190b3093944640978f12ce983639ffb6f3efa90626b0d1951dd6",
+      "gzip": true
+    },
+    {
+      "path": "harness/package-round14.py.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\package-round14.py",
+      "source_bytes": 5361,
+      "source_sha256": "03647f87a60964fb86a35e2b0257bfd9b1cc7204f2fcebfb6d64cd6826d878f2",
+      "bytes": 2397,
+      "sha256": "7ebd49db16352b57b673cc10eb774949a35428ccd55add601e0e57456c3d85f4",
+      "gzip": true
+    }
+  ],
+  "validation_sha256": "d34415f2b240fb9f2de18e5272569dd1a6eaa9595977b2aa824b78183fc50ac9",
+  "excluded_runtime_artifacts": [
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-retry-data/etc/seekdb.data_version.bin.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-retry-data\\etc\\seekdb.data_version.bin",
+      "source_bytes": 51,
+      "source_sha256": "377c7c509d03fb0fe6894aab73f7df22de9bdc18368a9135560ec026bb362087",
+      "bytes": 57,
+      "sha256": "1b99919f9fae5713e0b4d73b3f1bbef369e6eaef20f893925b8b6698ad1ee2ba",
+      "gzip": true,
+      "reason": "Discarded isolated runtime files; failure logs retained"
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-retry-data/log/seekdb.log.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-retry-data\\log\\seekdb.log",
+      "source_bytes": 0,
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "gzip": true,
+      "reason": "Discarded isolated runtime files; failure logs retained"
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-retry-data/run/seekdb.exe.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-retry-data\\run\\seekdb.exe",
+      "source_bytes": 104894464,
+      "source_sha256": "bae4a3b9e1b4662d4021b28d5adc085764beb6cf02122eacd57b8e16b6fe1762",
+      "bytes": 34171551,
+      "sha256": "9e2cb44cf1a01eac0ddaa81dc666224a27b40566f762d36634c3897b5c78c7da",
+      "gzip": true,
+      "reason": "Discarded isolated runtime files; failure logs retained"
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-retry-data/run/seekdb.pid.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-retry-data\\run\\seekdb.pid",
+      "source_bytes": 5,
+      "source_sha256": "e090d5f690296262edc45d36345b9c0ba3841bab74b5449a6c30401aea31bfcb",
+      "bytes": 25,
+      "sha256": "c09672a061dfc9e2be502a7975e3c7e6a9abd52e64ed24539560b7bb0ba9aef0",
+      "gzip": true,
+      "reason": "Discarded isolated runtime files; failure logs retained"
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-retry-data/store/local/data.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-retry-data\\store\\local\\data",
+      "source_bytes": 16384,
+      "source_sha256": "fff340c037122bba70384d2fcb94843d2240dd7a5fbb1f81fd6e29fcd397fc18",
+      "bytes": 201,
+      "sha256": "dc6d2a85e4871fc88adae41531f303623e572e929970f06d798b2a4165bd33c5",
+      "gzip": true,
+      "reason": "Discarded isolated runtime files; failure logs retained"
+    },
+    {
+      "path": "round14-tokenize-proposal/r14-json-original-retry-data/store/local/lock.gz",
+      "source": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase比赛\\setup\\fts\\round14-tokenize-proposal\\r14-json-original-retry-data\\store\\local\\lock",
+      "source_bytes": 0,
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "gzip": true,
+      "reason": "Discarded isolated runtime files; failure logs retained"
+    }
+  ]
+}

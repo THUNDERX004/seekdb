@@ -262,3 +262,31 @@ The ASCII shortcut itself was rejected and both production files restored:
 three complete paired samples show 4.0261% overall regression. Retain these
 regressions and all evidence without claiming the rejected path is active.
 See [round-12 evidence](../../../docs/developer-guide/assets/fts-performance/competition-round12/manifest.json).
+
+## Complete TOKENIZE JSON regression (round 14)
+
+```sh
+python3 unittest/storage/fts/test_tokenize_json_nodes.py --port 2891
+```
+
+Requires PyMySQL and a dedicated instance; creates/drops `tokenize_json_nodes_r14`.
+The default `tokenize_json_nodes_expected.json.gz` contains 1,560 cases recorded
+independently from official competition commit
+`5bce9e06d1281347ad61344e4b01fab9158c58a2`, original executable SHA256
+`bae4a3b9e1b4662d4021b28d5adc085764beb6cf02122eacd57b8e16b6fe1762`.
+Fixture SHA256: `e87f9ca69192116ed37cb376e4a55b18da1b7e47b9f30a306a5d51388c4771ab`.
+Never record candidate output as an oracle or overwrite this fixture.
+
+Compare full ordered JSON, types/counts/lengths, column metadata, warnings and
+original errors for all five parsers, DEFAULT/ALL, options, unique-token
+boundaries through 4,097, Unicode/NUL, JSON consumers, repeated rows and prepared
+execution. Requesting a rowset size does not prove its physical execution mode.
+VARCHAR(32768) retains the complete input corpus; the original rejects IK LOB
+locators. IK untyped NULL keeps original unsupported binary-charset error 1235.
+Stable ASCII aliases avoid original-server UTF8 expression-name truncation.
+
+The JSON batching candidate passed this differential and seven existing suites,
+but was rejected after three full pairs showed unstable benefit and a tokenize
+category regression. Its planned native helper did not compile or run because
+capture settings were missing. SQL equality does not establish allocator
+failure-path safety. See the round-14 evidence and validation limitations.
