@@ -1,5 +1,39 @@
 # Full-text performance optimization
 
+## Round 28 ASCII-span experiment — REJECTED and restored (2026-11-05)
+
+**REJECTED; no production or established-unit-suite promotion.** The parent restored the exact original `src/share/text_analysis/ob_token_stream.cpp` (SHA256 `0fce1e910e786b24f4d5fbaa48e39bf2c4fb357bd20f3f6560ff0181c86a3a58`) and confirmed the source rebuild/link PASS. Three complete local pairs against C7 record mean-time reductions of **build +0.232597%, tokenize −7.601984%, query −6.137460%, equal-category overall −4.502282%**; the target BENG tokenize reduction is **−10.969084%**. **Pair1 crossed a user pause between its control and candidate runs** (report timestamps November 4 22:21:30 / November 5 00:00:43). Its raw values remain included, without timing correction or removal; the observed degradation is **not attributed causally to this patch**. Pair2/3 also do not establish reliable causal target benefit. There is no formal/full score, cumulative gain, stability or statistical significance claim.
+
+The proposal batches adjacent ASCII delimiter/token bytes using the real charset ctype mask in `ObTextWhitespaceTokenizer::get_next`, retaining the decoder fallback and existing token/error/end behavior. Exact original/candidate/patch and historical pending reviews remain unchanged. Control is binary `c7fcc8676875246a38bc4135f29e6f52b85a9d29a9563679003d5b6140666b01`, source label `f56ddd03e66826919d8d9192bc4c0afece8843dd`; candidate is `f10e0fea8fa6d09b2e36388ee3f145fd0e9096a5c614eca0f91e9fa461ab17b0`, historical source label `c110239a7+round28-ascii`, exact candidate CPP `0bef1d905eccbd9eedf0b0e8190b331ceaef0678c3df21393cfff7a874c785a9`. Raw report checkout `git_head` labels are retained; they are not binary-source attestation.
+
+The six timing labels are `r28-ascii-{control,candidate}-a{1,2,3}`. Parameters remain `ROWS=20000 BATCH=500 ROUNDS=3000 QUERY_ROUNDS=200 SAMPLES=3 WARMUP=30 SKIP_LOAD=0`, WARN logging, requested/verified affinity **15**, and CN/BENG/mixed/LIMIT hits **8001/11000/7332/20**. Immutable 1/2/3-pair snapshots use per-metric run means, signed category means and equal category weighting. No SELECT1 subtraction, clipping, outlier removal or timing correction was applied.
+
+| Metric | C7 control mean | Rejected candidate mean | Time reduction |
+| --- | ---: | ---: | ---: |
+| build_ik_all_sec | 8.854000 | 8.788000 | +0.745426% |
+| build_ik_content_sec | 6.416333 | 6.304333 | +1.745545% |
+| build_beng_en_sec | 3.587667 | 3.652000 | -1.793180% |
+| tokenize_ik_avg_ms | 0.152700 | 0.159167 | -4.234883% |
+| tokenize_beng_avg_ms | 0.112133 | 0.124433 | -10.969084% |
+| query_cn_avg_ms | 0.952700 | 0.979767 | -2.841048% |
+| query_beng_avg_ms | 1.188167 | 1.358467 | -14.333006% |
+| query_mixed_avg_ms | 1.047467 | 1.065667 | -1.737525% |
+| query_limit_avg_ms | 2.232367 | 2.358233 | -5.638261% |
+
+| Pair | Build | Tokenize | Query | Equal-category overall |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | -15.209018% | -38.208529% | -14.296976% | -22.571508% |
+| 2 | +7.031804% | +4.199779% | -5.093634% | +2.045983% |
+| 3 | +6.497892% | +3.958036% | -0.237749% | +3.406060% |
+
+**Both initial failures remain unexplained.** Candidate `r28-ascii-candidate-regression-a1` passes sort **315**, count **709**, materialization **4,416**, case-copy **16,359** and BMP **2,488**, then fails the ranked score comparison at `root[54][4][0][1]`, expected `0.3978152416996387`, actual `0.40073254302705685` (`simple_docs / mutated / database / ORDER BY id`, id1). `capture()` finishes and drops the database before comparison; the first differing comparison is not a runtime stop at that row. The full first actual output was not persisted. C7 `r28-ascii-control-regression-a1` passes the same five preliminary suites, then loses its connection during the ranked handshake, before fixture SQL. Both receipts record `exit_before_cleanup=null`, only an observation before cleanup. Later isolated **BAE official** and **same candidate** runs pass ranked **432 / 142,692 rows**, key types **192 / 68,852 rows** and all seven existing suites. Both complete ranked captures match frozen expected compressed and decompressed bytes exactly (gzip SHA256 `d322411c90638ba7cb0dbb4a71c2b770ff41309cac3da185e375a2e9b8d40570`). These passes prove neither repair nor reproduction of the earlier failures.
+
+Actual production-linked native control/candidate compile/link and executions both PASS **4,699 cases**, using identical TU SHA256 `7d464d4db30518eba4b9f776097cf106ddceb21240ccc68f86d15d5ccf0e7eab`. Complete raw stdout is byte-identical (`76436bae7278790385c86788a1942c29a3d51d3533531e2385f60a64ca572386`), stderr is empty, and **73,151 CASE/T/PASS record lines include 68,451 T records**. Complete normalized records also match (`e1403ec9aa5e1735ca888105c25eb8379ab81e9bd2a3a514e3491841f7fbed8f`). Parent verification and an independent offline full-byte recheck are archived. Available descriptors and labeled readable padding bound this finite matrix; no guard-page/sanitizer, real `mbminlen>1` descriptor, concurrency or BM25 integration proof is claimed. No native TU is promoted.
+
+The bounded source-only BM25 report traces actual engine registration, posting tf/doc-length maintenance, optimizer/runtime total-count alternatives and single-major `SUM(token_cnt)` estimation. The two id1 scores conditionally fit the same old lexical sum **41625** divided by **3073** versus **2940**, assuming tf=2, doclen=7 and clamped weight=.55. This is a numerical diagnostic lead, **not proof of executed parameters or stale-stat causation**; actual N/A/df/weight, plan and major/snapshot records are missing. Proposed diagnostic SQL was never executed. The gap is archived and no longer a promotion blocker for this rejected candidate.
+
+The compact [exact-byte manifest](../assets/fts-performance/competition-round28-ascii/manifest.json) includes all six timing reports/receipts/small logs, immutable comparisons and frozen imported utility, proposal/reviews, both actual native builds/runs and full streams, initial SQL tracebacks and isolated captures, capture harness provenance, restoration/application/build records and the bounded [BM25 report gzip](../assets/fts-performance/competition-round28-ascii/files/round28-ranked-review/report.md.gz). Historical restoration JSON still says `SEPARATE PENDING`; it remains verbatim, with the later parent-confirmed rebuild PASS explained separately. Every file has raw/packed SHA256 and sizes. No binaries, PDBs, libraries, objects, runtime/data, secrets, unrelated large logs, whole report-history backups or Round29 evidence is packed. Official benchmark/scoring files remain unchanged. The archiver performed only offline verification and authorized documentation writes; no Git or workload was run.
+
 ## Round 27 root-transition prefix experiment — REJECTED and restored (2026-11-04)
 
 **REJECTED; no production or unit-test promotion.** The parent restored the exact original DAT CPP/header and completed the recorded restoration rebuild. Two full local timing pairs against accepted C7 control show mean-time reductions of **build −1.040791%, tokenize +0.254403%, query +1.786638%, equal-category overall +0.333417%**. The target IK tokenize reduction is only **+0.508806%**, with BENG **0%**. Query fluctuations do not establish a causal benefit from this tokenizer change; there is no convincing measured target benefit. These observations do not add to any cumulative result and make no formal/full-score, stability or statistical significance claim.

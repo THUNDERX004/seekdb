@@ -1,5 +1,39 @@
 # seekdb 全文索引性能优化报告
 
+## 第二十八轮 ASCII 连续段实验——已拒绝并恢复（2026-11-05）
+
+**已拒绝，不晋升生产修改或 established 单测。**父任务已恢复 `src/share/text_analysis/ob_token_stream.cpp` 精确原始字节（SHA256 `0fce1e910e786b24f4d5fbaa48e39bf2c4fb357bd20f3f6560ff0181c86a3a58`），并确认源码重新编译/链接 PASS。相对 C7 的三组完整本地对照，均值耗时下降为：**构建 +0.232597%、分词 −7.601984%、查询 −6.137460%，三类等权综合 −4.502282%**；目标 BENG 分词为 **−10.969084%**。**第一组控制与候选之间跨用户暂停**，报告时间分别为 11 月 4 日 22:21:30 / 11 月 5 日 00:00:43；原值全部保留，不修正或删除，**不能把观测退化归因于本补丁**。第二、三组也不足以可靠归因目标收益。不声称正式成绩、满分、累计提升、稳定性或统计显著性。
+
+提案仅在 `ObTextWhitespaceTokenizer::get_next` 中使用真实 charset ctype 掩码批处理连续 ASCII 分隔符/词元字节，保留解码回退和既有 token/错误/结束行为。精确原始文件、候选、补丁和历史待执行评审原样保存。控制二进制为 `c7fcc8676875246a38bc4135f29e6f52b85a9d29a9563679003d5b6140666b01`，源码标签 `f56ddd03e66826919d8d9192bc4c0afece8843dd`；候选为 `f10e0fea8fa6d09b2e36388ee3f145fd0e9096a5c614eca0f91e9fa461ab17b0`，历史源码标签 `c110239a7+round28-ascii`，候选 CPP 精确哈希 `0bef1d905eccbd9eedf0b0e8190b331ceaef0678c3df21393cfff7a874c785a9`。原始报告的 checkout `git_head` 标签保留，不把它当成运行二进制源码证明。
+
+六次计时标签为 `r28-ascii-{control,candidate}-a{1,2,3}`。固定参数保持 `ROWS=20000 BATCH=500 ROUNDS=3000 QUERY_ROUNDS=200 SAMPLES=3 WARMUP=30 SKIP_LOAD=0`、WARN 日志、请求/核实亲和掩码 **15**，中文/英文/混合/LIMIT 命中数 **8001/11000/7332/20**。一/二/三组不可变快照按各指标运行均值比、类别内带符号平均、三类等权平均计算；不扣 SELECT1、不截断、不剔除异常值、不修正原始时间。
+
+| 指标 | C7 控制均值 | 已拒绝候选均值 | 耗时下降 |
+| --- | ---: | ---: | ---: |
+| build_ik_all_sec | 8.854000 | 8.788000 | +0.745426% |
+| build_ik_content_sec | 6.416333 | 6.304333 | +1.745545% |
+| build_beng_en_sec | 3.587667 | 3.652000 | -1.793180% |
+| tokenize_ik_avg_ms | 0.152700 | 0.159167 | -4.234883% |
+| tokenize_beng_avg_ms | 0.112133 | 0.124433 | -10.969084% |
+| query_cn_avg_ms | 0.952700 | 0.979767 | -2.841048% |
+| query_beng_avg_ms | 1.188167 | 1.358467 | -14.333006% |
+| query_mixed_avg_ms | 1.047467 | 1.065667 | -1.737525% |
+| query_limit_avg_ms | 2.232367 | 2.358233 | -5.638261% |
+
+| 对照组 | 构建 | 分词 | 查询 | 三类等权综合 |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | -15.209018% | -38.208529% | -14.296976% | -22.571508% |
+| 2 | +7.031804% | +4.199779% | -5.093634% | +2.045983% |
+| 3 | +6.497892% | +3.958036% | -0.237749% | +3.406060% |
+
+**两次最初失败均未解释。**候选 `r28-ascii-candidate-regression-a1` 通过排序 **315**、count **709**、物化 **4,416**、case-copy **16,359**、BMP **2,488** 后，在 ranked 比较 `root[54][4][0][1]` 失败：期望 `0.3978152416996387`、实际 `0.40073254302705685`，对应 `simple_docs / mutated / database / ORDER BY id` 的 id1。`capture()` 完成并 DROP 数据库后才开始比较，不能把首个比较差异当成执行停在该行；首次完整 actual 未落盘。C7 `r28-ascii-control-regression-a1` 同样通过前五项，再于 ranked 握手期间连接重置，尚未进入 fixture SQL。两者 `exit_before_cleanup=null` 仅是清理前观察。后续 **BAE 官方原始**与**相同候选**单独运行均通过 ranked **432 组 / 142,692 行**、键类型 **192 组 / 68,852 行**及七套既有 suite；两个完整 ranked 捕获的压缩/解压字节均与冻结 expected 完全一致，gzip SHA256 为 `d322411c90638ba7cb0dbb4a71c2b770ff41309cac3da185e375a2e9b8d40570`。后续 PASS 不证明早先故障已修复或复现。
+
+实际生产链接的控制/候选 native 均编译、链接、执行 PASS **4,699 组**，使用相同 TU，SHA256 `7d464d4db30518eba4b9f776097cf106ddceb21240ccc68f86d15d5ccf0e7eab`。完整原始 stdout 逐字节一致（`76436bae7278790385c86788a1942c29a3d51d3533531e2385f60a64ca572386`），stderr 为空；**73,151 行 CASE/T/PASS 记录中有 68,451 行 T 记录**，完整规范化记录也一致（`e1403ec9aa5e1735ca888105c25eb8379ab81e9bd2a3a514e3491841f7fbed8f`）。父任务验证和独立离线完整字节复核均归档。矩阵仅覆盖实际可用 descriptor 及带标识的可读 padding；不证明 guard page/sanitizer、真实 `mbminlen>1` descriptor、并发或 BM25 集成。TU 仅归档，不迁入 established suites。
+
+有界 BM25 源码报告追到实际引擎注册、posting tf/文长维护、优化器/运行时总文档数分支和单 major 的 `SUM(token_cnt)` 估算。在假定 tf=2、doclen=7、截断权重 .55 时，两种 id1 分数分别精确拟合旧词法总和 **41625** 除以 **3073** 和 **2940**。这只是数值诊断线索，**不是实际参数或过期统计因果证明**；失败时实际 N/A/df/weight、计划、major/快照记录仍缺失，建议诊断 SQL 未执行。缺口原样归档，候选已拒绝，不再作为晋升阻塞。
+
+紧凑[精确字节清单](../assets/fts-performance/competition-round28-ascii/manifest.json)包含六次计时报告/凭证/小日志、不可变比较与冻结导入工具、提案/评审、两次实际 native 构建/运行和完整输出、首次 SQL traceback 与后续完整捕获、capture harness 来源、应用/恢复/构建凭证及有界 [BM25 报告 gzip](../assets/fts-performance/competition-round28-ascii/files/round28-ranked-review/report.md.gz)。历史恢复 JSON 的 `SEPARATE PENDING` 原文不改，后来的父任务确认恢复构建 PASS 单独说明。每项均记录 raw/packed SHA256 与大小；不含二进制/PDB/lib/obj、runtime/data、凭据、巨大无关日志、完整历史文档备份或 round29 证据。官方 benchmark/scoring 文件保持不变。归档者仅做离线验证和获授权的文档写入，未运行 Git 或任何 workload。
+
 ## 第二十七轮根转移前缀实验——已拒绝并恢复（2026-11-04）
 
 **已拒绝，不晋升生产修改或单元测试。**父任务已恢复 DAT CPP/头文件的精确原始字节，并完成记录中的恢复构建。相对已接受 C7 控制的两组完整本地对照，均值耗时下降为：**构建 −1.040791%、分词 +0.254403%、查询 +1.786638%，三类等权综合 +0.333417%**。目标 IK 分词仅 **+0.508806%**，BENG 为 **0%**；查询波动不能证明本次分词修改的因果收益，目标性能改善缺乏说服力。这些观察不叠加到累计结果，不声称正式成绩、满分、稳定性或统计显著性。
