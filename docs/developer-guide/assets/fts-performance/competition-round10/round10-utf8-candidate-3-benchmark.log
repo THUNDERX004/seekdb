@@ -1,0 +1,88 @@
+=== FTS Large Benchmark (label=round10-utf8-candidate-3) ===
+rows=20000 batch=500 rounds=3000 query_rounds=200 samples=3
+[0/5] SQL baseline ...
+  select1: sample=1/3 rounds=3000 total_ms=239.128 avg_ms=0.0797
+  select1: sample=2/3 rounds=3000 total_ms=221.275 avg_ms=0.0738
+  select1: sample=3/3 rounds=3000 total_ms=230.422 avg_ms=0.0768
+[1/5] setup raw schema ...
+[2/5] raw bulk load 20000 docs (batch=500) ...
+  raw load done: 0.427s (46838.4 rows/s)
+  table rows: 20000
+[3/5] build fulltext indexes ...
+  build_ik_all: 6.575s
+  build_ik_content: 5.117s
+  build_beng_en: 2.894s
+[4/5] TOKENIZE hot-path ...
+  tokenize_ik: sample=1/3 rounds=3000 total_ms=441.968 avg_ms=0.1473
+  tokenize_ik: sample=2/3 rounds=3000 total_ms=465.099 avg_ms=0.1550
+  tokenize_ik: sample=3/3 rounds=3000 total_ms=437.219 avg_ms=0.1457
+  tokenize_beng: sample=1/3 rounds=3000 total_ms=382.425 avg_ms=0.1275
+  tokenize_beng: sample=2/3 rounds=3000 total_ms=330.552 avg_ms=0.1102
+  tokenize_beng: sample=3/3 rounds=3000 total_ms=330.387 avg_ms=0.1101
+[5/5] MATCH query ...
+  query_cn: warmup_hits=8001
+  query_cn: sample=1/3 rounds=200 total_ms=200.245 avg_ms=1.0012
+  query_cn: sample=2/3 rounds=200 total_ms=199.090 avg_ms=0.9955
+  query_cn: sample=3/3 rounds=200 total_ms=200.239 avg_ms=1.0012
+  query_beng: warmup_hits=11000
+  query_beng: sample=1/3 rounds=200 total_ms=257.133 avg_ms=1.2857
+  query_beng: sample=2/3 rounds=200 total_ms=257.545 avg_ms=1.2877
+  query_beng: sample=3/3 rounds=200 total_ms=264.969 avg_ms=1.3248
+  query_mixed: warmup_hits=7332
+  query_mixed: sample=1/3 rounds=200 total_ms=213.509 avg_ms=1.0675
+  query_mixed: sample=2/3 rounds=200 total_ms=218.559 avg_ms=1.0928
+  query_mixed: sample=3/3 rounds=200 total_ms=209.363 avg_ms=1.0468
+  query_limit: warmup_hits=20
+  query_limit: sample=1/3 rounds=200 total_ms=449.399 avg_ms=2.2470
+  query_limit: sample=2/3 rounds=200 total_ms=444.631 avg_ms=2.2232
+  query_limit: sample=3/3 rounds=200 total_ms=445.666 avg_ms=2.2283
+========================================
+FTS Large Benchmark Report
+========================================
+timestamp:              2026-11-04 15:53:22
+label:                  round10-utf8-candidate-3
+git_head:               36519bd8b
+git_dirty:              1
+rows:                   20000
+batch:                  500
+rounds:                 3000
+query_rounds:           200
+samples:                3
+warmup:                 30
+skip_load:              0
+----------------------------------------
+select1_avg_ms:         0.0768
+select1_stdev_ms:       0.0024
+raw_load_sec:           0.427
+raw_load_rows_per_sec:  46838.4
+build_ik_all_sec:       6.575
+build_ik_content_sec:   5.117
+build_beng_en_sec:      2.894
+build_total_sec:        14.774
+----------------------------------------
+tokenize_ik_avg_ms:     0.1493
+tokenize_ik_median_ms:  0.1473
+tokenize_ik_stdev_ms:   0.0041
+tokenize_beng_avg_ms:   0.1159
+tokenize_beng_median_ms:0.1102
+tokenize_beng_stdev_ms: 0.0082
+----------------------------------------
+query_cn_hits:          8001
+query_cn_avg_ms:        0.9993
+query_cn_stdev_ms:      0.0027
+query_beng_hits:        11000
+query_beng_avg_ms:      1.2994
+query_beng_stdev_ms:    0.0180
+query_mixed_hits:       7332
+query_mixed_avg_ms:     1.0690
+query_mixed_stdev_ms:   0.0188
+query_limit_hits:       20
+query_limit_avg_ms:     2.2328
+query_limit_stdev_ms:   0.0102
+========================================
+Report appended to C:/Users/11946/Documents/ChatGPT/OceanBase比赛/setup/fts/round10-utf8-candidate-3-report.txt
+
+Compare before/after on these fields:
+  build_ik_all_sec, build_ik_content_sec, build_beng_en_sec, build_total_sec
+  tokenize_ik_avg_ms/stdev, tokenize_beng_avg_ms/stdev, select1_avg_ms as SQL-loop baseline
+  query_cn_avg_ms, query_beng_avg_ms, query_mixed_avg_ms, query_limit_avg_ms with *_hits

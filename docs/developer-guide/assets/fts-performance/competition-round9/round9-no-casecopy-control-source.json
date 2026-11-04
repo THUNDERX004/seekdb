@@ -1,0 +1,6 @@
+{
+  "parent": "36519bd8b3782c90f50565ebf6b233beba542600",
+  "patch_sha256": "769e31e439af83441c6faa1501b75467accd9a541d092d5ef2368f045622f2d8",
+  "binary_sha256": "1f6668d766e9118eb118e37dc99165e691bbd0aec7341d2229c2fbbf90fedf70",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-round9-no-casecopy-control\\seekdb.exe"
+}

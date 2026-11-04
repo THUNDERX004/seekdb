@@ -52,7 +52,8 @@ TokenizeContext::TokenizeContext(ObCollationType coll_type,
                                  int64_t fulltext_len,
                                  bool is_smart)
     : coll_type_(coll_type), fulltext_(fulltext), fulltext_len_(fulltext_len), cursor_(0),
-      next_char_len_(0), handle_size_(0), is_smart_(is_smart), token_list_(allocator),
+      next_char_len_(0), handle_size_(0), is_smart_(is_smart), utf8_fast_path_(false),
+      token_list_(allocator),
       result_list_(allocator)
 {
 }
@@ -60,10 +61,16 @@ TokenizeContext::TokenizeContext(ObCollationType coll_type,
 int TokenizeContext::init()
 {
   int ret = OB_SUCCESS;
+  // Keep the first character on the original path, including charset initialization.
+  utf8_fast_path_ = false;
 
   if (OB_ISNULL(fulltext_) || fulltext_len_ <= 0) {
     ret = OB_INVALID_ARGUMENT;
   } else if (OB_FAIL(prepare_next_char())) {
+  } else {
+    utf8_fast_path_ = coll_type_ == CS_TYPE_UTF8MB4_GENERAL_CI
+        || coll_type_ == CS_TYPE_UTF8MB4_BIN
+        || coll_type_ == CS_TYPE_UTF8MB4_UNICODE_CI;
   }
   return ret;
 }
@@ -102,6 +109,19 @@ int TokenizeContext::current_char_type(ObFTCharUtil::CharType &type)
 int TokenizeContext::prepare_next_char()
 {
   int ret = OB_SUCCESS;
+  if (utf8_fast_path_ && cursor_ < fulltext_len_) {
+    const unsigned char *begin = reinterpret_cast<const unsigned char *>(fulltext_ + cursor_);
+    ob_wc_t unicode = 0;
+    const int char_len = common::ob_charset_decode_unicode<CHARSET_UTF8MB4>(
+        begin, begin + (fulltext_len_ - cursor_), unicode);
+    // Positive lengths imply the original validator accepts the same character.
+    // In particular, ILSEQ is zero: surrogate encodings must retain the fallback.
+    if (char_len > 0) {
+      next_char_len_ = char_len;
+      ObFTCharUtil::classify_unicode<CHARSET_UTF8MB4>(unicode, next_char_type_);
+      return OB_SUCCESS;
+    }
+  }
   if (OB_FAIL(ObCharset::first_valid_char(coll_type_,
                                           fulltext_ + cursor_,
                                           fulltext_len_ - cursor_,

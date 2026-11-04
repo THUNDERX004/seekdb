@@ -1,0 +1,23 @@
+{
+  "label": "round10-profile-1",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build_fts_competition\\src\\observer\\seekdb.exe",
+  "source_commit": "36519bd8b3782c90f50565ebf6b233beba542600+db05a9104441c7ceebacbcbccfc7fef0358ea4091c1df3f4fab0587a04599820",
+  "binary_sha256": "4b5da29dccff5458257668e17e6209676e751363213b649faebbbdbaf35e2a82",
+  "actions": [
+    {
+      "action": "profile-ik",
+      "exit_code": 0,
+      "seconds": 14.282733500003815
+    },
+    {
+      "action": "profile-beng",
+      "exit_code": 0,
+      "seconds": 4.621545500005595
+    },
+    {
+      "action": "profile-build",
+      "exit_code": 0,
+      "seconds": 7.101363800000399
+    }
+  ]
+}

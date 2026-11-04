@@ -1,0 +1,18 @@
+FTS Large Benchmark Score
+=========================
+score: 100.00 / 100
+mean_improvement: 84.13%
+full_score_improvement: 50.00%
+
+build_improvement: 81.59%
+  build_ik_all_sec: baseline=35.2836, current=6.475, improvement=81.65%
+  build_ik_content_sec: baseline=28.3764, current=4.904, improvement=82.72%
+  build_beng_en_sec: baseline=14.7578, current=2.892, improvement=80.40%
+tokenize_improvement: 78.97%
+  tokenize_ik_avg_ms: baseline=0.76478, current=0.1384, improvement=81.90%
+  tokenize_beng_avg_ms: baseline=0.42262, current=0.1013, improvement=76.03%
+query_improvement: 91.83%
+  query_cn_avg_ms: baseline=16.6628, current=1.0775, improvement=93.53%
+  query_beng_avg_ms: baseline=24.3042, current=1.3975, improvement=94.25%
+  query_mixed_avg_ms: baseline=17.5593, current=1.242, improvement=92.93%
+  query_limit_avg_ms: baseline=16.2334, current=2.1751, improvement=86.60%

@@ -158,3 +158,36 @@ python3 unittest/storage/fts/test_ranked_key_types.py --port 2891
 Its default fixture is `ranked_key_types_expected.json.gz`. `--record NEW_PATH`
 refuses to overwrite and is only for an independently verified official original.
 See the round-7 evidence manifest for both fixture hashes and original binaries.
+
+
+## UTF8 validation/decode and Unicode case regression
+
+```sh
+python3 unittest/storage/fts/test_utf8_prepare_leaf.py --run --compiler clang++
+python3 unittest/storage/fts/test_utf8_prepare_leaf.py --run --compiler g++ --sanitize
+python3 unittest/storage/fts/test_casecopy.py --port 2891
+```
+
+The standard-library-only native entry point extracts real validator, decoder,
+classification and context method bodies verbatim. It reads current candidate
+sources and immutable parent Git blobs, verifies pinned raw/LF hashes, and fails
+on other source drift. Generation alone is the default; `--run` compiles/runs.
+Use `--compiler cl.exe` in a Visual Studio developer shell. `--source-root` and
+`--output-dir` override the checkout and build/fts-utf8-prepare-leaf paths.
+The manifest and driver.inc must remain beside the script. Review source changes
+before deliberately updating pins. The 2,429,473 native cases include every
+Unicode scalar, surrogate fallback, one/two-byte combinations, multibyte edges,
+truncations, deterministic random strings and cached init/error state. Framework
+and charset descriptor initialization are stubbed; non-UTF8 cases check dispatch
+only, so complete SQL regressions remain required. Native checks must run outside
+performance measurement intervals.
+
+The independently recorded official-original casecopy_expected.json.gz checks
+16,359 SQL groups: ordered TOKENIZE JSON, frequencies/document lengths, both IK
+modes, BENG, all default-table case mappings, width boundaries, NUL, malformed
+UTF8 and strict/non-strict sessions. It preserves 924 original SQL errors; the
+trimmed original's unsupported non-UTF8 charset errors are not evidence of those
+charsets' conversion contents. Recording is explicit, original-only and refuses
+to overwrite a fixture. The lowercase pre-copy experiment was rejected; the
+regression is retained for Unicode parser changes. See the round-9/10 evidence
+manifests for independent fixture and executable provenance.

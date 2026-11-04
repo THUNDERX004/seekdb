@@ -1,0 +1,18 @@
+{
+  "compiler_command": [
+    "cl.exe",
+    "/nologo",
+    "/std:c++17",
+    "/EHsc",
+    "/O2",
+    "/W4",
+    "D:\\Projects\\OceanBase\\seekdb\\build\\fts-utf8-prepare-leaf\\utf8_prepare_leaf.cpp",
+    "/Fe:D:\\Projects\\OceanBase\\seekdb\\build\\fts-utf8-prepare-leaf\\utf8_prepare_leaf.exe"
+  ],
+  "exit_code": 0,
+  "stdout": "PASS cases=2429473 positive=1557808 zero=737449 negative=134216 scalar=1112064 surrogate=2048 all1=256 all2=65536 boundary3=524288 boundary4=204800 truncation3=20480 random=500000\n",
+  "stderr": "",
+  "executable_sha256": "42c7f01319338a87d5c7547610f80f0c9c8272425edafc1d8d1f022a3e6010b7",
+  "generated_cpp_sha256": "fe4453ecd35ef78233d20685c1dc5b40fbfd8c77576645210f6b3d314deb80f6",
+  "random_cases": 250000
+}

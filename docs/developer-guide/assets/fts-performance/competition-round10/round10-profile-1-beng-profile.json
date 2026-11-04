@@ -1,0 +1,132 @@
+{
+  "purpose": "Perturbing IP samples for diagnosis only; not scoring",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build_fts_competition\\src\\observer\\seekdb.exe",
+  "binary_sha256": "4b5da29dccff5458257668e17e6209676e751363213b649faebbbdbaf35e2a82",
+  "workload": "beng",
+  "sample_count": 57,
+  "all_modules_symbol_lookup": true,
+  "elapsed_with_sampling": 3.9787414000020362,
+  "cpu_with_sampling": 3.90625,
+  "symbols": [
+    [
+      "RtlVirtualUnwind2",
+      12
+    ],
+    [
+      "ob_hash_sort_utf8mb4",
+      5
+    ],
+    [
+      "ZwWaitForAlertByThreadId",
+      5
+    ],
+    [
+      "RtlFlsGetValue2",
+      3
+    ],
+    [
+      "oceanbase::common::hash::ObHashTable<oceanbase::storage::ObFTWord,oceanbase::common::hash::HashMapPair<oceanbase::storage::ObFTWord,oceanbase::common::hash::HashNullObj>,oceanbase::common::hash::hash_func<oceanbase::storage::ObFTWord>,oceanbase::common::hash::equal_to<oceanbase::storage::ObFTWord>,oceanbase::common::hash::pair_first<oceanbase::common::hash::HashMapPair<oceanbase::storage::ObFTWord,oceanbase::common::hash::HashNullObj> >,oceanbase::common::hash::SimpleAllocer<oceanbase::common::hash::ObHashTableNode<oceanbase::common::hash::HashMapPair<oceanbase::storage::ObFTWord,oceanbase::common::hash::HashNullObj> >,108,oceanbase::common::hash::SpinMutexDefendMode,oceanbase::common::hash::DefaultSimpleAllocerAllocator>,oceanbase::common::hash::NoPthreadDefendMode,oceanbase::common::hash::NormalPointer,oceanbase::common::ObMalloc,1>::get_refactored",
+      2
+    ],
+    [
+      "oceanbase::common::ObJsonArray::element_count",
+      2
+    ],
+    [
+      "oceanbase::common::hash::ObHashTable<oceanbase::storage::ObFTWord,oceanbase::common::hash::HashMapPair<oceanbase::storage::ObFTWord,oceanbase::common::hash::HashNullObj>,oceanbase::common::hash::hash_func<oceanbase::storage::ObFTWord>,oceanbase::common::hash::equal_to<oceanbase::storage::ObFTWord>,oceanbase::common::hash::pair_first<oceanbase::common::hash::HashMapPair<oceanbase::storage::ObFTWord,oceanbase::common::hash::HashNullObj> >,oceanbase::common::hash::SimpleAllocer<oceanbase::common::hash::ObHashTableNode<oceanbase::common::hash::HashMapPair<oceanbase::storage::ObFTWord,oceanbase::common::hash::HashNullObj> >,108,oceanbase::common::hash::SpinMutexDefendMode,oceanbase::common::hash::DefaultSimpleAllocerAllocator>,oceanbase::common::hash::NoPthreadDefendMode,oceanbase::common::hash::NormalPointer,oceanbase::common::ObMalloc,1>::internal_get_with_timeout_unsafe",
+      2
+    ],
+    [
+      "oceanbase::common::ObVector<oceanbase::omt::ObSrsCacheSnapShot *,oceanbase::common::PageArena<oceanbase::omt::ObSrsCacheSnapShot *,oceanbase::common::ModulePageAllocator> >::insert",
+      2
+    ],
+    [
+      "oceanbase::common::PageArena<char,oceanbase::common::ModulePageAllocator>::_alloc",
+      2
+    ],
+    [
+      "oceanbase::share::ObBasicEnglishNormalizer::get_next",
+      2
+    ],
+    [
+      "oceanbase::common::ObCharset::charset_convert",
+      1
+    ],
+    [
+      "oceanbase::storage::ObAddWord::process_word",
+      1
+    ],
+    [
+      "LdrInitializeEnclave",
+      1
+    ],
+    [
+      "oceanbase::common::ObILobCursor::check_and_get",
+      1
+    ],
+    [
+      "RtlUpcaseUnicodeString",
+      1
+    ],
+    [
+      "oceanbase::storage::ObFTParseHelper::make_token_array_json",
+      1
+    ],
+    [
+      "ZwQuerySystemInformation",
+      1
+    ],
+    [
+      "ob_casedn_utf8mb4",
+      1
+    ],
+    [
+      "GetSystemInfo",
+      1
+    ],
+    [
+      "oceanbase::common::ObCharset::hash",
+      1
+    ],
+    [
+      "ZwWaitForMultipleObjects",
+      1
+    ],
+    [
+      "RtlQueryPerformanceCounter",
+      1
+    ],
+    [
+      "ob_wc_mb_utf8mb4",
+      1
+    ],
+    [
+      "oceanbase::lib::ObCtxAllocator::on_alloc",
+      1
+    ],
+    [
+      "oceanbase::storage::ObFTWord::operator==",
+      1
+    ],
+    [
+      "NtQueryInformationProcess",
+      1
+    ],
+    [
+      "pthread_spin_lock",
+      1
+    ],
+    [
+      "pthread_spin_unlock",
+      1
+    ],
+    [
+      "RtlWow64SuspendThread",
+      1
+    ],
+    [
+      "oceanbase::share::ObJsonWrapper::get_raw_binary",
+      1
+    ]
+  ]
+}

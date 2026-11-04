@@ -1,0 +1,84 @@
+{
+  "label": "round9-casecopy-candidate-1",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-round9-casecopy\\seekdb.exe",
+  "source_commit": "36519bd8b3782c90f50565ebf6b233beba542600+9375c28e3fe65e85a49529af61d906474fd799cf125074b3ab553cd276ab942b",
+  "binary_sha256": "0fae7b6383ee2fabf8a689b1c31d5145401a1d9338bbedf38d963354c8739435",
+  "actions": [
+    {
+      "action": "casecopy",
+      "exit_code": 0,
+      "seconds": 24.622064299997874
+    },
+    {
+      "action": "bmp",
+      "exit_code": 0,
+      "seconds": 1.4807371000060812
+    },
+    {
+      "action": "ranked",
+      "exit_code": 0,
+      "seconds": 5.836843600001885
+    },
+    {
+      "action": "keytypes",
+      "exit_code": 0,
+      "seconds": 5.33849690000352
+    },
+    {
+      "action": "test_hot_path.py",
+      "exit_code": 0,
+      "seconds": 3.2934124000021257
+    },
+    {
+      "action": "test_tokenize_config.py",
+      "exit_code": 0,
+      "seconds": 0.3130024999991292
+    },
+    {
+      "action": "test_collation.py",
+      "exit_code": 0,
+      "seconds": 1.6816379999945639
+    },
+    {
+      "action": "test_match_batches.py",
+      "exit_code": 0,
+      "seconds": 15.049347599997418
+    },
+    {
+      "action": "test_map_concurrency.py",
+      "exit_code": 0,
+      "seconds": 1.517328699992504
+    },
+    {
+      "action": "test_stopword_concurrency.py",
+      "exit_code": 0,
+      "seconds": 0.30817579998984
+    },
+    {
+      "action": "test_dictionary_prefixes.py",
+      "exit_code": 0,
+      "seconds": 0.34011639999516774
+    },
+    {
+      "action": "benchmark",
+      "exit_code": 0,
+      "seconds": 33.73386629999732
+    },
+    {
+      "action": "input-validation",
+      "exit_code": 0,
+      "seconds": 0.1273040999949444
+    },
+    {
+      "action": "plans",
+      "exit_code": 0,
+      "seconds": 0.24064930000167806
+    },
+    {
+      "action": "micro",
+      "exit_code": 0,
+      "seconds": 15.778804999994463
+    }
+  ],
+  "report": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase\u6bd4\u8d5b\\setup\\fts\\round9-casecopy-candidate-1-report.txt"
+}

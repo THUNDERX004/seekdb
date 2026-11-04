@@ -1,0 +1,24 @@
+{
+  "label": "round8-local-alloc-candidate-2",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-round8-local-alloc\\seekdb.exe",
+  "source_commit": "36519bd8b3782c90f50565ebf6b233beba542600+round8-local-allocators-no-gallop",
+  "binary_sha256": "a1d0082be002e4640d0c88daba435726d481046416d247cd8e836d5388d1e7a5",
+  "actions": [
+    {
+      "action": "benchmark",
+      "exit_code": 0,
+      "seconds": 41.44363120000344
+    },
+    {
+      "action": "input-validation",
+      "exit_code": 0,
+      "seconds": 0.10192410000308882
+    },
+    {
+      "action": "micro",
+      "exit_code": 0,
+      "seconds": 14.747101500004646
+    }
+  ],
+  "report": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase\u6bd4\u8d5b\\setup\\fts\\round8-local-alloc-candidate-2-report.txt"
+}

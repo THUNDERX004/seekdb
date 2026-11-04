@@ -1,0 +1,9 @@
+{
+  "decision": "Reject private node allocator specialization; no demonstrated stable benefit. Retain withdrawal of unproved galloping for the next experiment.",
+  "source_patch": "round8-source.patch",
+  "measured_overall_reduction": 0.007555190305409745,
+  "build_reduction": -0.05288667537499688,
+  "all_runs_retained": true,
+  "formal_score_available": false,
+  "next_candidate": "Parent36519bd8b without galloping, plus separately tested UTF8 out-of-place lowercase candidate"
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "36519bd8b3782c90f50565ebf6b233beba542600",
+  "patch_sha256": "3f849b432d5bfadd376f1cebe89abee4d20682825f1c7a91947b0726187ecfe2",
+  "binary_sha256": "a1d0082be002e4640d0c88daba435726d481046416d247cd8e836d5388d1e7a5",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-round8-local-alloc\\seekdb.exe"
+}

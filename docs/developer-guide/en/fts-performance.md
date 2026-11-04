@@ -1,5 +1,31 @@
 # Full-text performance optimization
 
+## Round-10 checkpoint (2026-11-04)
+
+Two new, separate adjacent official-original/candidate pairs measure a **26.19%** equal-category reduction: build **22.60%**, tokenize **20.68%**, query **35.29%**. This remains below 50%; the user's only formal platform result is still 21.099/100 raw, or 10.550/50 after weighting. No later platform evaluation is available. These local measurements do not replace that result.
+
+| Metric | Official original mean | Candidate mean | Time reduction |
+| --- | ---: | ---: | ---: |
+| `build_ik_all_sec` | 8.27500 | 6.43050 | 22.29% |
+| `build_ik_content_sec` | 6.77950 | 4.90350 | 27.67% |
+| `build_beng_en_sec` | 3.45400 | 2.83800 | 17.83% |
+| `tokenize_ik_avg_ms` | 0.18860 | 0.14170 | 24.87% |
+| `tokenize_beng_avg_ms` | 0.12490 | 0.10430 | 16.49% |
+| `query_cn_avg_ms` | 1.76145 | 1.03195 | 41.41% |
+| `query_beng_avg_ms` | 2.43550 | 1.31490 | 46.01% |
+| `query_mixed_avg_ms` | 1.98385 | 1.14900 | 42.08% |
+| `query_limit_avg_ms` | 2.47540 | 2.18725 | 11.64% |
+
+After successful IK context initialization, the three supported UTF8 collations decode each subsequent character once and classify its codepoint directly. The first character and every nonpositive decode result use the complete existing validation/classification chain. In particular, ILSEQ is zero: surrogate byte sequences preserve the original success/length-3/USELESS result through fallback. Other collations retain their original dispatch. No segmentation rule changes. The unproved posting-batch galloping experiment is withdrawn.
+
+Three additional adjacent pairs isolate this UTF8 change against the same parent without galloping. They show only **1.41%** overall reduction (build 2.49%, tokenize 0.25%, query 1.48%), with **IK TOKENIZE 4.92% slower**. Unchanged BENG also varied, so a stable isolated speedup is not established. All six runs and every negative metric remain in the calculation; the separate cumulative original comparison above uses its own two pairs. No SELECT1 subtraction, negative clipping or fastest-sample selection is used.
+
+The source-extracted native regression passes **2,429,473** cases, including every Unicode scalar, all surrogate encodings, exhaustive one/two-byte inputs, multibyte boundaries/truncations, deterministic random strings, cached state and init/fallback checks. Its native control is pinned to immutable parent source blobs, while SQL expected results remain independently recorded on the official competition original. Framework/allocator/charset-descriptor initialization is stubbed in the native leaf; it does not replace integration testing. All seven established SQL suites, BMP dictionary, complete ranked/key-type fixtures and 16,359 Unicode/case-copy SQL groups pass on the candidate. Of those SQL groups, 15,435 return full results and 924 preserve original errors. The trimmed build rejects latin1/gbk/utf16 with 1115; their conversion contents are not validated. Benchmark hits remain 8001/11000/7332/20.
+
+Rejected round-8 node-allocator specialization measured 0.76% overall reduction but a 5.29% build regression over three pairs. Rejected round-9 lowercase pre-copy elimination measured **-1.12%** overall reduction over two pairs. Both source experiments are reverted; their complete evidence and the initial fixture-recording failure remain retained. The Unicode regression is kept independently of the rejected lowercase optimization.
+
+Full native compilation/linking and source/hash checks passed on Windows. Profiling/native leaf execution occurred outside performance measurements. Linux CI and a new formal score remain unverified. The official baseline/benchmark/build/CI files are unchanged. [Round-10 evidence](../assets/fts-performance/competition-round10/manifest.json), [round-9 rejection](../assets/fts-performance/competition-round9/manifest.json) and [round-8 rejection](../assets/fts-performance/competition-round8/manifest.json) retain all reports, logs, exact patches and binary hashes.
+
 ## Round-7 checkpoint (2026-11-04)
 
 Two full runs per official-original/candidate binary give a **26.47%** equal-category reduction (build 12.77%, tokenize 27.30%, query 39.35%). Two adjacent runs per previously pushed a2cd7c9cd/candidate binary give a **7.65%** incremental reduction, with a **2.44% query regression**. The first original LIMIT run was noisy and is retained. This is below 50% and does not establish a new formal platform score.

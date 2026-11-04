@@ -1,0 +1,8 @@
+{
+  "decision": "Reject UTF8 lowercase pre-copy elimination; no demonstrated stable benefit.",
+  "comparison": "round9-comparison.json",
+  "overall_reduction": -0.011196169689394443,
+  "all_completed_runs_retained": true,
+  "correctness": "All candidate1 complete-result suites passed, including 16359 independently recorded SQL groups.",
+  "formal_score_available": false
+}

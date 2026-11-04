@@ -1,0 +1,104 @@
+{
+  "schema_version": 2,
+  "purpose": "Pinned UTF8 prepare regression; candidate from checkout, baseline from immutable Git blobs",
+  "baseline_source_head": "36519bd8b3782c90f50565ebf6b233beba542600",
+  "official_competition_baseline": "5bce9e06d1281347ad61344e4b01fab9158c58a2",
+  "hash_policy": "Exact SHA-256; explicitly pinned normalized-LF SHA-256 also accepts Git CRLF/LF checkout differences. No other drift is accepted.",
+  "source_files": [
+    {
+      "path": "src/storage/fts/ik/ob_ik_processor.cpp",
+      "original_git_blob": "996b4665d4382a86aa737781728931d87a73bd78",
+      "original_lf_sha256": "51bb8f44736747f30c0549d91fe4bae80e2136bdc47e920427fb9e094eb03704",
+      "new_sha256": "13479e8f1438c2c8650db7815eccce43480218e5ee3d4da20b457b9d79105169",
+      "new_lf_sha256": "13479e8f1438c2c8650db7815eccce43480218e5ee3d4da20b457b9d79105169"
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_processor.h",
+      "original_git_blob": "19a073ca51b30e92ed8d885549631341e56356d1",
+      "original_lf_sha256": "3fd6fcf4afbf1a1da95f73e93d59f4418ca1fddcedc718ef84b4932da21de449",
+      "new_sha256": "04a621fc07d3f46a0856fa2ef0b01d4869834af674e4fe4d77177b52ce252d0d",
+      "new_lf_sha256": "04a621fc07d3f46a0856fa2ef0b01d4869834af674e4fe4d77177b52ce252d0d"
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_char_util.h",
+      "original_git_blob": "f029b7d5f0c18b415db052249d190776fafc8723",
+      "original_lf_sha256": "833f08ef4208099e55e4936f644c5f2d641af231e2de4db8d4de257442831d00",
+      "new_sha256": "cd1c9fdcfb27f42791c31be8d4912c04c083882176140f37c12f8e9f8b18cb3f",
+      "new_lf_sha256": "e429775111646c185090e6e60b4da4da245bb92fc7d0900bdc5ae494debc0215"
+    }
+  ],
+  "leaf_input_files": [
+    {
+      "path": "src/oblib/lib/charset/ob_ctype_utf8.cc",
+      "content_sha256": "40db8ba8e8ca93126693012bf866d04f881fbb545fd1ef20a4cbe2b90406a8e1",
+      "git_blob_at_source_head": "d589c6e7c178d553ba56cd348202494d14e87d3b",
+      "content_lf_sha256": "943ca0fb087c44a4b63c90b552ab9091418302cef80932e04026733c776e5046"
+    },
+    {
+      "path": "src/oblib/lib/charset/mb_wc.h",
+      "content_sha256": "fec54fa0ecb8e46f3eab994e798f416256bb3cd9400d1ce034345484af43dab2",
+      "git_blob_at_source_head": "ccaffad817a53a05a3d1d73ef7ae573d8318939d",
+      "content_lf_sha256": "021338d4512dc6234ef2a58aa4546349d27c02b9d488e745dd4d501833cc6a46"
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_charset_string_helper.h",
+      "content_sha256": "492a719d9a37250aa7cc342d6258c7d7e370c8439a31d106a66e4724cdb082eb",
+      "git_blob_at_source_head": "e6d5df2f141db0414cff077406de025fa9bc74a3",
+      "content_lf_sha256": "294149391c3bdbc913d1a7b8458ccf814e5d94db8156cd36dcd232bdce8302d1"
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_charset.cpp",
+      "content_sha256": "177e854975f531fe817b3906ce3623fa161c0b39608e8c3e934637892095cb78",
+      "git_blob_at_source_head": "dbfbcf3d38bbe656aadd27ec159ead989384faa4",
+      "pin_note": "Round9 rollback: exact original dbfbcf3d38bbe656aadd27ec159ead989384faa4 blob; definitions retain old proposal receipt hashes.",
+      "definitions": [
+        {
+          "marker": "bool ObCharset::is_valid_collation(int64_t",
+          "definition_lf_sha256": "f31809f52652cb3549ba4bfcbdcdf50169c80dcffdcb266af1ddd7bfe0c4d860"
+        },
+        {
+          "marker": "ObCharsetType ObCharset::charset_type_by_coll(",
+          "definition_lf_sha256": "90373b50b6f3f60e07e0a39e9b856b87f37391e4e844f21cdf23a837e881245b"
+        },
+        {
+          "marker": "int ObCharset::first_valid_char(",
+          "definition_lf_sha256": "cbb996fd1159c8859525a476e14ac7d96bdfa40da14e6cce9e91ccad68405198"
+        }
+      ],
+      "content_lf_sha256": "177e854975f531fe817b3906ce3623fa161c0b39608e8c3e934637892095cb78"
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_charset.h",
+      "content_sha256": "0d585dd6a49049af1384ff9e0b21ad165d7e1997fd25a6905a2bbb8099d6ff25",
+      "git_blob_at_source_head": "6064514ff3169d455d08c8b69f28a6cd39d28d3b",
+      "content_lf_sha256": "e9f7498bf205498477b86067ba4b9126dd767b805f9f743e39314012ec6c2c73"
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_ctype.h",
+      "content_sha256": "de359387e848bf95baafcbb09719b0eaa0e55dbacdaf1f34187a9c6a26ca7fd1",
+      "git_blob_at_source_head": "29bb254be82e5d52f759aa91c1ac2718034ff6f1",
+      "content_lf_sha256": "ff5fd6b82032f56f457e21041e4a33d1dd40cb30eba7dd10b44daf2ecca4be50"
+    },
+    {
+      "path": "src/oblib/lib/ob_errno.h",
+      "content_sha256": "5ea6dcd527cb2159778771d3711a8385fb28fbaa8c6ab931ac260dcf626b2635",
+      "git_blob_at_source_head": "03b3225f519b448c1191fe4b4ddda79b7c212c77",
+      "content_lf_sha256": "e7cd8ca125e022d6acbeaf2be320a178a23b03d20413ed98eb171dd398e99610"
+    },
+    {
+      "path": "src/storage/fts/utils/unicode_utils.h",
+      "content_sha256": "68b5a7f0b815c58cedd9ae9aa6e37c6f73cdb74a7a5109dab4b7348cec6342f8",
+      "git_blob_at_source_head": "91fea06d9c5003f72a54e54d008cce5199147a64",
+      "content_lf_sha256": "7a38abb5608dd730a0eb2172bbe99a46b1820e342195a52d3d21eec15e59ce16"
+    },
+    {
+      "path": "src/storage/fts/utils/unicode_utils.cpp",
+      "content_sha256": "be1ac55f94c63741718130753b6d20f1d48ab9baae2272315b7db668d9ca54d4",
+      "git_blob_at_source_head": "33eec5e4aa1e7e25dfbe3fc6e4d16d4697df7536",
+      "content_lf_sha256": "df5f75ea6d16c4284359c5fb34f9acf757c66b0018a19b0a0d684accf3cca8e2"
+    }
+  ],
+  "driver_file": "driver.inc",
+  "driver_sha256": "80426181089b01fd89d5bb4c79361b403f7918a60f6b9366c94a84c66407027a",
+  "driver_lf_sha256": "80426181089b01fd89d5bb4c79361b403f7918a60f6b9366c94a84c66407027a"
+}

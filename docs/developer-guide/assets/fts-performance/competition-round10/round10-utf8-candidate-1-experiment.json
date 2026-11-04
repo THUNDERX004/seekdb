@@ -1,0 +1,79 @@
+{
+  "label": "round10-utf8-candidate-1",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-round10-utf8-prepare\\seekdb.exe",
+  "source_commit": "36519bd8b3782c90f50565ebf6b233beba542600+db05a9104441c7ceebacbcbccfc7fef0358ea4091c1df3f4fab0587a04599820",
+  "binary_sha256": "4b5da29dccff5458257668e17e6209676e751363213b649faebbbdbaf35e2a82",
+  "actions": [
+    {
+      "action": "casecopy",
+      "exit_code": 0,
+      "seconds": 24.223231299998588
+    },
+    {
+      "action": "bmp",
+      "exit_code": 0,
+      "seconds": 1.3502456000132952
+    },
+    {
+      "action": "ranked",
+      "exit_code": 0,
+      "seconds": 5.455034999991767
+    },
+    {
+      "action": "keytypes",
+      "exit_code": 0,
+      "seconds": 5.537900799987256
+    },
+    {
+      "action": "test_hot_path.py",
+      "exit_code": 0,
+      "seconds": 3.4884319999982836
+    },
+    {
+      "action": "test_tokenize_config.py",
+      "exit_code": 0,
+      "seconds": 0.32912570000917185
+    },
+    {
+      "action": "test_collation.py",
+      "exit_code": 0,
+      "seconds": 1.6996017000055872
+    },
+    {
+      "action": "test_match_batches.py",
+      "exit_code": 0,
+      "seconds": 13.876523400002043
+    },
+    {
+      "action": "test_map_concurrency.py",
+      "exit_code": 0,
+      "seconds": 1.489365799992811
+    },
+    {
+      "action": "test_stopword_concurrency.py",
+      "exit_code": 0,
+      "seconds": 0.3004534999927273
+    },
+    {
+      "action": "test_dictionary_prefixes.py",
+      "exit_code": 0,
+      "seconds": 0.4199484999990091
+    },
+    {
+      "action": "benchmark",
+      "exit_code": 0,
+      "seconds": 33.21754010001314
+    },
+    {
+      "action": "input-validation",
+      "exit_code": 0,
+      "seconds": 0.12563979999686126
+    },
+    {
+      "action": "micro",
+      "exit_code": 0,
+      "seconds": 17.459019500005525
+    }
+  ],
+  "report": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase\u6bd4\u8d5b\\setup\\fts\\round10-utf8-candidate-1-report.txt"
+}

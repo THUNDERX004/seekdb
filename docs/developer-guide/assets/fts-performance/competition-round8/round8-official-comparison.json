@@ -1,0 +1,51 @@
+{
+  "controls": [
+    "round8-original-1",
+    "round8-original-2"
+  ],
+  "candidates": [
+    "round8-local-alloc-candidate-1",
+    "round8-local-alloc-candidate-2",
+    "round8-local-alloc-candidate-3"
+  ],
+  "control_mean": {
+    "build_ik_all_sec": 9.8325,
+    "build_ik_content_sec": 7.59,
+    "build_beng_en_sec": 3.6260000000000003,
+    "tokenize_ik_avg_ms": 0.19855,
+    "tokenize_beng_avg_ms": 0.1431,
+    "query_cn_avg_ms": 1.91395,
+    "query_beng_avg_ms": 2.5103999999999997,
+    "query_mixed_avg_ms": 2.08,
+    "query_limit_avg_ms": 2.61235
+  },
+  "candidate_mean": {
+    "build_ik_all_sec": 8.414,
+    "build_ik_content_sec": 6.389333333333333,
+    "build_beng_en_sec": 3.732333333333333,
+    "tokenize_ik_avg_ms": 0.18233333333333335,
+    "tokenize_beng_avg_ms": 0.12416666666666666,
+    "query_cn_avg_ms": 1.1118333333333335,
+    "query_beng_avg_ms": 1.4033333333333333,
+    "query_mixed_avg_ms": 1.1734333333333333,
+    "query_limit_avg_ms": 2.4474666666666667
+  },
+  "per_metric_reduction": {
+    "build_ik_all_sec": 0.14426646325959824,
+    "build_ik_content_sec": 0.15819060166886256,
+    "build_beng_en_sec": -0.029325243610957674,
+    "tokenize_ik_avg_ms": 0.08167548056744722,
+    "tokenize_beng_avg_ms": 0.1323084090379688,
+    "query_cn_avg_ms": 0.41908966622255883,
+    "query_beng_avg_ms": 0.4409921393669003,
+    "query_mixed_avg_ms": 0.43584935897435895,
+    "query_limit_avg_ms": 0.06311686157418928
+  },
+  "per_category_reduction": {
+    "build": 0.0910439404391677,
+    "tokenize": 0.10699194480270802,
+    "query": 0.33976200653450184
+  },
+  "overall_reduction": 0.17926596392545918,
+  "note": "Local comparison only. All listed runs retained; no SELECT1 subtraction and no negative clipping."
+}

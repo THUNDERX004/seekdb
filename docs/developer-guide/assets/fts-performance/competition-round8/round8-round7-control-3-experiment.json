@@ -1,0 +1,24 @@
+{
+  "label": "round8-round7-control-3",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-round7-final\\seekdb.exe",
+  "source_commit": "36519bd8b3782c90f50565ebf6b233beba542600",
+  "binary_sha256": "7803026263fb23c5bdabdae4811332720e5bb76b9b50e3401e439b1124cf7f7a",
+  "actions": [
+    {
+      "action": "benchmark",
+      "exit_code": 0,
+      "seconds": 34.718647300003795
+    },
+    {
+      "action": "input-validation",
+      "exit_code": 0,
+      "seconds": 0.13545909999811556
+    },
+    {
+      "action": "micro",
+      "exit_code": 0,
+      "seconds": 17.737593600002583
+    }
+  ],
+  "report": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase\u6bd4\u8d5b\\setup\\fts\\round8-round7-control-3-report.txt"
+}

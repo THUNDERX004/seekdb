@@ -1,0 +1,24 @@
+{
+  "label": "round10-no-utf8-control-1",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-round9-no-casecopy-control\\seekdb.exe",
+  "source_commit": "36519bd8b3782c90f50565ebf6b233beba542600+769e31e439af83441c6faa1501b75467accd9a541d092d5ef2368f045622f2d8",
+  "binary_sha256": "1f6668d766e9118eb118e37dc99165e691bbd0aec7341d2229c2fbbf90fedf70",
+  "actions": [
+    {
+      "action": "benchmark",
+      "exit_code": 0,
+      "seconds": 33.387925800008816
+    },
+    {
+      "action": "input-validation",
+      "exit_code": 0,
+      "seconds": 0.11353440000675619
+    },
+    {
+      "action": "micro",
+      "exit_code": 0,
+      "seconds": 15.063679700004286
+    }
+  ],
+  "report": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase\u6bd4\u8d5b\\setup\\fts\\round10-no-utf8-control-1-report.txt"
+}

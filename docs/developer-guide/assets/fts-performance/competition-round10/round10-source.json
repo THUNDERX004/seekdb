@@ -1,0 +1,7 @@
+{
+  "parent": "36519bd8b3782c90f50565ebf6b233beba542600",
+  "patch": "round10-source.patch",
+  "sha256": "db05a9104441c7ceebacbcbccfc7fef0358ea4091c1df3f4fab0587a04599820",
+  "changes": "Withdraw unproved galloping; validate/decode UTF8 IK characters once after successful context init.",
+  "native_leaf": "PASS cases=2429473; integration and performance pending"
+}

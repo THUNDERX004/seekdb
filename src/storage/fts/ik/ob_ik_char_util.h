@@ -52,6 +52,9 @@ public:
                                  const uint8_t char_len,
                                  CharType &type);
 
+  template <ObCharsetType CS_TYPE>
+  static void classify_unicode(const ob_wc_t unicode, CharType &type);
+
   static int check_cn_number(ObCollationType coll_type,
                              const char *input,
                              const uint8_t char_len,
@@ -442,16 +445,10 @@ inline int ObFTCharUtil::is_ignore_single_cjk(ObCollationType coll_type,
 }
 
 template <ObCharsetType CS_TYPE>
-inline int ObFTCharUtil::do_classify(const char *input, const uint8_t char_len, CharType &type)
+inline void ObFTCharUtil::classify_unicode(const ob_wc_t unicode, CharType &type)
 {
-  int ret = OB_SUCCESS;
-  ob_wc_t unicode = 0;
   type = CharType::USELESS;
-
-  // Every predicate examines the same character. Decode it once while keeping
-  // the classification order, including UTF-16-only surrogate handling.
-  if (OB_FAIL(decode_unicode<CS_TYPE>(input, char_len, unicode))) {
-  } else if (ObUnicodeBlockUtils::is_alpha(unicode)) {
+  if (ObUnicodeBlockUtils::is_alpha(unicode)) {
     type = CharType::ENGLISH_LETTER;
   } else if (ObUnicodeBlockUtils::is_arabic(unicode)) {
     type = CharType::ARABIC_LETTER;
@@ -465,6 +462,19 @@ inline int ObFTCharUtil::do_classify(const char *input, const uint8_t char_len, 
   } else if ((CS_TYPE == CHARSET_UTF16 || CS_TYPE == CHARSET_UTF16LE)
              && ObUnicodeBlockUtils::check_low_surrogate(unicode)) {
     type = CharType::SURROGATE_LOW;
+  }
+}
+
+template <ObCharsetType CS_TYPE>
+inline int ObFTCharUtil::do_classify(const char *input, const uint8_t char_len, CharType &type)
+{
+  int ret = OB_SUCCESS;
+  ob_wc_t unicode = 0;
+  // Preserve the original output value even when decoding fails.
+  type = CharType::USELESS;
+  if (OB_FAIL(decode_unicode<CS_TYPE>(input, char_len, unicode))) {
+  } else {
+    classify_unicode<CS_TYPE>(unicode, type);
   }
   return ret;
 }

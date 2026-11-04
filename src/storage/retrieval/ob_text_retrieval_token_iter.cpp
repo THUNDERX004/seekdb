@@ -545,50 +545,11 @@ int ObTextRetrievalDaaTTokenIter::get_next_batch(const int64_t capacity, int64_t
   return OB_NOT_IMPLEMENT;
 }
 
-int ObTextRetrievalDaaTTokenIter::advance_in_batch(const ObDatum &id_datum)
-{
-  int ret = OB_SUCCESS;
-  int result = 0;
-  const int64_t start_idx = cur_idx_;
-  const int64_t remaining = count_ - start_idx;
-  int64_t span = 1;
-  int64_t upper_idx = start_idx;
-
-  // Gallop over the saved ascending IDs, clamping the last probe to the batch.
-  // cur_idx_ always marks the first index not yet excluded, including on error.
-  while (OB_SUCC(ret) && cur_idx_ < count_) {
-    if (OB_FAIL(cmp_func_(
-            id_datum, doc_id_[upper_idx].get_datum(), result, nullptr))) {
-    } else if (result <= 0) {
-      break;
-    } else {
-      cur_idx_ = upper_idx + 1;
-      if (cur_idx_ < count_) {
-        span = span <= remaining / 2 ? span * 2 : remaining;
-        upper_idx = start_idx + span - 1;
-      }
-    }
-  }
-  // If a probe matched, find the first match without comparing upper_idx again.
-  while (OB_SUCC(ret) && cur_idx_ < upper_idx) {
-    const int64_t mid_idx = cur_idx_ + (upper_idx - cur_idx_) / 2;
-    if (OB_FAIL(cmp_func_(
-            id_datum, doc_id_[mid_idx].get_datum(), result, nullptr))) {
-    } else if (result <= 0) {
-      upper_idx = mid_idx;
-    } else {
-      cur_idx_ = mid_idx + 1;
-    }
-  }
-  return ret;
-}
-
 int ObTextRetrievalDaaTTokenIter::advance_to(const ObDatum &id_datum)
 {
   int ret = OB_SUCCESS;
   int result = 0;
   bool find = false;
-  int64_t linear_steps = 0;
 
   if (cur_idx_ < 0) {
     ret = OB_ERR_UNEXPECTED;
@@ -601,13 +562,6 @@ int ObTextRetrievalDaaTTokenIter::advance_to(const ObDatum &id_datum)
         find = true;
       } else {
         ++cur_idx_;
-        // Keep current/adjacent targets on the short linear path.
-        if (++linear_steps == 2 && cur_idx_ < count_) {
-          if (OB_FAIL(advance_in_batch(id_datum))) {
-          } else {
-            find = cur_idx_ < count_;
-          }
-        }
       }
     } else if (OB_FAIL(token_iter_->advance_to(id_datum))) {
     } else if (OB_FAIL(get_next_row())) {

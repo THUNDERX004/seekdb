@@ -1,0 +1,21 @@
+GENERATED C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp
+CPP_SHA256 fe4453ecd35ef78233d20685c1dc5b40fbfd8c77576645210f6b3d314deb80f6
+COMPILE cl.exe /nologo /std:c++17 /EHsc /O2 /W4 C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp /Fe:C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.exe
+utf8_prepare_leaf.cpp
+C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp(392): warning C4100: 'cs': 未引用的参数
+C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp(435): warning C4100: 'cs': 未引用的参数
+C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp(1336): warning C4244: “参数”: 从“int64_t”转换到“const uint8_t”，可能丢失数据
+C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp(1914): warning C4244: “参数”: 从“int64_t”转换到“const uint8_t”，可能丢失数据
+C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp(1250): warning C4127: 条件表达式是常量
+C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp(1250): note: 考虑改用 "if constexpr" 语句
+C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp(1250): note: 模板实例化上下文(最早的实例化上下文)为
+C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp(1269): note: 查看对正在编译的函数 模板 实例化“int baseline::ObFTCharUtil::do_classify<CHARSET_UTF8MB4>(const char *,const uint8_t,baseline::ObFTCharUtil::CharType &)”的引用
+C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp(1253): warning C4127: 条件表达式是常量
+C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp(1253): note: 考虑改用 "if constexpr" 语句
+C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp(1793): warning C4127: 条件表达式是常量
+C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp(1793): note: 考虑改用 "if constexpr" 语句
+C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp(1793): note: 模板实例化上下文(最早的实例化上下文)为
+C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp(1906): note: 查看对正在编译的函数 模板 实例化“void candidate::ObFTCharUtil::classify_unicode<CHARSET_UTF8MB4>(const ulong,candidate::ObFTCharUtil::CharType &)”的引用
+C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp(1796): warning C4127: 条件表达式是常量
+C:\Users\11946\Documents\ChatGPT\OceanBase比赛\setup\fts\round10-proposal\leaf-build\utf8_prepare_leaf.cpp(1796): note: 考虑改用 "if constexpr" 语句
+PASS cases=2429473 positive=1557808 zero=737449 negative=134216 scalar=1112064 surrogate=2048 all1=256 all2=65536 boundary3=524288 boundary4=204800 truncation3=20480 random=500000

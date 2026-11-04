@@ -1,0 +1,321 @@
+{
+  "baseline_source_head": "36519bd8b3782c90f50565ebf6b233beba542600",
+  "source_root": "D:\\Projects\\OceanBase\\seekdb",
+  "manifest_sha256": "2736da48afb96d81e7230267ed5b14d918610cea57f1e63137bd27fda62e3f90",
+  "generated_cpp_sha256": "fe4453ecd35ef78233d20685c1dc5b40fbfd8c77576645210f6b3d314deb80f6",
+  "extractor_sha256": "b9ad0cb12d2f3ba72cd10a2fc6de15aacd752bb369611e8ff48979a5bd0df014",
+  "test_driver_sha256": "80426181089b01fd89d5bb4c79361b403f7918a60f6b9366c94a84c66407027a",
+  "files": [
+    {
+      "path": "src/storage/fts/ik/ob_ik_processor.cpp",
+      "role": "candidate",
+      "raw_sha256": "13479e8f1438c2c8650db7815eccce43480218e5ee3d4da20b457b9d79105169",
+      "lf_sha256": "13479e8f1438c2c8650db7815eccce43480218e5ee3d4da20b457b9d79105169",
+      "verification": "raw_sha256"
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_processor.h",
+      "role": "candidate",
+      "raw_sha256": "04a621fc07d3f46a0856fa2ef0b01d4869834af674e4fe4d77177b52ce252d0d",
+      "lf_sha256": "04a621fc07d3f46a0856fa2ef0b01d4869834af674e4fe4d77177b52ce252d0d",
+      "verification": "raw_sha256"
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_char_util.h",
+      "role": "candidate",
+      "raw_sha256": "cd1c9fdcfb27f42791c31be8d4912c04c083882176140f37c12f8e9f8b18cb3f",
+      "lf_sha256": "e429775111646c185090e6e60b4da4da245bb92fc7d0900bdc5ae494debc0215",
+      "verification": "raw_sha256"
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_processor.cpp",
+      "role": "baseline",
+      "git_blob": "996b4665d4382a86aa737781728931d87a73bd78",
+      "raw_sha256": "51bb8f44736747f30c0549d91fe4bae80e2136bdc47e920427fb9e094eb03704",
+      "lf_sha256": "51bb8f44736747f30c0549d91fe4bae80e2136bdc47e920427fb9e094eb03704",
+      "verification": "immutable_git_blob_and_lf_sha256"
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_processor.h",
+      "role": "baseline",
+      "git_blob": "19a073ca51b30e92ed8d885549631341e56356d1",
+      "raw_sha256": "3fd6fcf4afbf1a1da95f73e93d59f4418ca1fddcedc718ef84b4932da21de449",
+      "lf_sha256": "3fd6fcf4afbf1a1da95f73e93d59f4418ca1fddcedc718ef84b4932da21de449",
+      "verification": "immutable_git_blob_and_lf_sha256"
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_char_util.h",
+      "role": "baseline",
+      "git_blob": "f029b7d5f0c18b415db052249d190776fafc8723",
+      "raw_sha256": "833f08ef4208099e55e4936f644c5f2d641af231e2de4db8d4de257442831d00",
+      "lf_sha256": "833f08ef4208099e55e4936f644c5f2d641af231e2de4db8d4de257442831d00",
+      "verification": "immutable_git_blob_and_lf_sha256"
+    },
+    {
+      "path": "driver.inc",
+      "role": "test driver",
+      "raw_sha256": "80426181089b01fd89d5bb4c79361b403f7918a60f6b9366c94a84c66407027a",
+      "lf_sha256": "80426181089b01fd89d5bb4c79361b403f7918a60f6b9366c94a84c66407027a",
+      "verification": "raw_sha256"
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_charset.h",
+      "role": "pinned leaf input",
+      "raw_sha256": "0d585dd6a49049af1384ff9e0b21ad165d7e1997fd25a6905a2bbb8099d6ff25",
+      "lf_sha256": "e9f7498bf205498477b86067ba4b9126dd767b805f9f743e39314012ec6c2c73",
+      "verification": "raw_sha256"
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_ctype.h",
+      "role": "pinned leaf input",
+      "raw_sha256": "de359387e848bf95baafcbb09719b0eaa0e55dbacdaf1f34187a9c6a26ca7fd1",
+      "lf_sha256": "ff5fd6b82032f56f457e21041e4a33d1dd40cb30eba7dd10b44daf2ecca4be50",
+      "verification": "raw_sha256"
+    },
+    {
+      "path": "src/oblib/lib/ob_errno.h",
+      "role": "pinned leaf input",
+      "raw_sha256": "5ea6dcd527cb2159778771d3711a8385fb28fbaa8c6ab931ac260dcf626b2635",
+      "lf_sha256": "e7cd8ca125e022d6acbeaf2be320a178a23b03d20413ed98eb171dd398e99610",
+      "verification": "raw_sha256"
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_ctype_utf8.cc",
+      "role": "pinned leaf input",
+      "raw_sha256": "40db8ba8e8ca93126693012bf866d04f881fbb545fd1ef20a4cbe2b90406a8e1",
+      "lf_sha256": "943ca0fb087c44a4b63c90b552ab9091418302cef80932e04026733c776e5046",
+      "verification": "raw_sha256"
+    },
+    {
+      "path": "src/oblib/lib/charset/mb_wc.h",
+      "role": "pinned leaf input",
+      "raw_sha256": "fec54fa0ecb8e46f3eab994e798f416256bb3cd9400d1ce034345484af43dab2",
+      "lf_sha256": "021338d4512dc6234ef2a58aa4546349d27c02b9d488e745dd4d501833cc6a46",
+      "verification": "raw_sha256"
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_charset_string_helper.h",
+      "role": "pinned leaf input",
+      "raw_sha256": "492a719d9a37250aa7cc342d6258c7d7e370c8439a31d106a66e4724cdb082eb",
+      "lf_sha256": "294149391c3bdbc913d1a7b8458ccf814e5d94db8156cd36dcd232bdce8302d1",
+      "verification": "raw_sha256"
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_charset.cpp",
+      "role": "pinned leaf input",
+      "raw_sha256": "177e854975f531fe817b3906ce3623fa161c0b39608e8c3e934637892095cb78",
+      "lf_sha256": "177e854975f531fe817b3906ce3623fa161c0b39608e8c3e934637892095cb78",
+      "verification": "raw_sha256"
+    },
+    {
+      "path": "src/storage/fts/utils/unicode_utils.h",
+      "role": "pinned leaf input",
+      "raw_sha256": "68b5a7f0b815c58cedd9ae9aa6e37c6f73cdb74a7a5109dab4b7348cec6342f8",
+      "lf_sha256": "7a38abb5608dd730a0eb2172bbe99a46b1820e342195a52d3d21eec15e59ce16",
+      "verification": "raw_sha256"
+    },
+    {
+      "path": "src/storage/fts/utils/unicode_utils.cpp",
+      "role": "pinned leaf input",
+      "raw_sha256": "be1ac55f94c63741718130753b6d20f1d48ab9baae2272315b7db668d9ca54d4",
+      "lf_sha256": "df5f75ea6d16c4284359c5fb34f9acf757c66b0018a19b0a0d684accf3cca8e2",
+      "verification": "raw_sha256"
+    }
+  ],
+  "definitions": [
+    {
+      "path": "src/oblib/lib/charset/ob_charset.h",
+      "version": "pinned working source",
+      "marker": "enum ObCharsetType",
+      "definition_lf_sha256": "317236b459ed790af5493306184e98abaa4bebd2d69771963e95951f051dd1a5",
+      "source_line": 34
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_charset.h",
+      "version": "pinned working source",
+      "marker": "enum ObCollationType",
+      "definition_lf_sha256": "fa1ac4ef852cb1f9f87961e28c65c2266587b7ca592464577de51f7c14524642",
+      "source_line": 73
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_ctype_utf8.cc",
+      "version": "pinned working source",
+      "marker": "static int ob_valid_mbcharlen_utf8mb3(",
+      "definition_lf_sha256": "963cc02b5d82c7db0d3472727627db583b3ed2920e87726367ac6a67f693305c",
+      "source_line": 33
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_ctype_utf8.cc",
+      "version": "pinned working source",
+      "marker": "static inline int ob_valid_mbcharlen_utf8mb4(",
+      "definition_lf_sha256": "6615b75b9bb54e06eadeba400c8d2645638571766721785bcc6b07ad67c523e6",
+      "source_line": 58
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_ctype_utf8.cc",
+      "version": "pinned working source",
+      "marker": "static inline size_t ob_well_formed_len_utf8mb4(",
+      "definition_lf_sha256": "7d79e312d42b5120cf2b8f0944dd1e9f36ac8d659c5525bf209d3b09295860f1",
+      "source_line": 103
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_ctype_utf8.cc",
+      "version": "pinned working source",
+      "marker": "static int ob_mb_wc_utf8mb4(",
+      "definition_lf_sha256": "2b74f760ed670eb01141a36c42ffd1e4f80b3d70e37a2538e260c2bbc245d2bb",
+      "source_line": 123
+    },
+    {
+      "path": "src/oblib/lib/charset/mb_wc.h",
+      "version": "pinned working source",
+      "marker": "template <bool RANGE_CHECK, bool SUPPORT_MB4>\nstatic ALWAYS_INLINE int ob_mb_wc_utf8_prototype(",
+      "definition_lf_sha256": "bdccae076c01f57a00e5541662d9e9743eb3c2d420522f45b0f497c78347e847",
+      "source_line": 101
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_charset_string_helper.h",
+      "version": "pinned working source",
+      "marker": "char_len/decode template block",
+      "definition_lf_sha256": "bf4a84893269245f247634e8199bcb086a64cbe2925ee9167154b3d2b27b433f"
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_charset.cpp",
+      "version": "pinned working source",
+      "marker": "bool ObCharset::is_valid_collation(int64_t",
+      "definition_lf_sha256": "f31809f52652cb3549ba4bfcbdcdf50169c80dcffdcb266af1ddd7bfe0c4d860",
+      "source_line": 1346
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_charset.cpp",
+      "version": "pinned working source",
+      "marker": "ObCharsetType ObCharset::charset_type_by_coll(",
+      "definition_lf_sha256": "90373b50b6f3f60e07e0a39e9b856b87f37391e4e844f21cdf23a837e881245b",
+      "source_line": 1355
+    },
+    {
+      "path": "src/oblib/lib/charset/ob_charset.cpp",
+      "version": "pinned working source",
+      "marker": "int ObCharset::first_valid_char(",
+      "definition_lf_sha256": "cbb996fd1159c8859525a476e14ac7d96bdfa40da14e6cce9e91ccad68405198",
+      "source_line": 1728
+    },
+    {
+      "path": "src/storage/fts/utils/unicode_utils.h",
+      "version": "pinned working source",
+      "marker": "class ObUnicodeBlockUtils final",
+      "definition_lf_sha256": "fb3dbe7d0eb0dc00926cde5dec2aba729273b257c548d90d7e349ec9eab471c9",
+      "source_line": 26
+    },
+    {
+      "path": "src/storage/fts/utils/unicode_utils.cpp",
+      "version": "pinned working source",
+      "marker": "bool ObUnicodeBlockUtils::is_alpha(",
+      "definition_lf_sha256": "186a0bd2b6e19d674b99326e76b418a199e4f6d6c0f5fe48e1542dd6cc2915a0",
+      "source_line": 28
+    },
+    {
+      "path": "src/storage/fts/utils/unicode_utils.cpp",
+      "version": "pinned working source",
+      "marker": "bool ObUnicodeBlockUtils::is_arabic(",
+      "definition_lf_sha256": "fb6d5ecc2994df168a3d76341c0afc7a9f4dfce9cc2bf4c25976211fb474a40d",
+      "source_line": 37
+    },
+    {
+      "path": "src/storage/fts/utils/unicode_utils.cpp",
+      "version": "pinned working source",
+      "marker": "bool ObUnicodeBlockUtils::is_chinese(",
+      "definition_lf_sha256": "097a2289f208c6461978f711a6ac281e8fd120a3d535b989823e0785f5047b04",
+      "source_line": 102
+    },
+    {
+      "path": "src/storage/fts/utils/unicode_utils.cpp",
+      "version": "pinned working source",
+      "marker": "bool ObUnicodeBlockUtils::is_other_cjk(",
+      "definition_lf_sha256": "5ffe947c8274d65f9b33b04638578dd5df3e48177188641fac97c041e565b561",
+      "source_line": 112
+    },
+    {
+      "path": "src/storage/fts/utils/unicode_utils.cpp",
+      "version": "pinned working source",
+      "marker": "bool ObUnicodeBlockUtils::check_high_surrogate(",
+      "definition_lf_sha256": "ebc909a20393ca85f4d7cd7679dde4638d8f3d6e0cecaa55bf372cbc5e2c7878",
+      "source_line": 44
+    },
+    {
+      "path": "src/storage/fts/utils/unicode_utils.cpp",
+      "version": "pinned working source",
+      "marker": "bool ObUnicodeBlockUtils::check_low_surrogate(",
+      "definition_lf_sha256": "87e7e7d5e8aa410d9bd09c0b453cd5b942b4717f76cbf91a5ecd9e30a04d8b83",
+      "source_line": 54
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_char_util.h",
+      "version": "baseline",
+      "marker": "complete ObFTCharUtil class and inline definitions",
+      "definition_lf_sha256": "f66ccc710ab19da47e10c2ad78a2b5812a8d8605ee65b8be6379067a29b4207d"
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_processor.cpp",
+      "version": "baseline",
+      "marker": "TokenizeContext::TokenizeContext(",
+      "definition_lf_sha256": "6e605039d19e85efedba1242fbc4f6de8dd0559e836401c3125e37d659822005",
+      "source_line": 49
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_processor.cpp",
+      "version": "baseline",
+      "marker": "int TokenizeContext::init()",
+      "definition_lf_sha256": "4802c28c7b840ddfd51705231eebb690134db000167b2f4a2c023f87a05d1eba",
+      "source_line": 60
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_processor.cpp",
+      "version": "baseline",
+      "marker": "int TokenizeContext::prepare_next_char()",
+      "definition_lf_sha256": "ccb129b874532a412aaa84832a73eb5d44ccf784e713ac8b245906b48eeebbb7",
+      "source_line": 102
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_processor.cpp",
+      "version": "baseline",
+      "marker": "int TokenizeContext::step_next()",
+      "definition_lf_sha256": "9879da877ec4f0b8b429bdedb85fcc6ad8ef6eca5a14da5513f227da1b5e32b8",
+      "source_line": 117
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_char_util.h",
+      "version": "candidate",
+      "marker": "complete ObFTCharUtil class and inline definitions",
+      "definition_lf_sha256": "7edc7c9d34e1d25ad6dbb452bd78afada0a454a82a579bce2aa62d3078a161fe"
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_processor.cpp",
+      "version": "candidate",
+      "marker": "TokenizeContext::TokenizeContext(",
+      "definition_lf_sha256": "687a3aa515c7129c0a5b09fd5d8dcc801dc4b764bf9ff03e4258aa9b20718721",
+      "source_line": 49
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_processor.cpp",
+      "version": "candidate",
+      "marker": "int TokenizeContext::init()",
+      "definition_lf_sha256": "54ef73c9b5b8174d00ea8af392b1f9e2ddcf408d67b75d81a356b032314814b1",
+      "source_line": 61
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_processor.cpp",
+      "version": "candidate",
+      "marker": "int TokenizeContext::prepare_next_char()",
+      "definition_lf_sha256": "25739b9c46cb91f59472d31c0ad86e3622d07849efa7a258639e77618bde5c68",
+      "source_line": 109
+    },
+    {
+      "path": "src/storage/fts/ik/ob_ik_processor.cpp",
+      "version": "candidate",
+      "marker": "int TokenizeContext::step_next()",
+      "definition_lf_sha256": "9879da877ec4f0b8b429bdedb85fcc6ad8ef6eca5a14da5513f227da1b5e32b8",
+      "source_line": 137
+    }
+  ],
+  "scope": "Actual UTF8 leaf bodies and context methods; framework/logging/containers/get_charset initialization are stubbed; full SQL fixtures remain separate."
+}

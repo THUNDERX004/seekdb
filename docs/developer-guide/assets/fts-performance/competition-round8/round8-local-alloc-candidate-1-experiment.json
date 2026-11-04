@@ -1,0 +1,74 @@
+{
+  "label": "round8-local-alloc-candidate-1",
+  "binary": "D:\\Projects\\OceanBase\\seekdb\\build\\fts-round8-local-alloc\\seekdb.exe",
+  "source_commit": "36519bd8b3782c90f50565ebf6b233beba542600+round8-local-allocators-no-gallop",
+  "binary_sha256": "a1d0082be002e4640d0c88daba435726d481046416d247cd8e836d5388d1e7a5",
+  "actions": [
+    {
+      "action": "bmp",
+      "exit_code": 0,
+      "seconds": 2.102699900002335
+    },
+    {
+      "action": "ranked",
+      "exit_code": 0,
+      "seconds": 6.294897900006617
+    },
+    {
+      "action": "keytypes",
+      "exit_code": 0,
+      "seconds": 6.49945220000518
+    },
+    {
+      "action": "test_hot_path.py",
+      "exit_code": 0,
+      "seconds": 29.67892020000727
+    },
+    {
+      "action": "test_tokenize_config.py",
+      "exit_code": 0,
+      "seconds": 1.1199499999929685
+    },
+    {
+      "action": "test_collation.py",
+      "exit_code": 0,
+      "seconds": 1.848190999997314
+    },
+    {
+      "action": "test_match_batches.py",
+      "exit_code": 0,
+      "seconds": 15.623562100008712
+    },
+    {
+      "action": "test_map_concurrency.py",
+      "exit_code": 0,
+      "seconds": 1.764668799994979
+    },
+    {
+      "action": "test_stopword_concurrency.py",
+      "exit_code": 0,
+      "seconds": 0.36084049999772105
+    },
+    {
+      "action": "test_dictionary_prefixes.py",
+      "exit_code": 0,
+      "seconds": 0.4039000000047963
+    },
+    {
+      "action": "benchmark",
+      "exit_code": 0,
+      "seconds": 38.1199898999912
+    },
+    {
+      "action": "input-validation",
+      "exit_code": 0,
+      "seconds": 0.11117469999589957
+    },
+    {
+      "action": "micro",
+      "exit_code": 0,
+      "seconds": 14.977279599988833
+    }
+  ],
+  "report": "C:\\Users\\11946\\Documents\\ChatGPT\\OceanBase\u6bd4\u8d5b\\setup\\fts\\round8-local-alloc-candidate-1-report.txt"
+}
