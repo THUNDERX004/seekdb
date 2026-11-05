@@ -57,12 +57,12 @@ already persists the source FP32 vectors and external ids, so restoring uses
 the official `cuvsCagraIndexFromArgs` path instead of serializing a second copy
 of the dataset through a temporary file. `OBCUVS02` snapshots remain readable.
 
-The build uses the contest-required degree-128 output graph and degree-256
-intermediate graph. NN-Descent is bounded to 20 iterations for 128-dimensional
-data. Data above 128 dimensions retains the baseline's 100 iterations because
-the evaluator's Hidden250K Recall@100 delta gate was sensitive to earlier
-reduction. Search parameters and device-side query/result buffers are reused by
-the bridge handle.
+The dimension-adaptive build uses a degree-96/128 NN-Descent graph with 20
+iterations for 128-dimensional data. Above 128 dimensions it preserves the
+validated degree-128 final graph and builds the intermediate degree-192 graph
+with IVF-PQ. Query search keeps the official CAGRA implementation, uses
+`itopk=max(2*k, 256)`, and reuses search parameters plus device query/result
+buffers.
 
 Build seekdb with the resulting library:
 

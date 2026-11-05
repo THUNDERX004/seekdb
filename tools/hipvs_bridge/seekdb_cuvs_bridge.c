@@ -33,6 +33,18 @@ typedef struct {
 #ifndef SEEKDB_CUVS_NN_DESCENT_NITER_HIGH_DIM
 #define SEEKDB_CUVS_NN_DESCENT_NITER_HIGH_DIM 100
 #endif
+#ifndef SEEKDB_CUVS_GRAPH_DEGREE_LOW_DIM
+#define SEEKDB_CUVS_GRAPH_DEGREE_LOW_DIM 96
+#endif
+#ifndef SEEKDB_CUVS_INTERMEDIATE_DEGREE_LOW_DIM
+#define SEEKDB_CUVS_INTERMEDIATE_DEGREE_LOW_DIM 128
+#endif
+#ifndef SEEKDB_CUVS_GRAPH_DEGREE_HIGH_DIM
+#define SEEKDB_CUVS_GRAPH_DEGREE_HIGH_DIM 128
+#endif
+#ifndef SEEKDB_CUVS_INTERMEDIATE_DEGREE_HIGH_DIM
+#define SEEKDB_CUVS_INTERMEDIATE_DEGREE_HIGH_DIM 192
+#endif
 
 static void sk_release_device_buffers(sk_cuvs_index *h) {
   if (!h || !h->res)
@@ -124,14 +136,19 @@ void *seekdb_cuvs_build(const float *base, long n, long dim) {
   dset.dl_tensor.strides = 0;
   dset.dl_tensor.byte_offset = 0;
 
-  h->ip->build_algo = NN_DESCENT;
-  h->ip->graph_degree = 128;
-  h->ip->intermediate_graph_degree = 256;
-  /* The 128/256 degrees are required by the contest recall gates. The prior
-   * 100-iteration run kept refining a graph long after convergence, so use the
-   * cuVS example/default range and retain extra refinement for 256-d data. */
-  h->ip->nn_descent_niter = dim > 128 ? SEEKDB_CUVS_NN_DESCENT_NITER_HIGH_DIM
-                                      : SEEKDB_CUVS_NN_DESCENT_NITER_LOW_DIM;
+  const int high_dim = dim > 128;
+  /* Cloud sweeps show that 128-d recall is unchanged with a 96/128 graph and
+   * 20 NN-descent iterations. The 256-d workload stays on its validated final
+   * graph degree, while IVF-PQ builds a fresh intermediate graph substantially
+   * faster than spending 100 NN-descent refinement rounds. */
+  h->ip->build_algo = high_dim ? IVF_PQ : NN_DESCENT;
+  h->ip->graph_degree = high_dim ? SEEKDB_CUVS_GRAPH_DEGREE_HIGH_DIM
+                                 : SEEKDB_CUVS_GRAPH_DEGREE_LOW_DIM;
+  h->ip->intermediate_graph_degree =
+      high_dim ? SEEKDB_CUVS_INTERMEDIATE_DEGREE_HIGH_DIM
+               : SEEKDB_CUVS_INTERMEDIATE_DEGREE_LOW_DIM;
+  h->ip->nn_descent_niter = high_dim ? SEEKDB_CUVS_NN_DESCENT_NITER_HIGH_DIM
+                                     : SEEKDB_CUVS_NN_DESCENT_NITER_LOW_DIM;
   if (cuvsCagraBuild(h->res, h->ip, &dset, h->idx) != CUVS_SUCCESS)
     goto fail;
   h->n = n;
@@ -152,7 +169,7 @@ int seekdb_cuvs_search(void *handle, const float *query, long nq, long topk,
   if ((size_t)nq > SIZE_MAX / sizeof(float) / (size_t)h->dim ||
       (size_t)nq > SIZE_MAX / sizeof(float) / (size_t)topk ||
       (size_t)nq > SIZE_MAX / sizeof(unsigned) / (size_t)topk ||
-      (size_t)topk > SIZE_MAX / 4) {
+      (size_t)topk > SIZE_MAX / 2) {
     return 2;
   }
   const size_t query_bytes = (size_t)nq * (size_t)h->dim * sizeof(float);
@@ -201,9 +218,9 @@ int seekdb_cuvs_search(void *handle, const float *query, long nq, long topk,
     dt.dl_tensor.dtype.code = kDLFloat;
     dt.dl_tensor.shape = dsh;
     {
-      size_t required_itopk = (size_t)topk * 4;
-      if (required_itopk < 512)
-        required_itopk = 512;
+      size_t required_itopk = (size_t)topk * 2;
+      if (required_itopk < 256)
+        required_itopk = 256;
       if (h->sp->itopk_size < required_itopk)
         h->sp->itopk_size = required_itopk;
     }

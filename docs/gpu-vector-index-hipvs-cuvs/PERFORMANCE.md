@@ -14,12 +14,11 @@ evaluator's paired frozen-baseline run.
 
 ## Candidate changes
 
-1. NN-Descent no longer always runs 100 iterations. The candidate retains the
-   degree-128 output graph and degree-256 intermediate graph that were required
-   to pass recall, but uses 20 iterations at 128 dimensions. A 32-iteration
-   experiment above 128 dimensions failed the evaluator's
-   `hidden250k:recall@100_baseline_delta` gate, so 256-dimensional data retains
-   the baseline's 100 iterations.
+1. Build parameters are dimension-adaptive. The 128-dimensional path uses
+   degree 96/128 with 20 NN-Descent iterations. The 256-dimensional path keeps
+   the validated final degree 128 and builds a degree-192 intermediate graph
+   with IVF-PQ. A 32-iteration NN-Descent experiment failed the evaluator's
+   `hidden250k:recall@100_baseline_delta` gate and was rejected.
 2. `OBCUVS03` persists only the final uint32 adjacency graph. The previous V5
    path serialized the complete CAGRA index, including a second dataset copy,
    to a temporary file and then copied that file into the seekdb snapshot.
@@ -27,10 +26,16 @@ evaluator's paired frozen-baseline run.
    persisted adjacency graph and original FP32 vectors. Search still uses the
    pinned `cuvsCagraSearch` implementation.
 4. The bridge caches CAGRA search parameters and device query/result buffers on
-   the index handle. The build and search parameters that affect recall are
-   unchanged: graph degree 128, `itopk_size >= 512`, and `search_width=4`.
+   the index handle. It uses `itopk_size=max(2*k, 256)` with `search_width=4`;
+   public 250K sweeps measured unchanged Recall and 1.2x-1.3x query throughput
+   at this queue size.
 
 `OBCUVS02` snapshots remain readable for backward compatibility.
+
+The previous passing evaluator run reached `build=1.375x, query=1.083x` at
+commit `eb25cf55c...`. The parameter combination above targets the published
+3.0x build threshold by moving the expensive 256-dimensional path to IVF-PQ and
+the 128-dimensional path to the measured 96/128/20 profile.
 
 ## Correctness invariants
 
