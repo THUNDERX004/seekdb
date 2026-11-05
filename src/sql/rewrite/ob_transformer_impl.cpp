@@ -520,6 +520,68 @@ void ObTransformerImpl::print_trans_stat()
   }
 }
 
+// Open only the existing projection rule for a count-only limited view.
+// Do not relax the full-text restrictions on row selection or score handling.
+static bool can_prune_counted_limit_view(const ObDMLStmt *stmt)
+{
+  if (OB_ISNULL(stmt) || !stmt->is_select_stmt()) {
+    return false;
+  }
+  const ObSelectStmt *upper = static_cast<const ObSelectStmt *>(stmt);
+  if (!upper->is_scala_group_by() || upper->is_set_stmt() || upper->has_distinct()
+      || upper->get_select_item_size() != 1 || upper->get_aggr_item_size() != 1
+      || upper->get_table_size() != 1 || upper->get_from_item_size() != 1
+      || !upper->get_joined_tables().empty() || !upper->get_semi_infos().empty()
+      || !upper->get_condition_exprs().empty() || upper->has_having()
+      || upper->has_window_function() || upper->has_window_function_filter()
+      || upper->has_order_by() || upper->has_limit() || upper->has_fetch()
+      || upper->has_select_into() || upper->has_for_update()
+      || upper->is_contains_assignment() || upper->get_column_size() != 0
+      || !upper->get_subquery_exprs().empty() || upper->get_cte_definition_size() != 0
+      || !upper->get_pseudo_column_like_exprs().empty()) {
+    return false;
+  }
+  const ObAggFunRawExpr *count = upper->get_aggr_items().at(0);
+  const TableItem *view = upper->get_table_item(0);
+  if (OB_ISNULL(count) || count != upper->get_select_item(0).expr_
+      || count->get_expr_type() != T_FUN_COUNT || count->get_real_param_count() != 0
+      || count->is_param_distinct() || OB_ISNULL(view) || !view->is_generated_table()
+      || !view->exec_params_.empty() || OB_ISNULL(view->ref_query_)) {
+    return false;
+  }
+  const ObSelectStmt *child = view->ref_query_;
+  if (child->is_set_stmt() || child->has_distinct() || child->has_group_by()
+      || child->has_having() || child->has_window_function()
+      || child->has_window_function_filter() || child->has_recursive_cte()
+      || child->is_values_table_query() || child->has_select_into()
+      || child->has_for_update() || child->is_contains_assignment()
+      || child->get_table_size() != 1 || child->get_from_item_size() != 1
+      || !child->get_joined_tables().empty() || !child->get_semi_infos().empty()
+      || !child->get_subquery_exprs().empty() || child->get_cte_definition_size() != 0
+      || !child->get_pseudo_column_like_exprs().empty()
+      || OB_ISNULL(child->get_limit_expr()) || child->has_fetch()
+      || child->is_fetch_with_ties() || OB_NOT_NULL(child->get_limit_percent_expr())
+      || child->get_select_item_size() == 0) {
+    return false;
+  }
+  const TableItem *base = child->get_table_item(0);
+  if (OB_ISNULL(base) || !base->is_basic_table() || !base->exec_params_.empty()) {
+    return false;
+  }
+  for (int64_t i = 0; i < child->get_select_item_size(); ++i) {
+    const ObRawExpr *expr = child->get_select_item(i).expr_;
+    if (OB_ISNULL(expr) || !expr->is_column_ref_expr()) {
+      return false;
+    }
+    const ObColumnRefRawExpr *column = static_cast<const ObColumnRefRawExpr *>(expr);
+    if (column->get_table_id() != base->table_id_ || column->is_generated_column()
+        || OB_NOT_NULL(column->get_dependant_expr())) {
+      return false;
+    }
+  }
+  return true;
+}
+
 int ObTransformerImpl::choose_rewrite_rules(ObDMLStmt *stmt, uint64_t &need_types)
 {
   int ret = OB_SUCCESS;
@@ -538,6 +600,12 @@ int ObTransformerImpl::choose_rewrite_rules(ObDMLStmt *stmt, uint64_t &need_type
   } else {
     if (func.contain_geometry_values_ || func.contain_fulltext_search_ || func.contain_vec_index_approx_) {
       disable_list = ObTransformRule::ALL_TRANSFORM_RULES;
+      if (func.contain_fulltext_search_ && !func.contain_geometry_values_
+          && !func.contain_vec_index_approx_ && can_prune_counted_limit_view(stmt)) {
+        uint64_t projection_only = 0;
+        ObTransformRule::add_trans_type(projection_only, PROJECTION_PRUNING);
+        disable_list &= ~projection_only;
+      }
     }
     if (func.contain_enum_set_values_) {
       uint64_t enum_set_enable_list = 0;
