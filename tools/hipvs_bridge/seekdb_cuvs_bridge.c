@@ -31,7 +31,7 @@ typedef struct {
 #define SEEKDB_CUVS_NN_DESCENT_NITER_LOW_DIM 5
 #endif
 #ifndef SEEKDB_CUVS_NN_DESCENT_NITER_HIGH_DIM
-#define SEEKDB_CUVS_NN_DESCENT_NITER_HIGH_DIM 50
+#define SEEKDB_CUVS_NN_DESCENT_NITER_HIGH_DIM 30
 #endif
 #ifndef SEEKDB_CUVS_GRAPH_DEGREE_LOW_DIM
 #define SEEKDB_CUVS_GRAPH_DEGREE_LOW_DIM 96
@@ -138,9 +138,10 @@ void *seekdb_cuvs_build(const float *base, long n, long dim) {
 
   const int high_dim = dim > 128;
   /* The 128-d SIFT path reaches its recall plateau with the 96/128 graph after
-   * very few NN-descent rounds. The clustered 256-d Hidden250K workload retains
-   * the 128/128/50 graph to preserve the Recall@100 baseline delta. IVF-PQ is
-   * not used because it exceeded both Recall and VRAM gates. */
+   * very few NN-descent rounds. The clustered 256-d Hidden250K workload uses a
+   * 128/128/30 graph to clear the build threshold; its query path compensates
+   * with a 1024-entry internal candidate queue. IVF-PQ is not used because it
+   * exceeded both Recall and VRAM gates. */
   h->ip->build_algo = NN_DESCENT;
   h->ip->graph_degree = high_dim ? SEEKDB_CUVS_GRAPH_DEGREE_HIGH_DIM
                                  : SEEKDB_CUVS_GRAPH_DEGREE_LOW_DIM;
@@ -218,8 +219,8 @@ int seekdb_cuvs_search(void *handle, const float *query, long nq, long topk,
     dt.dl_tensor.dtype.code = kDLFloat;
     dt.dl_tensor.shape = dsh;
     {
-      const size_t itopk_factor = h->dim > 128 ? 4 : 2;
-      const size_t itopk_floor = h->dim > 128 ? 512 : 256;
+      const size_t itopk_factor = 2;
+      const size_t itopk_floor = h->dim > 128 ? 1024 : 256;
       size_t required_itopk = (size_t)topk * itopk_factor;
       if (required_itopk < itopk_floor)
         required_itopk = itopk_floor;
