@@ -17,6 +17,7 @@
 
 #include "share/rc/ob_server_runtime.h"
 #include "share/ob_server_struct.h"
+#include "share/config/ob_server_config.h"
 #include "share/ob_share_util.h"
 #include "common/mysqlclient/ob_isql_connection.h"
 #include "rootserver/ob_rootserver_local_runtime.h"
@@ -369,7 +370,14 @@ int ObDDLTaskUtil::generate_build_replica_sql(const int64_t data_table_id,
     ObArray<int64_t> select_column_ids;
     ObArray<int64_t> order_column_ids;
     bool is_shadow_column = false;
-    const int64_t real_parallelism = ObDDLTaskUtil::get_real_parallelism(parallelism);
+    int64_t real_parallelism = ObDDLTaskUtil::get_real_parallelism(parallelism);
+    // Vector-index auxiliary tables are populated by one base-table scan.
+    // Parallelizing that scan only splits the same rows into more slices.
+    if (dest_table_schema->is_vec_vid_rowkey_type()
+        || dest_table_schema->is_vec_rowkey_vid_type()
+        || dest_table_schema->is_vec_index_snapshot_data_type()) {
+      real_parallelism = ObDDLTaskUtil::get_real_parallelism(8);
+    }
     const bool is_rowkey_doc_aux_table = dest_table_schema->is_rowkey_doc_id();
     uint64_t doc_id_col_id = OB_INVALID_ID;
     uint64_t ft_id_col_id = OB_INVALID_ID;

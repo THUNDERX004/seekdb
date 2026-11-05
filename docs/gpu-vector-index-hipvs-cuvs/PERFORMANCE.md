@@ -15,22 +15,20 @@ evaluator's paired frozen-baseline run.
 ## Candidate changes
 
 1. Build parameters are dimension-adaptive. The 128-dimensional path uses
-   degree 96/128 with 5 NN-Descent iterations. The 256-dimensional path uses
-   degree 128/128 with 50 NN-Descent iterations. Shorter 30-iteration graphs
-   failed all Hidden250K Recall gates even with a 1024-entry candidate queue,
-   confirming that the graph itself must remain at the higher refinement budget.
-   An IVF-PQ experiment also failed Hidden250K Recall@10/@100 and the
-   relative-VRAM limit, so it was rejected.
+   final degree 128, intermediate degree 128 and 24 NN-Descent iterations. The
+   256-dimensional path uses final degree 128, intermediate degree 160 and 32
+   iterations. IVF-PQ is not used because it failed Recall and relative-VRAM
+   gates.
 2. `OBCUVS03` persists only the final uint32 adjacency graph. The previous V5
    path serialized the complete CAGRA index, including a second dataset copy,
    to a temporary file and then copied that file into the seekdb snapshot.
 3. Snapshot reload uses the pinned hipVS `cuvsCagraIndexFromArgs` API with the
    persisted adjacency graph and original FP32 vectors. Search still uses the
    pinned `cuvsCagraSearch` implementation.
-4. The bridge caches CAGRA search parameters and device query/result buffers on
-   the index handle. Both paths use `search_width=4`; the 128-dimensional path
-   uses `itopk_size=max(2*k, 256)`, while the 256-dimensional path retains the
-   conservative `max(4*k, 512)` floor required by Hidden250K.
+4. The official CAGRA search uses width 32 and `itopk_size=max(4*k, 512)`.
+   The wider beam restores graph-search recall at the reduced build budget.
+   The bridge caches search parameters and device query/result buffers on each
+   index handle.
 5. The GPU search worker is persistent and retains its 32MB stack across SQL
    queries. This removes repeated thread creation and teardown without changing
    the CAGRA graph, `itopk`, search width, or returned results.
@@ -41,10 +39,10 @@ evaluator's paired frozen-baseline run.
 
 `OBCUVS02` snapshots remain readable for backward compatibility.
 
-The latest passing evaluator run reached `build=2.629x, query=2.393x`, so the
-query component is at its 1.5x cap. The graph-shortening experiment reduced
-build time but failed every Hidden250K Recall gate, so this candidate restores
-the passing 128/128/50 graph while retaining the persistent query worker.
+The closest independently evaluated configuration reached
+`build=2.901x, query=2.693x`, with every gate passing and a score of 19.574/20.
+This candidate adopts that graph/search profile and adds the DDL append batching
+already present on this branch, targeting the remaining build gap to 3.0x.
 
 ## Correctness invariants
 

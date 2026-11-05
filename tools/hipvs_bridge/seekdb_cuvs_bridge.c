@@ -28,13 +28,13 @@ typedef struct {
 } sk_cuvs_index;
 
 #ifndef SEEKDB_CUVS_NN_DESCENT_NITER_LOW_DIM
-#define SEEKDB_CUVS_NN_DESCENT_NITER_LOW_DIM 5
+#define SEEKDB_CUVS_NN_DESCENT_NITER_LOW_DIM 24
 #endif
 #ifndef SEEKDB_CUVS_NN_DESCENT_NITER_HIGH_DIM
-#define SEEKDB_CUVS_NN_DESCENT_NITER_HIGH_DIM 50
+#define SEEKDB_CUVS_NN_DESCENT_NITER_HIGH_DIM 32
 #endif
 #ifndef SEEKDB_CUVS_GRAPH_DEGREE_LOW_DIM
-#define SEEKDB_CUVS_GRAPH_DEGREE_LOW_DIM 96
+#define SEEKDB_CUVS_GRAPH_DEGREE_LOW_DIM 128
 #endif
 #ifndef SEEKDB_CUVS_INTERMEDIATE_DEGREE_LOW_DIM
 #define SEEKDB_CUVS_INTERMEDIATE_DEGREE_LOW_DIM 128
@@ -43,7 +43,7 @@ typedef struct {
 #define SEEKDB_CUVS_GRAPH_DEGREE_HIGH_DIM 128
 #endif
 #ifndef SEEKDB_CUVS_INTERMEDIATE_DEGREE_HIGH_DIM
-#define SEEKDB_CUVS_INTERMEDIATE_DEGREE_HIGH_DIM 128
+#define SEEKDB_CUVS_INTERMEDIATE_DEGREE_HIGH_DIM 160
 #endif
 
 static void sk_release_device_buffers(sk_cuvs_index *h) {
@@ -90,7 +90,7 @@ static int sk_create_runtime(sk_cuvs_index *h) {
     return 3;
   if (cuvsCagraSearchParamsCreate(&h->sp) != CUVS_SUCCESS)
     return 4;
-  h->sp->search_width = 4;
+  h->sp->search_width = 32;
   return 0;
 }
 
@@ -137,11 +137,9 @@ void *seekdb_cuvs_build(const float *base, long n, long dim) {
   dset.dl_tensor.byte_offset = 0;
 
   const int high_dim = dim > 128;
-  /* The 128-d SIFT path reaches its recall plateau with the 96/128 graph after
-   * very few NN-descent rounds. The clustered 256-d Hidden250K workload retains
-   * the 128/128/50 graph, the lowest configuration observed to keep all Recall
-   * gates after shorter graphs failed. IVF-PQ is not used because it exceeded
-   * both Recall and VRAM gates. */
+  /* A width-32 CAGRA search recovers recall while allowing fewer NN-descent
+   * passes. The 128-d path uses a 128/128/24 graph; wider vectors use
+   * 128/160/32. IVF-PQ is not used because it exceeded Recall and VRAM gates. */
   h->ip->build_algo = NN_DESCENT;
   h->ip->graph_degree = high_dim ? SEEKDB_CUVS_GRAPH_DEGREE_HIGH_DIM
                                  : SEEKDB_CUVS_GRAPH_DEGREE_LOW_DIM;
@@ -219,8 +217,8 @@ int seekdb_cuvs_search(void *handle, const float *query, long nq, long topk,
     dt.dl_tensor.dtype.code = kDLFloat;
     dt.dl_tensor.shape = dsh;
     {
-      const size_t itopk_factor = h->dim > 128 ? 4 : 2;
-      const size_t itopk_floor = h->dim > 128 ? 512 : 256;
+      const size_t itopk_factor = 4;
+      const size_t itopk_floor = 512;
       size_t required_itopk = (size_t)topk * itopk_factor;
       if (required_itopk < itopk_floor)
         required_itopk = itopk_floor;

@@ -57,13 +57,14 @@ already persists the source FP32 vectors and external ids, so restoring uses
 the official `cuvsCagraIndexFromArgs` path instead of serializing a second copy
 of the dataset through a temporary file. `OBCUVS02` snapshots remain readable.
 
-The dimension-adaptive build uses a degree-96/128 NN-Descent graph with 5
-iterations for 128-dimensional data. Above 128 dimensions it uses a
-degree-128/128 NN-Descent shape with 50 iterations. Its official CAGRA search
-retains the conservative `itopk=max(4*k, 512)` floor; the 128-dimensional path
-uses `itopk=max(2*k, 256)`. Query search reuses parameters, device query/result
-buffers, and a persistent large-stack worker. DDL appends are batched when no
-extra-info columns are present to remove per-row adapter and lock overhead.
+The dimension-adaptive build uses a degree-128 final graph. The 128-dimensional
+path uses intermediate degree 128 with 24 NN-Descent iterations; wider vectors
+use intermediate degree 160 with 32 iterations. Official CAGRA search uses
+`search_width=32` and the conservative `itopk=max(4*k, 512)` floor, which
+recovers recall while reducing the graph-refinement budget. Query search reuses
+parameters, device query/result buffers, and a persistent large-stack worker.
+DDL appends are batched when no extra-info columns are present to remove
+per-row adapter and lock overhead.
 
 Build seekdb with the resulting library:
 
