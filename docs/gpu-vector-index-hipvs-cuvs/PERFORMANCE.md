@@ -15,7 +15,7 @@ evaluator's paired frozen-baseline run.
 ## Candidate changes
 
 1. Build parameters are dimension-adaptive. The 128-dimensional path uses
-   degree 96/128 with 20 NN-Descent iterations. The 256-dimensional path uses
+   degree 96/128 with 5 NN-Descent iterations. The 256-dimensional path uses
    degree 128/128 with 50 NN-Descent iterations. A 45-iteration run passed every
    other gate but failed `hidden250k:recall@100_baseline_delta`, so five
    additional iterations restore Recall margin. A 32-iteration experiment
@@ -32,18 +32,22 @@ evaluator's paired frozen-baseline run.
    `itopk_size=max(2*k, 256)` with `search_width=4`; the 256-dimensional path
    retains the conservative `max(4*k, 512)` floor because Hidden250K Recall is
    sensitive to the internal candidate queue.
-5. DDL vector appends are batched when the index has no extra-info columns.
+5. The GPU search worker is persistent and retains its 32MB stack across SQL
+   queries. This removes repeated thread creation and teardown without changing
+   the CAGRA graph, `itopk`, search width, or returned results.
+6. DDL vector appends are batched when the index has no extra-info columns.
    This preserves the original per-row fallback where payload encoding is
    required, while replacing repeated adapter acquisition and lock bookkeeping
    with one `add_snap_index` call per decoded row batch.
 
 `OBCUVS02` snapshots remain readable for backward compatibility.
 
-The previous passing evaluator run reached `build=1.375x, query=1.083x` at
-commit `eb25cf55c...`. The failed 45-iteration candidate showed that the
-remaining issue was isolated to the 256-dimensional Recall@100 delta. The
-128/128/50 profile combined with the faster evaluator-validated 128-dimensional
-profile and DDL batching is the next candidate for the 3.0x build threshold.
+The latest evaluator run before query-worker persistence passed every gate at
+`build=2.653x, query=1.208x`. The failed 45-iteration candidate showed that the
+remaining Recall issue was isolated to the 256-dimensional Recall@100 delta;
+the 128/128/50 profile fixed it. This candidate keeps that passing graph,
+shortens only the 128-dimensional refinement budget, and removes repeated
+per-query worker creation, targeting the 3.0x build and 1.5x query thresholds.
 
 ## Correctness invariants
 
