@@ -1,5 +1,29 @@
 # Full-text performance optimization
 
+## Round 30 CJK live-hit storage — REJECTED and restored (2026-11-05)
+
+**Rejected; no production or established-test promotion.** Two complete local
+pairs against accepted C7 show equal-category overall time reduction
+**-0.308969%**, with target IK tokenization **+1.431889%**. This small target
+change does not establish useful overall benefit. Unchanged metrics fluctuate;
+their movements are not attributed to this proposal. Both pairs, negative
+values and original timings are retained. This is no new formal result,
+cumulative improvement, full-score or statistical-stability claim.
+
+The two-file list-to-vector proposal was restored to its exact original bytes;
+the parent observed restoration build exit zero. Both actual-production-linked
+native variants pass the same 20-case public-API fixture and independent
+substring token oracle: complete 170,541-line stdout matches exactly, SHA-256
+`61b6344b29cfb687895d6f2637625c16ef3190490c720d15e836b1f13f3d6693`, with empty
+stderr. Candidate SQL passes case-copy, BMP, ranked/key-type checks and seven
+existing suites. The native TU remains archive-only. The gzip manifest preserves
+exact source, full transcripts, timing and execution receipts; historical
+pending metadata remains unchanged. Finite arena-backed coverage does not
+prove allocation-failure equivalence or all runtime states.
+
+[Round 30 exact evidence manifest](../assets/fts-performance/competition-round30-cjk-hits/manifest.json)
+
+
 ## Round 29 IK output decode — REJECTED and restored (2026-11-05)
 
 **REJECTED; no production or unit-test promotion.** Two complete immediate local pairs against accepted C7 show build -0.589519%, tokenize -3.241825%, query +4.269743%, equal-category overall +0.146133% time reduction. Target IK tokenize time reduction is -1.977212%. Small overall variation and unrelated query gains do not establish useful causal benefit. This is not a cumulative result, formal score, full score or statistical significance claim.
