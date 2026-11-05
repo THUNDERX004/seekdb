@@ -16,11 +16,11 @@ evaluator's paired frozen-baseline run.
 
 1. Build parameters are dimension-adaptive. The 128-dimensional path uses
    degree 96/128 with 5 NN-Descent iterations. The 256-dimensional path uses
-   degree 128/128 with 30 NN-Descent iterations. Prior runs showed that
-   Hidden250K Recall@100 is sensitive to both graph refinement and the official
-   CAGRA candidate queue; the shorter graph therefore searches 1024 candidates
-   instead of the previous 512. An IVF-PQ experiment failed Hidden250K
-   Recall@10/@100 and the relative-VRAM limit, so it was rejected.
+   degree 128/128 with 50 NN-Descent iterations. Shorter 30-iteration graphs
+   failed all Hidden250K Recall gates even with a 1024-entry candidate queue,
+   confirming that the graph itself must remain at the higher refinement budget.
+   An IVF-PQ experiment also failed Hidden250K Recall@10/@100 and the
+   relative-VRAM limit, so it was rejected.
 2. `OBCUVS03` persists only the final uint32 adjacency graph. The previous V5
    path serialized the complete CAGRA index, including a second dataset copy,
    to a temporary file and then copied that file into the seekdb snapshot.
@@ -29,8 +29,8 @@ evaluator's paired frozen-baseline run.
    pinned `cuvsCagraSearch` implementation.
 4. The bridge caches CAGRA search parameters and device query/result buffers on
    the index handle. Both paths use `search_width=4`; the 128-dimensional path
-   uses `itopk_size=max(2*k, 256)`, while the 256-dimensional path uses 1024 to
-   recover Recall after shortening graph construction.
+   uses `itopk_size=max(2*k, 256)`, while the 256-dimensional path retains the
+   conservative `max(4*k, 512)` floor required by Hidden250K.
 5. The GPU search worker is persistent and retains its 32MB stack across SQL
    queries. This removes repeated thread creation and teardown without changing
    the CAGRA graph, `itopk`, search width, or returned results.
@@ -41,10 +41,10 @@ evaluator's paired frozen-baseline run.
 
 `OBCUVS02` snapshots remain readable for backward compatibility.
 
-The latest passing evaluator run reached `build=2.629x, query=2.393x`. Query has
-therefore already cleared the 1.5x full-score threshold. This candidate spends
-part of that query margin on a wider Hidden250K CAGRA search queue while cutting
-its graph refinement enough to target the 3.0x build threshold.
+The latest passing evaluator run reached `build=2.629x, query=2.393x`, so the
+query component is at its 1.5x cap. The graph-shortening experiment reduced
+build time but failed every Hidden250K Recall gate, so this candidate restores
+the passing 128/128/50 graph while retaining the persistent query worker.
 
 ## Correctness invariants
 

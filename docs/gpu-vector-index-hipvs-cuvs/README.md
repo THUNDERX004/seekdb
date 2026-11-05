@@ -59,12 +59,11 @@ of the dataset through a temporary file. `OBCUVS02` snapshots remain readable.
 
 The dimension-adaptive build uses a degree-96/128 NN-Descent graph with 5
 iterations for 128-dimensional data. Above 128 dimensions it uses a
-degree-128/128 NN-Descent shape with 30 iterations. To preserve the Hidden250K
-Recall@100 baseline delta, its official CAGRA search uses a 1024-entry internal
-candidate queue; the 128-dimensional path uses `itopk=max(2*k, 256)`. Query
-search reuses parameters, device query/result buffers, and a persistent
-large-stack worker. DDL appends are batched when no extra-info columns are
-present to remove per-row adapter and lock overhead.
+degree-128/128 NN-Descent shape with 50 iterations. Its official CAGRA search
+retains the conservative `itopk=max(4*k, 512)` floor; the 128-dimensional path
+uses `itopk=max(2*k, 256)`. Query search reuses parameters, device query/result
+buffers, and a persistent large-stack worker. DDL appends are batched when no
+extra-info columns are present to remove per-row adapter and lock overhead.
 
 Build seekdb with the resulting library:
 
