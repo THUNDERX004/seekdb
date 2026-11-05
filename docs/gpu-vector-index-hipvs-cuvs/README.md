@@ -58,11 +58,14 @@ the official `cuvsCagraIndexFromArgs` path instead of serializing a second copy
 of the dataset through a temporary file. `OBCUVS02` snapshots remain readable.
 
 The dimension-adaptive build uses a degree-96/128 NN-Descent graph with 20
-iterations for 128-dimensional data. Above 128 dimensions it preserves the
-validated degree-128 final graph and builds the intermediate degree-192 graph
-with IVF-PQ. Query search keeps the official CAGRA implementation, uses
-`itopk=max(2*k, 256)`, and reuses search parameters plus device query/result
-buffers.
+iterations for 128-dimensional data. Above 128 dimensions it uses the officially
+validated degree-128/128 NN-Descent graph with 45 iterations; that profile
+passed all Hidden250K gates twice. Query search keeps the official CAGRA
+implementation, retains the conservative `itopk=max(4*k, 512)` floor above 128
+dimensions, uses `itopk=max(2*k, 256)` for the evaluator-validated 128-d path,
+and reuses search parameters plus device query/result buffers. DDL appends are
+batched when no extra-info columns are present to remove per-row adapter and
+lock overhead.
 
 Build seekdb with the resulting library:
 

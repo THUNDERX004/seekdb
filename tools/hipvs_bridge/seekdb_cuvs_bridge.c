@@ -31,7 +31,7 @@ typedef struct {
 #define SEEKDB_CUVS_NN_DESCENT_NITER_LOW_DIM 20
 #endif
 #ifndef SEEKDB_CUVS_NN_DESCENT_NITER_HIGH_DIM
-#define SEEKDB_CUVS_NN_DESCENT_NITER_HIGH_DIM 100
+#define SEEKDB_CUVS_NN_DESCENT_NITER_HIGH_DIM 45
 #endif
 #ifndef SEEKDB_CUVS_GRAPH_DEGREE_LOW_DIM
 #define SEEKDB_CUVS_GRAPH_DEGREE_LOW_DIM 96
@@ -43,7 +43,7 @@ typedef struct {
 #define SEEKDB_CUVS_GRAPH_DEGREE_HIGH_DIM 128
 #endif
 #ifndef SEEKDB_CUVS_INTERMEDIATE_DEGREE_HIGH_DIM
-#define SEEKDB_CUVS_INTERMEDIATE_DEGREE_HIGH_DIM 192
+#define SEEKDB_CUVS_INTERMEDIATE_DEGREE_HIGH_DIM 128
 #endif
 
 static void sk_release_device_buffers(sk_cuvs_index *h) {
@@ -137,11 +137,11 @@ void *seekdb_cuvs_build(const float *base, long n, long dim) {
   dset.dl_tensor.byte_offset = 0;
 
   const int high_dim = dim > 128;
-  /* Cloud sweeps show that 128-d recall is unchanged with a 96/128 graph and
-   * 20 NN-descent iterations. The 256-d workload stays on its validated final
-   * graph degree, while IVF-PQ builds a fresh intermediate graph substantially
-   * faster than spending 100 NN-descent refinement rounds. */
-  h->ip->build_algo = high_dim ? IVF_PQ : NN_DESCENT;
+  /* The 128-d path retains the evaluator-validated 96/128/20 graph. For the
+   * clustered 256-d Hidden250K workload, 128/128/45 has passed every official
+   * gate twice; lower iteration counts fail the Recall@100 baseline delta.
+   * IVF-PQ is not used because it exceeded both Recall and VRAM gates. */
+  h->ip->build_algo = NN_DESCENT;
   h->ip->graph_degree = high_dim ? SEEKDB_CUVS_GRAPH_DEGREE_HIGH_DIM
                                  : SEEKDB_CUVS_GRAPH_DEGREE_LOW_DIM;
   h->ip->intermediate_graph_degree =
@@ -218,9 +218,11 @@ int seekdb_cuvs_search(void *handle, const float *query, long nq, long topk,
     dt.dl_tensor.dtype.code = kDLFloat;
     dt.dl_tensor.shape = dsh;
     {
-      size_t required_itopk = (size_t)topk * 2;
-      if (required_itopk < 256)
-        required_itopk = 256;
+      const size_t itopk_factor = h->dim > 128 ? 4 : 2;
+      const size_t itopk_floor = h->dim > 128 ? 512 : 256;
+      size_t required_itopk = (size_t)topk * itopk_factor;
+      if (required_itopk < itopk_floor)
+        required_itopk = itopk_floor;
       if (h->sp->itopk_size < required_itopk)
         h->sp->itopk_size = required_itopk;
     }

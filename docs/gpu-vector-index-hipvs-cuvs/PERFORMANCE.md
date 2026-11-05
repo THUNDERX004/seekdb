@@ -15,10 +15,11 @@ evaluator's paired frozen-baseline run.
 ## Candidate changes
 
 1. Build parameters are dimension-adaptive. The 128-dimensional path uses
-   degree 96/128 with 20 NN-Descent iterations. The 256-dimensional path keeps
-   the validated final degree 128 and builds a degree-192 intermediate graph
-   with IVF-PQ. A 32-iteration NN-Descent experiment failed the evaluator's
-   `hidden250k:recall@100_baseline_delta` gate and was rejected.
+   degree 96/128 with 20 NN-Descent iterations. The 256-dimensional path uses
+   degree 128/128 with 45 NN-Descent iterations; this configuration passed every
+   official Hidden250K gate twice. A 32-iteration experiment failed the
+   Hidden250K Recall@100 delta gate. An IVF-PQ experiment failed Hidden250K
+   Recall@10/@100 and the relative-VRAM limit, so both experiments were rejected.
 2. `OBCUVS03` persists only the final uint32 adjacency graph. The previous V5
    path serialized the complete CAGRA index, including a second dataset copy,
    to a temporary file and then copied that file into the seekdb snapshot.
@@ -26,16 +27,22 @@ evaluator's paired frozen-baseline run.
    persisted adjacency graph and original FP32 vectors. Search still uses the
    pinned `cuvsCagraSearch` implementation.
 4. The bridge caches CAGRA search parameters and device query/result buffers on
-   the index handle. It uses `itopk_size=max(2*k, 256)` with `search_width=4`;
-   public 250K sweeps measured unchanged Recall and 1.2x-1.3x query throughput
-   at this queue size.
+   the index handle. The 128-dimensional path uses
+   `itopk_size=max(2*k, 256)` with `search_width=4`; the 256-dimensional path
+   retains the conservative `max(4*k, 512)` floor because Hidden250K Recall is
+   sensitive to the internal candidate queue.
+5. DDL vector appends are batched when the index has no extra-info columns.
+   This preserves the original per-row fallback where payload encoding is
+   required, while replacing repeated adapter acquisition and lock bookkeeping
+   with one `add_snap_index` call per decoded row batch.
 
 `OBCUVS02` snapshots remain readable for backward compatibility.
 
 The previous passing evaluator run reached `build=1.375x, query=1.083x` at
-commit `eb25cf55c...`. The parameter combination above targets the published
-3.0x build threshold by moving the expensive 256-dimensional path to IVF-PQ and
-the 128-dimensional path to the measured 96/128/20 profile.
+commit `eb25cf55c...`. The 256-dimensional 128/128/45 profile independently
+passed the official evaluator twice at approximately `build=1.73x`; combining it
+with the faster evaluator-validated 128-dimensional profile and DDL batching is
+the next candidate for the 3.0x build threshold.
 
 ## Correctness invariants
 
