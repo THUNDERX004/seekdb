@@ -16,10 +16,11 @@ evaluator's paired frozen-baseline run.
 
 1. Build parameters are dimension-adaptive. The 128-dimensional path uses
    degree 96/128 with 20 NN-Descent iterations. The 256-dimensional path uses
-   degree 128/128 with 45 NN-Descent iterations; this configuration passed every
-   official Hidden250K gate twice. A 32-iteration experiment failed the
-   Hidden250K Recall@100 delta gate. An IVF-PQ experiment failed Hidden250K
-   Recall@10/@100 and the relative-VRAM limit, so both experiments were rejected.
+   degree 128/128 with 50 NN-Descent iterations. A 45-iteration run passed every
+   other gate but failed `hidden250k:recall@100_baseline_delta`, so five
+   additional iterations restore Recall margin. A 32-iteration experiment
+   failed the same gate. An IVF-PQ experiment failed Hidden250K Recall@10/@100
+   and the relative-VRAM limit, so it was rejected.
 2. `OBCUVS03` persists only the final uint32 adjacency graph. The previous V5
    path serialized the complete CAGRA index, including a second dataset copy,
    to a temporary file and then copied that file into the seekdb snapshot.
@@ -39,10 +40,10 @@ evaluator's paired frozen-baseline run.
 `OBCUVS02` snapshots remain readable for backward compatibility.
 
 The previous passing evaluator run reached `build=1.375x, query=1.083x` at
-commit `eb25cf55c...`. The 256-dimensional 128/128/45 profile independently
-passed the official evaluator twice at approximately `build=1.73x`; combining it
-with the faster evaluator-validated 128-dimensional profile and DDL batching is
-the next candidate for the 3.0x build threshold.
+commit `eb25cf55c...`. The failed 45-iteration candidate showed that the
+remaining issue was isolated to the 256-dimensional Recall@100 delta. The
+128/128/50 profile combined with the faster evaluator-validated 128-dimensional
+profile and DDL batching is the next candidate for the 3.0x build threshold.
 
 ## Correctness invariants
 
