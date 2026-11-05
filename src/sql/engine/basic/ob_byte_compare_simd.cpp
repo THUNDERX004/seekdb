@@ -49,13 +49,14 @@ int fast_compare_simd(const unsigned char *s,
   }
   return 0;
 #else
-  (void)s;
-  (void)t;
-  (void)length;
-  (void)differ_at;
-  (void)cache_ends;
-  abort();
-  return 0;
+  int result = 0;
+  for (int64_t i = 0; 0 == result && i < length; ++i) {
+    if (s[i] != t[i]) {
+      differ_at = i + cache_ends;
+      result = s[i] - t[i];
+    }
+  }
+  return result;
 #endif
 }
 

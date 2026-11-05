@@ -529,13 +529,33 @@ int ObDDLTaskUtil::generate_build_replica_sql(const int64_t data_table_id,
           }
         }
         const char *io_read_hint = " ";
+        const ObRowkeyInfo &sort_keys = dest_table_schema->get_rowkey_info();
+        bool encode_fts_keys = (dest_table_schema->is_fts_index_aux()
+            || dest_table_schema->is_fts_doc_word_aux()) && sort_keys.get_size() > 0;
+        // Enable only the two FTS layouts and a narrow set of encoded key types.
+        // Missing/shadow columns and other collations retain the existing hint.
+        for (int64_t i = 0; encode_fts_keys && i < sort_keys.get_size(); ++i) {
+          const ObRowkeyColumn *key = sort_keys.get_column(i);
+          const ObColumnSchemaV2 *column = nullptr == key ? nullptr
+              : dest_table_schema->get_column_schema(key->column_id_);
+          if (nullptr == column) {
+            encode_fts_keys = false;
+          } else if (column->get_data_type() == ObVarcharType) {
+            const ObCollationType collation = column->get_collation_type();
+            encode_fts_keys = collation == CS_TYPE_BINARY
+                || collation == CS_TYPE_UTF8MB4_GENERAL_CI;
+          } else {
+            encode_fts_keys = column->get_data_type() == ObUInt64Type
+                || column->get_data_type() == ObIntType;
+          }
+        }
         if (dest_table_schema->is_vec_vid_rowkey_type()) {
           src_table_schema_version_hint_sql_string.reset();
         }
         if (OB_FAIL(ret)) {
         } else {
-          if (OB_FAIL(sql_string.assign_fmt("INSERT /*+ enable_parallel_dml parallel(%ld) opt_param('ddl_execution_id', %ld) opt_param('ddl_task_id', %ld) opt_param('enable_newsort', 'false') %.*s use_px */INTO `%.*s`.`%.*s` %.*s(%.*s) SELECT /*+ index(`%.*s` primary) %.*s */ %.*s from `%.*s`.`%.*s` %.*s as of snapshot %ld %.*s",
-              real_parallelism, execution_id, task_id,
+          if (OB_FAIL(sql_string.assign_fmt("INSERT /*+ enable_parallel_dml parallel(%ld) opt_param('ddl_execution_id', %ld) opt_param('ddl_task_id', %ld) opt_param('enable_newsort', '%s') %.*s use_px */INTO `%.*s`.`%.*s` %.*s(%.*s) SELECT /*+ index(`%.*s` primary) %.*s */ %.*s from `%.*s`.`%.*s` %.*s as of snapshot %ld %.*s",
+              real_parallelism, execution_id, task_id, encode_fts_keys ? "true" : "false",
               static_cast<int>(strlen(io_read_hint)), io_read_hint,
               static_cast<int>(new_dest_database_name.length()), new_dest_database_name.ptr(), static_cast<int>(new_dest_table_name.length()), new_dest_table_name.ptr(),
               static_cast<int>(partition_names.length()), partition_names.ptr(),
