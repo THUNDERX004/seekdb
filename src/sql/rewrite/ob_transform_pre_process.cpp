@@ -32,6 +32,169 @@ namespace oceanbase
 using namespace common;
 namespace sql
 {
+// Keep this exception local to an immediate root COUNT(*) over a limited view.
+// It suppresses only synthesized full-text ordering, never an existing ORDER BY.
+static bool is_count_only_order_column(const ObRawExpr *expr, uint64_t table_id)
+{
+  if (OB_ISNULL(expr) || !expr->is_column_ref_expr()) {
+    return false;
+  }
+  const ObColumnRefRawExpr *column = static_cast<const ObColumnRefRawExpr *>(expr);
+  return column->get_table_id() == table_id && !column->is_generated_column()
+      && OB_ISNULL(column->get_dependant_expr());
+}
+
+static bool is_count_only_order_constant(const ObRawExpr *expr, bool search_key)
+{
+  if (OB_ISNULL(expr) || !expr->is_const_raw_expr()) {
+    return false;
+  }
+  const ObConstRawExpr *value = static_cast<const ObConstRawExpr *>(expr);
+  return !value->is_dynamic_eval_questionmark()
+      && (expr->get_expr_type() == T_QUESTIONMARK
+          || expr->get_expr_type() == (search_key ? T_VARCHAR : T_INT));
+}
+
+static bool get_count_only_order_bound(const ObRawExpr *expr,
+                                       const ParamStore &params,
+                                       int64_t &bound)
+{
+  if (!is_count_only_order_constant(expr, false)) {
+    return false;
+  }
+  const ObConstRawExpr *constant = static_cast<const ObConstRawExpr *>(expr);
+  const ObObj *value = &constant->get_value();
+  if (expr->get_expr_type() == T_QUESTIONMARK) {
+    if (!value->is_unknown()) {
+      return false;
+    }
+    const int64_t index = value->get_unknown();
+    if (index < 0 || index >= params.count() || params.at(index).is_batch_parameters()) {
+      return false;
+    }
+    value = &params.at(index);
+  }
+  if (!value->is_int()) {
+    return false;
+  }
+  bound = value->get_int();
+  return bound >= 0 && bound <= UINT32_MAX;
+}
+
+static bool can_skip_count_only_fulltext_order(
+    const ObIArray<ObParentDMLStmt> &parent_stmts, const ObDMLStmt *stmt)
+{
+  if (parent_stmts.count() != 1 || OB_ISNULL(stmt) || !stmt->is_select_stmt()
+      || OB_ISNULL(parent_stmts.at(0).stmt_) || !parent_stmts.at(0).stmt_->is_select_stmt()) {
+    return false;
+  }
+  const ObSelectStmt *upper = static_cast<const ObSelectStmt *>(parent_stmts.at(0).stmt_);
+  const ObSelectStmt *child = static_cast<const ObSelectStmt *>(stmt);
+  if (!upper->is_scala_group_by() || upper->is_set_stmt() || upper->has_distinct()
+      || upper->get_select_item_size() != 1 || upper->get_aggr_item_size() != 1
+      || upper->get_table_size() != 1 || upper->get_from_item_size() != 1
+      || !upper->get_joined_tables().empty() || !upper->get_semi_infos().empty()
+      || !upper->get_condition_exprs().empty() || upper->has_having()
+      || upper->has_window_function() || upper->has_window_function_filter()
+      || upper->has_order_by() || upper->has_limit() || upper->has_fetch()
+      || upper->has_select_into() || upper->has_for_update() || upper->is_skip_locked()
+      || upper->is_contains_assignment() || upper->is_calc_found_rows()
+      || upper->contain_ab_param() || !upper->get_match_exprs().empty()
+      || upper->get_column_size() != 0 || !upper->get_subquery_exprs().empty()
+      || upper->get_cte_definition_size() != 0 || !upper->get_pseudo_column_like_exprs().empty()
+      || OB_ISNULL(upper->get_query_ctx()) || !upper->get_query_ctx()->calculable_items_.empty()
+      || upper->get_query_ctx()->get_global_hint().disable_query_transform()
+      || OB_NOT_NULL(upper->get_stmt_hint().get_no_rewrite_hint())
+      || OB_NOT_NULL(child->get_stmt_hint().get_no_rewrite_hint())) {
+    return false;
+  }
+  const ObAggFunRawExpr *count = upper->get_aggr_items().at(0);
+  const TableItem *view = upper->get_table_item(0);
+  if (OB_ISNULL(count) || count != upper->get_select_item(0).expr_
+      || count->get_expr_type() != T_FUN_COUNT || count->get_real_param_count() != 0
+      || count->is_param_distinct() || OB_ISNULL(view) || !view->is_generated_table()
+      || view->ref_query_ != child || !view->exec_params_.empty()) {
+    return false;
+  }
+  if (child->is_set_stmt() || child->has_distinct() || child->has_group_by()
+      || child->has_having() || child->has_window_function() || child->has_window_function_filter()
+      || child->has_recursive_cte() || child->is_values_table_query() || child->has_select_into()
+      || child->has_for_update() || child->is_skip_locked() || child->is_contains_assignment()
+      || child->is_calc_found_rows() || child->contain_ab_param() || child->has_vec_approx()
+      || child->get_table_size() != 1 || child->get_from_item_size() != 1
+      || !child->get_joined_tables().empty() || !child->get_semi_infos().empty()
+      || !child->get_subquery_exprs().empty() || child->get_cte_definition_size() != 0
+      || !child->get_pseudo_column_like_exprs().empty() || child->has_order_by()
+      || child->has_fetch() || child->is_fetch_with_ties()
+      || OB_NOT_NULL(child->get_limit_percent_expr()) || child->get_select_item_size() == 0
+      || !is_count_only_order_constant(child->get_limit_expr(), false)
+      || (OB_NOT_NULL(child->get_offset_expr())
+          && !is_count_only_order_constant(child->get_offset_expr(), false))
+      || child->get_match_exprs().count() != 1 || child->get_condition_exprs().count() != 1) {
+    return false;
+  }
+  const TableItem *base = child->get_table_item(0);
+  if (OB_ISNULL(base) || !base->is_basic_table() || !base->exec_params_.empty()
+      || OB_NOT_NULL(base->snapshot_query_expr_) || OB_NOT_NULL(base->sample_info_)) {
+    return false;
+  }
+  const ObMatchFunRawExpr *match = child->get_match_exprs().at(0);
+  const ObRawExpr *predicate = child->get_condition_exprs().at(0);
+  if (OB_ISNULL(match) || match->get_expr_type() != T_FUN_MATCH_AGAINST
+      || match->get_mode_flag() != NATURAL_LANGUAGE_MODE || !match->get_columns_boosts().empty()
+      || OB_NOT_NULL(match->get_param_text_expr()) || match->get_match_columns().empty()
+      || !is_count_only_order_constant(match->get_search_key(), true)
+      || OB_ISNULL(predicate) || predicate->get_expr_type() != T_OP_BOOL
+      || predicate->get_param_count() != 1 || predicate->get_param_expr(0) != match) {
+    return false;
+  }
+  for (int64_t i = 0; i < child->get_select_item_size(); ++i) {
+    if (!is_count_only_order_column(child->get_select_item(i).expr_, base->table_id_)) {
+      return false;
+    }
+  }
+  for (int64_t i = 0; i < match->get_match_columns().count(); ++i) {
+    if (!is_count_only_order_column(match->get_match_columns().at(i), base->table_id_)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// The sorted path validates its normalized LIMIT + OFFSET as an ObFixedArray
+// capacity. Keep that error path for unknown, negative or oversized bounds.
+// Parameter-dependent skips must carry exact-value plan-cache constraints.
+static int check_count_only_fulltext_order(
+    const ObIArray<ObParentDMLStmt> &parent_stmts,
+    const ObDMLStmt *stmt,
+    ObTransformerCtx *ctx,
+    bool &skip_order)
+{
+  int ret = OB_SUCCESS;
+  skip_order = false;
+  if (can_skip_count_only_fulltext_order(parent_stmts, stmt)
+      && OB_NOT_NULL(ctx) && OB_NOT_NULL(ctx->exec_ctx_)
+      && OB_NOT_NULL(ctx->exec_ctx_->get_physical_plan_ctx())) {
+    const ObSelectStmt *child = static_cast<const ObSelectStmt *>(stmt);
+    const ParamStore &params = ctx->exec_ctx_->get_physical_plan_ctx()->get_param_store();
+    int64_t limit = 0;
+    int64_t offset = 0;
+    if (get_count_only_order_bound(child->get_limit_expr(), params, limit)
+        && (OB_ISNULL(child->get_offset_expr())
+            || get_count_only_order_bound(child->get_offset_expr(), params, offset))
+        && limit <= UINT32_MAX - offset) {
+      if (OB_FAIL(ObTransformUtils::add_const_param_constraints(child->get_limit_expr(), ctx))) {
+      } else if (OB_NOT_NULL(child->get_offset_expr())
+                 && OB_FAIL(ObTransformUtils::add_const_param_constraints(
+                     child->get_offset_expr(), ctx))) {
+      } else {
+        skip_order = true;
+      }
+    }
+  }
+  return ret;
+}
+
 int ObTransformPreProcess::transform_one_stmt(common::ObIArray<ObParentDMLStmt> &parent_stmts,
                                               ObDMLStmt *&stmt,
                                               bool &trans_happened)
@@ -178,8 +341,11 @@ int ObTransformPreProcess::transform_one_stmt(common::ObIArray<ObParentDMLStmt> 
       }
     }
     if (OB_SUCC(ret)) {
+      bool skip_order = false;
       if (stmt->get_match_exprs().count() > 0 &&
-          OB_FAIL(preserve_order_for_fulltext_search(stmt, is_happened))) {
+          OB_FAIL(check_count_only_fulltext_order(parent_stmts, stmt, ctx_, skip_order))) {
+      } else if (stmt->get_match_exprs().count() > 0 && !skip_order &&
+                 OB_FAIL(preserve_order_for_fulltext_search(stmt, is_happened))) {
       } else {
         trans_happened |= is_happened;
       }
