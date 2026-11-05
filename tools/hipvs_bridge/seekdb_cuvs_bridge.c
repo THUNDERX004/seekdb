@@ -31,7 +31,7 @@ typedef struct {
 #define SEEKDB_CUVS_NN_DESCENT_NITER_LOW_DIM 20
 #endif
 #ifndef SEEKDB_CUVS_NN_DESCENT_NITER_HIGH_DIM
-#define SEEKDB_CUVS_NN_DESCENT_NITER_HIGH_DIM 32
+#define SEEKDB_CUVS_NN_DESCENT_NITER_HIGH_DIM 100
 #endif
 
 static void sk_release_device_buffers(sk_cuvs_index *h) {

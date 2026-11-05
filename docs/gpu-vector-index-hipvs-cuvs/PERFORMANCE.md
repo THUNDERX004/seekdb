@@ -16,10 +16,10 @@ evaluator's paired frozen-baseline run.
 
 1. NN-Descent no longer always runs 100 iterations. The candidate retains the
    degree-128 output graph and degree-256 intermediate graph that were required
-   to pass recall, but uses 20 iterations at 128 dimensions and 32 iterations
-   above 128 dimensions. The pinned hipVS build uses a 64-wide rounding grid,
-   so degree 128 produces an extended degree of 192; `250000 % 192 == 16`
-   does not hit the upstream degenerate-initial-graph residue classes.
+   to pass recall, but uses 20 iterations at 128 dimensions. A 32-iteration
+   experiment above 128 dimensions failed the evaluator's
+   `hidden250k:recall@100_baseline_delta` gate, so 256-dimensional data retains
+   the baseline's 100 iterations.
 2. `OBCUVS03` persists only the final uint32 adjacency graph. The previous V5
    path serialized the complete CAGRA index, including a second dataset copy,
    to a temporary file and then copied that file into the seekdb snapshot.
