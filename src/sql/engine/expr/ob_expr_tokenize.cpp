@@ -39,6 +39,129 @@ namespace oceanbase
 {
 namespace sql
 {
+namespace
+{
+// Adapted from juanzhi-gcb/seekdb PR1787, commit 97ab48bb741f789e4e9d1d88380727f11cd03aaa.
+// Keep complete raw argument identities, but only consult the memo after parse_param succeeds.
+// Built-in dictionaries are immutable; no parser or allocator-owned pointer is retained here.
+const int64_t TOKENIZE_MEMO_ENTRY_CNT = 2;
+
+struct TokenizeMemoKey
+{
+  int64_t arg_cnt_;
+  int64_t mode_;
+  int64_t collation_;
+  int64_t parser_version_;
+  int64_t types_[3];
+  int64_t collations_[3];
+  int64_t lengths_[3];
+  bool nulls_[3];
+};
+
+struct TokenizeMemoEntry
+{
+  static const int64_t MAX_TEXT_LEN = 1024;
+  static const int64_t MAX_PARSER_NAME_LEN = 64;
+  static const int64_t MAX_PROPERTIES_LEN = 1024;
+  static const int64_t MAX_RESULT_LEN = 16384;
+
+  bool valid_;
+  TokenizeMemoKey key_;
+  int64_t result_len_;
+  char text_[MAX_TEXT_LEN];
+  char parser_name_[MAX_PARSER_NAME_LEN];
+  char properties_[MAX_PROPERTIES_LEN];
+  char result_[MAX_RESULT_LEN];
+};
+
+struct TokenizeMemo
+{
+  TokenizeMemoEntry entries_[TOKENIZE_MEMO_ENTRY_CNT];
+  int64_t next_;
+};
+
+thread_local TokenizeMemo TLS_TOKENIZE_MEMO = {};
+
+bool tokenize_memo_key(const ObExpr &expr,
+                       ObEvalCtx &ctx,
+                       TokenizeMemoKey &key,
+                       ObString (&args)[3])
+{
+  const int64_t limits[] = {TokenizeMemoEntry::MAX_TEXT_LEN,
+                            TokenizeMemoEntry::MAX_PARSER_NAME_LEN,
+                            TokenizeMemoEntry::MAX_PROPERTIES_LEN};
+  bool eligible = true;
+  key.arg_cnt_ = expr.arg_cnt_;
+  for (int64_t i = 0; eligible && i < expr.arg_cnt_; ++i) {
+    // parse_param has already evaluated every supplied argument in the original order.
+    const ObExpr &arg = *expr.args_[i];
+    const ObDatum &datum = arg.locate_expr_datum(ctx);
+    key.types_[i] = static_cast<int64_t>(arg.datum_meta_.type_);
+    key.collations_[i] = static_cast<int64_t>(arg.datum_meta_.cs_type_);
+    key.nulls_[i] = datum.is_null();
+    if (!datum.is_null()) {
+      // A LOB locator is not an immutable byte key for its contents. Preserve the normal path.
+      if (arg.obj_meta_.has_lob_header() || datum.has_lob_header() || datum.is_outrow()
+          || (!ob_is_string_type(arg.datum_meta_.type_) && ObJsonType != arg.datum_meta_.type_)) {
+        eligible = false;
+      } else {
+        args[i] = datum.get_string();
+        key.lengths_[i] = args[i].length();
+        eligible = 0 <= args[i].length() && args[i].length() <= limits[i];
+      }
+    }
+  }
+  return eligible;
+}
+
+bool tokenize_memo_lookup(const TokenizeMemoKey &key,
+                          const ObString (&args)[3],
+                          ObString &result)
+{
+  bool found = false;
+  for (int64_t i = 0; !found && i < TOKENIZE_MEMO_ENTRY_CNT; ++i) {
+    TokenizeMemoEntry &entry = TLS_TOKENIZE_MEMO.entries_[i];
+    const TokenizeMemoKey &saved = entry.key_;
+    bool same = entry.valid_ && saved.arg_cnt_ == key.arg_cnt_
+                && saved.mode_ == key.mode_ && saved.collation_ == key.collation_
+                && saved.parser_version_ == key.parser_version_;
+    const char *bytes[] = {entry.text_, entry.parser_name_, entry.properties_};
+    for (int64_t j = 0; same && j < key.arg_cnt_; ++j) {
+      same = saved.types_[j] == key.types_[j] && saved.collations_[j] == key.collations_[j]
+             && saved.nulls_[j] == key.nulls_[j] && saved.lengths_[j] == key.lengths_[j]
+             && (0 == key.lengths_[j] || 0 == MEMCMP(bytes[j], args[j].ptr(), key.lengths_[j]));
+    }
+    if (same) {
+      result.assign_ptr(entry.result_, static_cast<int32_t>(entry.result_len_));
+      found = true;
+    }
+  }
+  return found;
+}
+
+void tokenize_memo_store(const TokenizeMemoKey &key,
+                         const ObString (&args)[3],
+                         const ObString &result)
+{
+  if (0 < result.length() && result.length() <= TokenizeMemoEntry::MAX_RESULT_LEN) {
+    TokenizeMemo &memo = TLS_TOKENIZE_MEMO;
+    TokenizeMemoEntry &entry = memo.entries_[memo.next_];
+    entry.valid_ = false;
+    entry.key_ = key;
+    char *bytes[] = {entry.text_, entry.parser_name_, entry.properties_};
+    for (int64_t i = 0; i < key.arg_cnt_; ++i) {
+      if (0 < key.lengths_[i]) {
+        MEMCPY(bytes[i], args[i].ptr(), key.lengths_[i]);
+      }
+    }
+    entry.result_len_ = result.length();
+    MEMCPY(entry.result_, result.ptr(), result.length());
+    entry.valid_ = true;
+    memo.next_ = (memo.next_ + 1) % TOKENIZE_MEMO_ENTRY_CNT;
+  }
+}
+} // namespace
+
 ObExprTokenize::ObExprTokenize(common::ObIAllocator &alloc)
     : ObStringExprOperator(alloc,
                            T_FUN_TOKENIZE,
@@ -64,12 +187,31 @@ int ObExprTokenize::eval_tokenize(const ObExpr &expr, ObEvalCtx &ctx, ObDatum &e
   if (OB_UNLIKELY(expr.arg_cnt_ < 1 || expr.arg_cnt_ > 3)) {
     ret = OB_INVALID_ARGUMENT;
   } else if (OB_FAIL(parse_param(expr, ctx, temp_allocator, param))) {
-  } else if (OB_FAIL(tokenize_fulltext(param, param.output_mode_, temp_allocator, json_result))) {
-  } else if (OB_FAIL(ObJsonExprHelper::pack_json_res(expr,
-                                                     ctx,
-                                                     temp_allocator,
-                                                     json_result,
-                                                     expr_datum))) {
+  } else {
+    TokenizeMemoKey key = {};
+    ObString args[3];
+    ObString cached_result;
+    const bool memo_eligible = tokenize_memo_key(expr, ctx, key, args);
+    key.mode_ = static_cast<int64_t>(param.output_mode_);
+    key.collation_ = static_cast<int64_t>(param.meta_.get_collation_type());
+    key.parser_version_ = param.parser_.get_parser_version();
+    if (memo_eligible && tokenize_memo_lookup(key, args, cached_result)) {
+      // The default allocator copies the bytes into expression-result memory.
+      if (OB_FAIL(ObJsonExprHelper::pack_json_str_res(expr, ctx, expr_datum, cached_result))) {
+      }
+    } else if (OB_FAIL(tokenize_fulltext(param, param.output_mode_, temp_allocator, json_result))) {
+    } else if (!memo_eligible || OB_ISNULL(json_result) || json_result->is_bin()) {
+      if (OB_FAIL(ObJsonExprHelper::pack_json_res(expr, ctx, temp_allocator, json_result, expr_datum))) {
+      }
+    } else {
+      // Token arrays/details are fresh JSON trees. Serialize once, as pack_json_res does.
+      ObString raw_result;
+      if (OB_FAIL(share::ObJsonWrapper::get_raw_binary(json_result, raw_result, &temp_allocator))) {
+      } else if (OB_FAIL(ObJsonExprHelper::pack_json_str_res(expr, ctx, expr_datum, raw_result))) {
+      } else {
+        tokenize_memo_store(key, args, raw_result);
+      }
+    }
   }
 
   return ret;
