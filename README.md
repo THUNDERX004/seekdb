@@ -107,6 +107,26 @@ The historical, pre-optimization development measurement is in
 0.387468 seconds for 1,000 queries, and 1.0 sampled Recall@10 for both filtered
 and unfiltered queries. These are not official Linux cgroup measurements.
 
+## Statement-failure tests
+
+Additional statement-failure regressions can be run without changing the
+production executable or enabling test fault hooks in it:
+
+~~~bash
+c++ -std=c++20 -O1 tests/test_statement_allocation.cpp -o build/test_statement_allocation
+c++ -std=c++20 -O1 -DMVD_FORCE_SCALAR tests/test_statement_allocation.cpp -o build/test_statement_allocation_scalar
+python -X utf8 -B tests/test_statement_allocation.py build/test_statement_allocation
+python -X utf8 -B tests/test_round6_sql_contract.py build/minivectordb
+python -X utf8 -B tests/test_round6_stream_contract.py build/minivectordb
+~~~
+
+The allocation test replaces global allocation only in its separate test
+executable. It enumerates one allocation failure at a time and checks failed
+statement isolation, successful execution, COMMIT/ROLLBACK, and restart. This
+is not a cgroup memory-limit test or evidence of official hidden-case acceptance.
+The full local validator accepts optional --allocation-normal and
+--allocation-scalar paths to include both allocation-test executables.
+
 ## Limitations
 
 - A value is kept inline in the append-only record; no page compaction is
@@ -117,6 +137,13 @@ and unfiltered queries. These are not official Linux cgroup measurements.
   correctness-complete submission.
 - The official hidden cases, complete driver, and official baseline are not yet
   public, so formal evaluation cannot be reproduced locally.
+
+## Statement-validation corrections (2026-11-09)
+
+See [the correction report](refine-logs/ROUND6_STATEMENT_FIXES_20261109.md)
+for invalid transaction controls, VARCHAR length validation, and allocation-failure
+statement isolation. The expanded local suite passed; official acceptance still
+requires a result for the exact submitted revision.
 
 ## Historical 2026-11-09 optimization (commit 666989f7d)
 

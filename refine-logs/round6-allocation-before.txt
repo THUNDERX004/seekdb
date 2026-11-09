@@ -1,0 +1,6 @@
+INSERT allocation failure #24 changed statement-visible state: expected 3 rows, got 4 rows
+  actual 1 prior-24
+  actual 2 two
+  actual 3 three
+  actual 4 four
+FAIL failed statement was not atomic

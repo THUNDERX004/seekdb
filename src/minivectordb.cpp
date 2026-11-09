@@ -731,9 +731,15 @@ class Parser {
       }
       fail("UNSUPPORTED", "only CREATE TABLE and CREATE VECTOR INDEX are supported");
     }
-    if (acceptKeyword("begin") || acceptKeyword("start")) {
-      while (acceptKeyword("work") || acceptKeyword("transaction")) {
+    if (acceptKeyword("begin")) {
+      if (!acceptKeyword("work")) {
+        acceptKeyword("transaction");
       }
+      expectEnd();
+      return EmptyStatement{};
+    }
+    if (acceptKeyword("start")) {
+      expectKeyword("transaction");
       expectEnd();
       return EmptyStatement{};
     }
@@ -1230,6 +1236,8 @@ class Parser {
             }
             column.length = static_cast<uint32_t>(length);
             expectSymbol(")");
+          } else if (type == "varchar") {
+            fail("SQL_SYNTAX", "VARCHAR requires an explicit length");
           } else {
             column.length = 65535;
           }
@@ -2277,6 +2285,26 @@ class Database {
     return overlay_[oid];
   }
 
+  void publishStatementChanges(
+      uint32_t oid, std::map<int64_t, std::optional<Row>> changes) {
+    if (changes.empty()) {
+      return;
+    }
+    // Allocate every row and map node before changing the transaction view.
+    // With equal allocators and integer keys, merge transfers nodes without
+    // allocating; replacing an existing optional<Row> is a nonthrowing swap.
+    static_assert(std::is_nothrow_swappable_v<std::optional<Row>>);
+    auto &overlay = overlayFor(oid);
+    if (overlay.empty()) {
+      overlay.swap(changes);
+      return;
+    }
+    overlay.merge(changes);
+    for (auto &[primary, row] : changes) {
+      overlay.find(primary)->second.swap(row);
+    }
+  }
+
   bool matches(const TableDef &definition, const Row &row,
                const std::vector<Condition> &conditions) const {
     for (const Condition &condition : conditions) {
@@ -2342,10 +2370,11 @@ class Database {
         fail("DUPLICATE_PRIMARY_KEY", "primary key already exists");
       }
     }
-    auto &overlay = overlayFor(definition.oid);
+    std::map<int64_t, std::optional<Row>> changes;
     for (const Row &row : statement.rows) {
-      overlay[row[definition.primary_key].integer] = row;
+      changes.emplace(row[definition.primary_key].integer, row);
     }
+    publishStatementChanges(definition.oid, std::move(changes));
     return ExecResult{false, static_cast<uint64_t>(statement.rows.size()), {}};
   }
 
@@ -2414,7 +2443,7 @@ class Database {
         fail("UNSUPPORTED", "primary key updates are not supported");
       }
     }
-    std::vector<std::pair<int64_t, Row>> replacements;
+    std::map<int64_t, std::optional<Row>> replacements;
     forEachCandidate(table, statement.conditions, [&](int64_t primary, const Row &row) {
       if (!matches(definition, row, statement.conditions)) {
         return;
@@ -2423,30 +2452,25 @@ class Database {
       for (const Assignment &assignment : statement.assignments) {
         updated[assignment.column] = assignment.value;
       }
-      replacements.emplace_back(primary, std::move(updated));
+      replacements.emplace(primary, std::move(updated));
     });
-    auto &overlay = overlayFor(definition.oid);
-    for (auto &[primary, row] : replacements) {
-      overlay[primary] = std::move(row);
-    }
-    return ExecResult{false, static_cast<uint64_t>(replacements.size()), {}};
+    const uint64_t affected = static_cast<uint64_t>(replacements.size());
+    publishStatementChanges(definition.oid, std::move(replacements));
+    return ExecResult{false, affected, {}};
   }
 
   ExecResult executeDelete(const DeleteStatement &statement) {
     Table &table = requireTable(statement.table);
     const TableDef &definition = table.definition();
-    std::vector<int64_t> matches_to_delete;
+    std::map<int64_t, std::optional<Row>> matches_to_delete;
     forEachCandidate(table, statement.conditions, [&](int64_t primary, const Row &row) {
       if (matches(definition, row, statement.conditions)) {
-        matches_to_delete.push_back(primary);
+        matches_to_delete.emplace(primary, std::nullopt);
       }
     });
-    auto &overlay = overlayFor(definition.oid);
-    for (int64_t primary : matches_to_delete) {
-      overlay[primary] = std::nullopt;
-    }
-    return ExecResult{false,
-                      static_cast<uint64_t>(matches_to_delete.size()), {}};
+    const uint64_t affected = static_cast<uint64_t>(matches_to_delete.size());
+    publishStatementChanges(definition.oid, std::move(matches_to_delete));
+    return ExecResult{false, affected, {}};
   }
 
   ExecResult executeSelect(const SelectStatement &statement) {

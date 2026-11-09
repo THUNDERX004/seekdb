@@ -1,0 +1,161 @@
+test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) ... 
+  test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) (sql='START') ... FAIL
+  test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) (sql='START WORK') ... FAIL
+  test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) (sql='BEGIN WORK WORK') ... FAIL
+  test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) (sql='BEGIN TRANSACTION TRANSACTION') ... FAIL
+  test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) (sql='BEGIN WORK TRANSACTION') ... FAIL
+  test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) (sql='START TRANSACTION TRANSACTION') ... FAIL
+test_supported_transaction_controls_and_invalid_tails (__main__.SqlContract.test_supported_transaction_controls_and_invalid_tails) ... ok
+test_supported_unicode_length_and_finite_float32_literals (__main__.SqlContract.test_supported_unicode_length_and_finite_float32_literals) ... ok
+test_valid_transaction_variants_keep_commit_and_rollback_semantics (__main__.SqlContract.test_valid_transaction_variants_keep_commit_and_rollback_semantics) ... ok
+test_varchar_requires_length_before_creating_catalog_entry (__main__.SqlContract.test_varchar_requires_length_before_creating_catalog_entry) ... FAIL
+
+======================================================================
+FAIL: test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) (sql='START')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_round6_sql_contract.py", line 98, in test_invalid_transaction_words_do_not_disable_autocommit
+    self.fail("\n\n".join(errors))
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: SQL: START
+expected: one ERROR with a nonempty code
+actual: ['OK']
+
+SQL: SELECT id,n FROM t ORDER BY id
+expected: ['COLUMNS\tid\tn', '1\t10']
+actual: ['COLUMNS\tid\tn']
+
+SQL: SELECT id,n FROM t ORDER BY id
+expected: ['COLUMNS\tid\tn', '1\t10']
+actual: ['COLUMNS\tid\tn']
+
+======================================================================
+FAIL: test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) (sql='START WORK')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_round6_sql_contract.py", line 98, in test_invalid_transaction_words_do_not_disable_autocommit
+    self.fail("\n\n".join(errors))
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: SQL: START WORK
+expected: one ERROR with a nonempty code
+actual: ['OK']
+
+SQL: SELECT id,n FROM t ORDER BY id
+expected: ['COLUMNS\tid\tn', '1\t10']
+actual: ['COLUMNS\tid\tn']
+
+SQL: SELECT id,n FROM t ORDER BY id
+expected: ['COLUMNS\tid\tn', '1\t10']
+actual: ['COLUMNS\tid\tn']
+
+======================================================================
+FAIL: test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) (sql='BEGIN WORK WORK')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_round6_sql_contract.py", line 98, in test_invalid_transaction_words_do_not_disable_autocommit
+    self.fail("\n\n".join(errors))
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: SQL: BEGIN WORK WORK
+expected: one ERROR with a nonempty code
+actual: ['OK']
+
+SQL: SELECT id,n FROM t ORDER BY id
+expected: ['COLUMNS\tid\tn', '1\t10']
+actual: ['COLUMNS\tid\tn']
+
+SQL: SELECT id,n FROM t ORDER BY id
+expected: ['COLUMNS\tid\tn', '1\t10']
+actual: ['COLUMNS\tid\tn']
+
+======================================================================
+FAIL: test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) (sql='BEGIN TRANSACTION TRANSACTION')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_round6_sql_contract.py", line 98, in test_invalid_transaction_words_do_not_disable_autocommit
+    self.fail("\n\n".join(errors))
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: SQL: BEGIN TRANSACTION TRANSACTION
+expected: one ERROR with a nonempty code
+actual: ['OK']
+
+SQL: SELECT id,n FROM t ORDER BY id
+expected: ['COLUMNS\tid\tn', '1\t10']
+actual: ['COLUMNS\tid\tn']
+
+SQL: SELECT id,n FROM t ORDER BY id
+expected: ['COLUMNS\tid\tn', '1\t10']
+actual: ['COLUMNS\tid\tn']
+
+======================================================================
+FAIL: test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) (sql='BEGIN WORK TRANSACTION')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_round6_sql_contract.py", line 98, in test_invalid_transaction_words_do_not_disable_autocommit
+    self.fail("\n\n".join(errors))
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: SQL: BEGIN WORK TRANSACTION
+expected: one ERROR with a nonempty code
+actual: ['OK']
+
+SQL: SELECT id,n FROM t ORDER BY id
+expected: ['COLUMNS\tid\tn', '1\t10']
+actual: ['COLUMNS\tid\tn']
+
+SQL: SELECT id,n FROM t ORDER BY id
+expected: ['COLUMNS\tid\tn', '1\t10']
+actual: ['COLUMNS\tid\tn']
+
+======================================================================
+FAIL: test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) (sql='START TRANSACTION TRANSACTION')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_round6_sql_contract.py", line 98, in test_invalid_transaction_words_do_not_disable_autocommit
+    self.fail("\n\n".join(errors))
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: SQL: START TRANSACTION TRANSACTION
+expected: one ERROR with a nonempty code
+actual: ['OK']
+
+SQL: SELECT id,n FROM t ORDER BY id
+expected: ['COLUMNS\tid\tn', '1\t10']
+actual: ['COLUMNS\tid\tn']
+
+SQL: SELECT id,n FROM t ORDER BY id
+expected: ['COLUMNS\tid\tn', '1\t10']
+actual: ['COLUMNS\tid\tn']
+
+======================================================================
+FAIL: test_varchar_requires_length_before_creating_catalog_entry (__main__.SqlContract.test_varchar_requires_length_before_creating_catalog_entry)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_round6_sql_contract.py", line 121, in test_varchar_requires_length_before_creating_catalog_entry
+    self.fail("\n\n".join(errors))
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: SQL: CREATE TABLE t(id BIGINT PRIMARY KEY,s VARCHAR)
+expected: one ERROR with a nonempty code
+actual: ['OK']
+
+SQL: INSERT INTO t VALUES (1,'x')
+expected: one ERROR with a nonempty code
+actual: ['OK 1']
+
+SQL: SELECT id FROM t
+expected: one ERROR with a nonempty code
+actual: ['COLUMNS\tid', '1']
+
+SQL: SELECT id FROM t
+expected: one ERROR with a nonempty code
+actual: ['COLUMNS\tid', '1']
+
+SQL: CREATE TABLE t(id BIGINT PRIMARY KEY,s VARCHAR(1))
+expected: ['OK']
+actual: ["ERROR TABLE_EXISTS: table 't' already exists"]
+
+SQL: SELECT id,s FROM t ORDER BY id
+expected: ['COLUMNS\tid\ts', '2\ty']
+actual: ['COLUMNS\tid\ts', '1\tx', '2\ty']
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.346s
+
+FAILED (failures=7)
