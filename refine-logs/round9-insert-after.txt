@@ -1,0 +1,12 @@
+binary=D:\Projects\OceanBase\seekdb-minivectordb\build\minivectordb.exe
+binary_sha256=66d5aee2e7a1e6b185f38d6c8798d2352c1b6fc9747bc8d8c6a3a32613ed7b3a
+test_full_duplicate_lists_and_too_many_values_remain_errors (__main__.StreamFollowup.test_full_duplicate_lists_and_too_many_values_remain_errors) ... ok
+test_malformed_later_row_preserves_prior_transaction_insert (__main__.StreamFollowup.test_malformed_later_row_preserves_prior_transaction_insert) ... ok
+test_short_duplicate_list_on_multicolumn_table (__main__.StreamFollowup.test_short_duplicate_list_on_multicolumn_table) ... ok
+test_short_row_cannot_hide_duplicate_insert_column (__main__.StreamFollowup.test_short_row_cannot_hide_duplicate_insert_column) ... ok
+test_valid_reordered_explicit_columns_commit_and_restart (__main__.StreamFollowup.test_valid_reordered_explicit_columns_commit_and_restart) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.225s
+
+OK

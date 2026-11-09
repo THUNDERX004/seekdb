@@ -42,6 +42,7 @@ ORDERS = (
     (("d", False), ("score", True), ("cat", False)),
     (("score", True), ("d", False), ("id", True)),
     (("d", False), ("e", True), ("score", False)),
+    (("d", False), ("id", False)),
 )
 
 
@@ -218,7 +219,7 @@ class Harness:
         self.phase = label
         # Audit every stored field, not only TopK IDs, before and after mutations.
         self.query((("id", False),), limit=None, star=True)
-        for order in (ORDERS[0], ORDERS[3], ORDERS[5], ORDERS[6], ORDERS[7]):
+        for order in (ORDERS[0], ORDERS[3], ORDERS[5], ORDERS[6], ORDERS[7], ORDERS[8]):
             distances = tuple(name for name in PROBES if any(key == name for key, _ in order))
             columns = ("body", "id", "emb", "score", "cat") + distances
             self.query(order, columns, limit=11, offset=3)

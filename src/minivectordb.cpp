@@ -1144,6 +1144,11 @@ class Parser {
         }
       }
       expectSymbol(")");
+      const size_t expected_values = statement.columns.empty()
+          ? table.columns.size() : statement.columns.size();
+      if (value_index != expected_values) {
+        fail("TYPE_MISMATCH", "column count does not match value count in INSERT");
+      }
       for (size_t i = 0; i < present.size(); ++i) {
         if (!present[i]) {
           fail("TYPE_MISMATCH", "INSERT must provide every column");
@@ -2647,8 +2652,15 @@ class Database {
       }
       distance_item = static_cast<int>(i);
     }
+    // The specialized heap already breaks exact distance ties by ascending
+    // primary key. An explicit matching secondary key has identical semantics;
+    // other secondary keys and descending primary keys need the general path.
+    const bool distance_primary_order = resolved_order.size() == 1 ||
+        (resolved_order.size() == 2 && !resolved_order[1].distance &&
+         !resolved_order[1].descending &&
+         resolved_order[1].column == definition.primary_key);
     if (statement.limit >= 0 && distance_item >= 0 &&
-        resolved_order.size() == 1 && resolved_order.front().distance &&
+        distance_primary_order && resolved_order.front().distance &&
         !resolved_order.front().descending &&
         resolved_order.front().distance_index ==
             static_cast<size_t>(distance_item)) {

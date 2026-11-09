@@ -244,11 +244,14 @@ class ExactDistanceTests(unittest.TestCase):
              lambda row: (distance(row), -row.score, -row.primary)),
             (False, expression + "," + other_expression + " DESC,score,id DESC",
              lambda row: (distance(row), -other_distance(row), row.score, -row.primary)),
+            (False, expression + ",id ASC", lambda row: (distance(row), row.primary)),
+            (True, "d,id ASC", lambda row: (distance(row), row.primary)),
+            (True, "d,id DESC", lambda row: (distance(row), -row.primary)),
         )
         windows = (("", 0, None), (" LIMIT 1", 0, 1),
                    (" LIMIT 5 OFFSET 2", 2, 5), (" LIMIT 2,5", 2, 5))
         if compact:
-            specifications = tuple(specifications[index] for index in (0, 1, 3, 5))
+            specifications = tuple(specifications[index] for index in (0, 1, 3, 5, 6, 7, 8))
             windows = (("", 0, None), (" LIMIT 3 OFFSET 1", 1, 3))
         for mode in ("exact", "ann"):
             self.expect_sql(session, f"SET vector_mode={mode}", ["OK"])

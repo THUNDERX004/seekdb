@@ -1,0 +1,134 @@
+binary=D:\Projects\OceanBase\seekdb-minivectordb\build\round8-submission-6d6fbb85f\build\normal\minivectordb.exe
+binary_sha256=60593a746887d1ddf920d6620386f9e1e2e02fb8b91b7c974e8d37ab0acbe6ef
+test_full_duplicate_lists_and_too_many_values_remain_errors (__main__.StreamFollowup.test_full_duplicate_lists_and_too_many_values_remain_errors) ... ok
+test_malformed_later_row_preserves_prior_transaction_insert (__main__.StreamFollowup.test_malformed_later_row_preserves_prior_transaction_insert) ... ok
+test_short_duplicate_list_on_multicolumn_table (__main__.StreamFollowup.test_short_duplicate_list_on_multicolumn_table) ... 
+  test_short_duplicate_list_on_multicolumn_table (__main__.StreamFollowup.test_short_duplicate_list_on_multicolumn_table) (phase='before restart', step=3, sql='INSERT INTO t(n,id,n) VALUES(20,2);') ... FAIL
+  test_short_duplicate_list_on_multicolumn_table (__main__.StreamFollowup.test_short_duplicate_list_on_multicolumn_table) (phase='before restart', step=4, sql='SELECT id,n FROM t ORDER BY id;') ... FAIL
+  test_short_duplicate_list_on_multicolumn_table (__main__.StreamFollowup.test_short_duplicate_list_on_multicolumn_table) (phase='before restart', step=6, sql='SELECT id,n FROM t ORDER BY id;') ... FAIL
+  test_short_duplicate_list_on_multicolumn_table (__main__.StreamFollowup.test_short_duplicate_list_on_multicolumn_table) (phase='after restart', step=0, sql='SELECT id,n FROM t ORDER BY id;') ... FAIL
+test_short_row_cannot_hide_duplicate_insert_column (__main__.StreamFollowup.test_short_row_cannot_hide_duplicate_insert_column) ... 
+  test_short_row_cannot_hide_duplicate_insert_column (__main__.StreamFollowup.test_short_row_cannot_hide_duplicate_insert_column) (phase='before restart', step=3, sql='INSERT INTO t(id,id) VALUES(2);') ... FAIL
+  test_short_row_cannot_hide_duplicate_insert_column (__main__.StreamFollowup.test_short_row_cannot_hide_duplicate_insert_column) (phase='before restart', step=4, sql='SELECT id FROM t ORDER BY id;') ... FAIL
+  test_short_row_cannot_hide_duplicate_insert_column (__main__.StreamFollowup.test_short_row_cannot_hide_duplicate_insert_column) (phase='before restart', step=6, sql='SELECT id FROM t ORDER BY id;') ... FAIL
+  test_short_row_cannot_hide_duplicate_insert_column (__main__.StreamFollowup.test_short_row_cannot_hide_duplicate_insert_column) (phase='after restart', step=0, sql='SELECT id FROM t ORDER BY id;') ... FAIL
+test_valid_reordered_explicit_columns_commit_and_restart (__main__.StreamFollowup.test_valid_reordered_explicit_columns_commit_and_restart) ... ok
+
+======================================================================
+FAIL: test_short_duplicate_list_on_multicolumn_table (__main__.StreamFollowup.test_short_duplicate_list_on_multicolumn_table) (phase='before restart', step=3, sql='INSERT INTO t(n,id,n) VALUES(20,2);')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stream_followup.py", line 45, in exchange
+    self.assertRegex(frame[0], r"^ERROR [^\s:]+: .+", evidence)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Regex didn't match: '^ERROR [^\\s:]+: .+' not found in 'OK 1' : before restart: INSERT INTO t(n,id,n) VALUES(20,2);; frames=[['OK'], ['OK'], ['OK 1'], ['OK 1'], ['1\t10', '2\t20'], ['OK'], ['1\t10', '2\t20']]
+
+======================================================================
+FAIL: test_short_duplicate_list_on_multicolumn_table (__main__.StreamFollowup.test_short_duplicate_list_on_multicolumn_table) (phase='before restart', step=4, sql='SELECT id,n FROM t ORDER BY id;')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stream_followup.py", line 47, in exchange
+    self.assertEqual(frame, expected, evidence)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['1\t10', '2\t20'] != ['1\t10']
+
+First list contains 1 additional elements.
+First extra element 1:
+'2\t20'
+
+- ['1\t10', '2\t20']
++ ['1\t10'] : before restart: SELECT id,n FROM t ORDER BY id;; frames=[['OK'], ['OK'], ['OK 1'], ['OK 1'], ['1\t10', '2\t20'], ['OK'], ['1\t10', '2\t20']]
+
+======================================================================
+FAIL: test_short_duplicate_list_on_multicolumn_table (__main__.StreamFollowup.test_short_duplicate_list_on_multicolumn_table) (phase='before restart', step=6, sql='SELECT id,n FROM t ORDER BY id;')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stream_followup.py", line 47, in exchange
+    self.assertEqual(frame, expected, evidence)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['1\t10', '2\t20'] != ['1\t10']
+
+First list contains 1 additional elements.
+First extra element 1:
+'2\t20'
+
+- ['1\t10', '2\t20']
++ ['1\t10'] : before restart: SELECT id,n FROM t ORDER BY id;; frames=[['OK'], ['OK'], ['OK 1'], ['OK 1'], ['1\t10', '2\t20'], ['OK'], ['1\t10', '2\t20']]
+
+======================================================================
+FAIL: test_short_duplicate_list_on_multicolumn_table (__main__.StreamFollowup.test_short_duplicate_list_on_multicolumn_table) (phase='after restart', step=0, sql='SELECT id,n FROM t ORDER BY id;')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stream_followup.py", line 47, in exchange
+    self.assertEqual(frame, expected, evidence)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['1\t10', '2\t20'] != ['1\t10']
+
+First list contains 1 additional elements.
+First extra element 1:
+'2\t20'
+
+- ['1\t10', '2\t20']
++ ['1\t10'] : after restart: SELECT id,n FROM t ORDER BY id;; frames=[['1\t10', '2\t20']]
+
+======================================================================
+FAIL: test_short_row_cannot_hide_duplicate_insert_column (__main__.StreamFollowup.test_short_row_cannot_hide_duplicate_insert_column) (phase='before restart', step=3, sql='INSERT INTO t(id,id) VALUES(2);')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stream_followup.py", line 45, in exchange
+    self.assertRegex(frame[0], r"^ERROR [^\s:]+: .+", evidence)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Regex didn't match: '^ERROR [^\\s:]+: .+' not found in 'OK 1' : before restart: INSERT INTO t(id,id) VALUES(2);; frames=[['OK'], ['OK'], ['OK 1'], ['OK 1'], ['1', '2'], ['OK'], ['1', '2']]
+
+======================================================================
+FAIL: test_short_row_cannot_hide_duplicate_insert_column (__main__.StreamFollowup.test_short_row_cannot_hide_duplicate_insert_column) (phase='before restart', step=4, sql='SELECT id FROM t ORDER BY id;')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stream_followup.py", line 47, in exchange
+    self.assertEqual(frame, expected, evidence)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['1', '2'] != ['1']
+
+First list contains 1 additional elements.
+First extra element 1:
+'2'
+
+- ['1', '2']
++ ['1'] : before restart: SELECT id FROM t ORDER BY id;; frames=[['OK'], ['OK'], ['OK 1'], ['OK 1'], ['1', '2'], ['OK'], ['1', '2']]
+
+======================================================================
+FAIL: test_short_row_cannot_hide_duplicate_insert_column (__main__.StreamFollowup.test_short_row_cannot_hide_duplicate_insert_column) (phase='before restart', step=6, sql='SELECT id FROM t ORDER BY id;')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stream_followup.py", line 47, in exchange
+    self.assertEqual(frame, expected, evidence)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['1', '2'] != ['1']
+
+First list contains 1 additional elements.
+First extra element 1:
+'2'
+
+- ['1', '2']
++ ['1'] : before restart: SELECT id FROM t ORDER BY id;; frames=[['OK'], ['OK'], ['OK 1'], ['OK 1'], ['1', '2'], ['OK'], ['1', '2']]
+
+======================================================================
+FAIL: test_short_row_cannot_hide_duplicate_insert_column (__main__.StreamFollowup.test_short_row_cannot_hide_duplicate_insert_column) (phase='after restart', step=0, sql='SELECT id FROM t ORDER BY id;')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stream_followup.py", line 47, in exchange
+    self.assertEqual(frame, expected, evidence)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['1', '2'] != ['1']
+
+First list contains 1 additional elements.
+First extra element 1:
+'2'
+
+- ['1', '2']
++ ['1'] : after restart: SELECT id FROM t ORDER BY id;; frames=[['1', '2']]
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.226s
+
+FAILED (failures=8)
