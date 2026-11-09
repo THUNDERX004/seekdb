@@ -72,7 +72,7 @@ def run_case(executable: Path, case: dict, case_dir: Path) -> list[str]:
     data_dir = tempfile.mkdtemp(prefix="mvd-public-")
     try:
         process = subprocess.run(
-            [str(executable), f"--data-dir={data_dir}"],
+            [str(executable), f"--data-dir={data_dir}", "--column-header"],
             input="\n".join(sql_lines) + "\n",
             text=True,
             encoding="utf-8",
@@ -96,6 +96,15 @@ def run_case(executable: Path, case: dict, case_dir: Path) -> list[str]:
     for index, (sql, expectation) in enumerate(zip(sql_lines, expected), 1):
         keyword = sql.lstrip().split(None, 1)[0].lower()
         if keyword == "select":
+            header = output[cursor].split("\t") if cursor < len(output) else []
+            cursor += 1
+            if not header or header[0] != "COLUMNS":
+                failures.append(f"{case['id']} statement {index}: missing column metadata")
+            elif "columns" in expectation and header[1:] != expectation["columns"]:
+                failures.append(
+                    f"{case['id']} statement {index}: column names mismatch\n"
+                    f"SQL: {sql}\nactual={header[1:]!r}\nexpected={expectation['columns']!r}"
+                )
             count = len(expectation.get("rows", []))
             actual = [line.split("\t") for line in output[cursor : cursor + count]]
             cursor += count
@@ -119,7 +128,7 @@ def run_case(executable: Path, case: dict, case_dir: Path) -> list[str]:
                         f"{case['id']} statement {index}: expected {wanted!r}, "
                         f"got {status!r}; SQL: {sql}"
                     )
-            elif keyword not in {"begin", "commit", "rollback", "set"}:
+            else:
                 if status != "OK":
                     failures.append(
                         f"{case['id']} statement {index}: expected OK, got {status!r}"

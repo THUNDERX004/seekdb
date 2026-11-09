@@ -1,20 +1,15 @@
-FROM ubuntu:24.04 AS build
-
-RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-       ca-certificates g++ cmake make \
-    && rm -rf /var/lib/apt/lists/*
+FROM gcc:14.3.0-bookworm@sha256:5e927c284bf55a7dc796262e311a0703344f62f41f5621eb56843111b1d37e15 AS build
 
 WORKDIR /src
-COPY CMakeLists.txt ./
 COPY src ./src
-RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
-    && cmake --build build --parallel
+RUN mkdir -p /out \
+    && g++ -std=c++20 -O3 -DNDEBUG -Wall -Wextra -Wpedantic \
+       -static-libstdc++ -static-libgcc src/minivectordb.cpp -o /out/minivectordb
 
-FROM ubuntu:24.04
+FROM debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc
 
 RUN mkdir -p /app /data
-COPY --from=build /src/build/minivectordb /app/minivectordb
+COPY --from=build /out/minivectordb /app/minivectordb
 
 VOLUME ["/data"]
 WORKDIR /app

@@ -1,0 +1,304 @@
+COMMAND: python -X utf8 -B tests/run_public.py build/minivectordb.exe
+PASS sql_crud
+PASS sql_comparisons
+PASS sql_ordering
+PASS sql_empty
+PASS vector_euclidean
+PASS 5 public cases
+COMMAND: python -X utf8 -B tests/test_extended.py build/minivectordb.exe
+PASS extended transaction, vector, persistence, and recovery tests
+COMMAND: python -X utf8 -B tests/test_semantics.py build/minivectordb.exe
+PASS SQL boundary, atomicity, and error semantics
+COMMAND: python -X utf8 -B tests/test_disk_scan.py build/minivectordb.exe
+PASS out-of-cache disk scan and filtered TopK
+COMMAND: python -X utf8 -B tests/test_hidden_edges.py build/minivectordb.exe
+test_recovery_does_not_reuse_cross_table_txid (__main__.HiddenEdges.test_recovery_does_not_reuse_cross_table_txid)
+Simulated interrupted-commit storage fixture, not a real process crash. ... ok
+test_large_finite_distances (__main__.HiddenEdges.test_large_finite_distances) ... ok
+test_tiny_distances_preserve_exact_topk (__main__.HiddenEdges.test_tiny_distances_preserve_exact_topk) ... ok
+test_near_distances_are_not_false_ties (__main__.HiddenEdges.test_near_distances_are_not_false_ties) ... ok
+test_topk_respects_all_order_keys_and_offset (__main__.HiddenEdges.test_topk_respects_all_order_keys_and_offset) ... ok
+test_ordinary_aliases_keep_the_source_column (__main__.HiddenEdges.test_ordinary_aliases_keep_the_source_column) ... ok
+test_where_literals_can_exceed_varchar_length (__main__.HiddenEdges.test_where_literals_can_exceed_varchar_length) ... ok
+test_long_where_literals_in_update_and_delete (__main__.HiddenEdges.test_long_where_literals_in_update_and_delete) ... ok
+test_varchar_write_lengths_remain_enforced (__main__.HiddenEdges.test_varchar_write_lengths_remain_enforced) ... ok
+test_query_edges_invalid_create_is_atomic (__main__.HiddenEdges.test_query_edges_invalid_create_is_atomic) ... ok
+test_query_edges_null_writes_are_statement_atomic (__main__.HiddenEdges.test_query_edges_null_writes_are_statement_atomic) ... ok
+test_query_edges_unprojected_distance_orders (__main__.HiddenEdges.test_query_edges_unprojected_distance_orders) ... ok
+test_query_edges_maximum_limit_and_offset (__main__.HiddenEdges.test_query_edges_maximum_limit_and_offset) ... ok
+test_query_edges_vector_order_is_always_rejected (__main__.HiddenEdges.test_query_edges_vector_order_is_always_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.600s
+
+OK
+COMMAND: python -X utf8 -B tests/test_differential.py build/minivectordb.exe
+PASS case=random seed=7 dim=4 statements=850
+PASS case=random seed=429 dim=8 statements=828
+PASS case=random seed=20261109 dim=33 statements=849
+PASS case=semantics seed=7 dim=4 statements=319
+FAIL case=numeric seed=20261109 dim=1 statements=403
+2 query mismatches; first 2 examples:
+case=numeric seed=20261109 dim=1 statement=395 mode=exact
+SQL: SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+row 1 column=id: actual='60', expected=1; expected row=(1, 1.0000000150474662e+30); actual rows=['13\t0.000000', '60\t1000000015047466219876688855040.000000', '61\t1000000015047466219876688855040.000000', '46\t1000000015047466219876688855040.000000', '41\t1000000015047466219876688855040.000000', '40\t1000000015047466219876688855040.000000', '48\t1000000015047466219876688855040.000000', '1\t1000000015047466219876688855040.000000', '2\t1000000015047466219876688855040.000000', '3\t1000000015047466219876688855040.000000']
+Replay: --case numeric --seed 20261109
+Recent SQL (long history entries abbreviated):
+  SELECT id,L2_DISTANCE(emb,'[0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  SET vector_mode = ann
+  SELECT id,L2_DISTANCE(emb,'[0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  UPDATE items SET emb = '[-1.0000000150474662e+30]' WHERE id = 10
+  DELETE FROM items WHERE id = 15
+  INSERT INTO items VALUES (15,2,'large','trailing ','[9.9999996826552254e-21]')
+  BEGIN
+  UPDATE items SET emb = '[0]' WHERE id = 11
+  SET vector_mode = exact
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+
+case=numeric seed=20261109 dim=1 statement=397 mode=ann
+SQL: SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+row 1 column=id: actual='60', expected=1; expected row=(1, 1.0000000150474662e+30); actual rows=['13\t0.000000', '60\t1000000015047466219876688855040.000000', '61\t1000000015047466219876688855040.000000', '46\t1000000015047466219876688855040.000000', '41\t1000000015047466219876688855040.000000', '40\t1000000015047466219876688855040.000000', '48\t1000000015047466219876688855040.000000', '1\t1000000015047466219876688855040.000000', '2\t1000000015047466219876688855040.000000', '3\t1000000015047466219876688855040.000000']
+Replay: --case numeric --seed 20261109
+Recent SQL (long history entries abbreviated):
+  SELECT id,L2_DISTANCE(emb,'[0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  UPDATE items SET emb = '[-1.0000000150474662e+30]' WHERE id = 10
+  DELETE FROM items WHERE id = 15
+  INSERT INTO items VALUES (15,2,'large','trailing ','[9.9999996826552254e-21]')
+  BEGIN
+  UPDATE items SET emb = '[0]' WHERE id = 11
+  SET vector_mode = exact
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+  SET vector_mode = ann
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+FAIL case=numeric seed=20261109 dim=3 statements=403
+2 query mismatches; first 2 examples:
+case=numeric seed=20261109 dim=3 statement=395 mode=exact
+SQL: SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+row 1 column=id: actual='61', expected=1; expected row=(1, 1.0000000150474662e+30); actual rows=['13\t0.000000', '61\t1000000015047466219876688855040.000000', '60\t1000000015047466219876688855040.000000', '51\t1000000015047466219876688855040.000000', '46\t1000000015047466219876688855040.000000', '45\t1000000015047466219876688855040.000000', '47\t1000000015047466219876688855040.000000', '43\t1000000015047466219876688855040.000000', '41\t1000000015047466219876688855040.000000', '40\t1000000015047466219876688855040.000000']
+Replay: --case numeric --seed 20261109
+Recent SQL (long history entries abbreviated):
+  SELECT id,L2_DISTANCE(emb,'[0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  SET vector_mode = ann
+  SELECT id,L2_DISTANCE(emb,'[0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  UPDATE items SET emb = '[-1.0000000150474662e+30,0,0]' WHERE id = 10
+  DELETE FROM items WHERE id = 15
+  INSERT INTO items VALUES (15,0,'large','','[9.9999996826552254e-21,0,0]')
+  BEGIN
+  UPDATE items SET emb = '[0,0,0]' WHERE id = 11
+  SET vector_mode = exact
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+
+case=numeric seed=20261109 dim=3 statement=397 mode=ann
+SQL: SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+row 1 column=id: actual='61', expected=1; expected row=(1, 1.0000000150474662e+30); actual rows=['13\t0.000000', '61\t1000000015047466219876688855040.000000', '60\t1000000015047466219876688855040.000000', '51\t1000000015047466219876688855040.000000', '46\t1000000015047466219876688855040.000000', '45\t1000000015047466219876688855040.000000', '47\t1000000015047466219876688855040.000000', '43\t1000000015047466219876688855040.000000', '41\t1000000015047466219876688855040.000000', '40\t1000000015047466219876688855040.000000']
+Replay: --case numeric --seed 20261109
+Recent SQL (long history entries abbreviated):
+  SELECT id,L2_DISTANCE(emb,'[0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  UPDATE items SET emb = '[-1.0000000150474662e+30,0,0]' WHERE id = 10
+  DELETE FROM items WHERE id = 15
+  INSERT INTO items VALUES (15,0,'large','','[9.9999996826552254e-21,0,0]')
+  BEGIN
+  UPDATE items SET emb = '[0,0,0]' WHERE id = 11
+  SET vector_mode = exact
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+  SET vector_mode = ann
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+FAIL case=numeric seed=20261109 dim=4 statements=403
+2 query mismatches; first 2 examples:
+case=numeric seed=20261109 dim=4 statement=395 mode=exact
+SQL: SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+row 1 column=id: actual='61', expected=1; expected row=(1, 1.0000000150474662e+30); actual rows=['13\t0.000000', '61\t1000000015047466219876688855040.000000', '60\t1000000015047466219876688855040.000000', '48\t1000000015047466219876688855040.000000', '43\t1000000015047466219876688855040.000000', '42\t1000000015047466219876688855040.000000', '47\t1000000015047466219876688855040.000000', '51\t1000000015047466219876688855040.000000', '44\t1000000015047466219876688855040.000000', '3\t1000000015047466219876688855040.000000']
+Replay: --case numeric --seed 20261109
+Recent SQL (long history entries abbreviated):
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  SET vector_mode = ann
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  UPDATE items SET emb = '[-1.0000000150474662e+30,0,0,0]' WHERE id = 10
+  DELETE FROM items WHERE id = 15
+  INSERT INTO items VALUES (15,-1,'large','甲乙','[9.9999996826552254e-21,0,0,0]')
+  BEGIN
+  UPDATE items SET emb = '[0,0,0,0]' WHERE id = 11
+  SET vector_mode = exact
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+
+case=numeric seed=20261109 dim=4 statement=397 mode=ann
+SQL: SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+row 1 column=id: actual='61', expected=1; expected row=(1, 1.0000000150474662e+30); actual rows=['13\t0.000000', '61\t1000000015047466219876688855040.000000', '60\t1000000015047466219876688855040.000000', '48\t1000000015047466219876688855040.000000', '43\t1000000015047466219876688855040.000000', '42\t1000000015047466219876688855040.000000', '47\t1000000015047466219876688855040.000000', '51\t1000000015047466219876688855040.000000', '44\t1000000015047466219876688855040.000000', '3\t1000000015047466219876688855040.000000']
+Replay: --case numeric --seed 20261109
+Recent SQL (long history entries abbreviated):
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  UPDATE items SET emb = '[-1.0000000150474662e+30,0,0,0]' WHERE id = 10
+  DELETE FROM items WHERE id = 15
+  INSERT INTO items VALUES (15,-1,'large','甲乙','[9.9999996826552254e-21,0,0,0]')
+  BEGIN
+  UPDATE items SET emb = '[0,0,0,0]' WHERE id = 11
+  SET vector_mode = exact
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+  SET vector_mode = ann
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+FAIL case=numeric seed=20261109 dim=8 statements=403
+2 query mismatches; first 2 examples:
+case=numeric seed=20261109 dim=8 statement=395 mode=exact
+SQL: SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+row 1 column=id: actual='61', expected=1; expected row=(1, 1.0000000150474662e+30); actual rows=['13\t0.000000', '61\t1000000015047466219876688855040.000000', '60\t1000000015047466219876688855040.000000', '51\t1000000015047466219876688855040.000000', '40\t1000000015047466219876688855040.000000', '43\t1000000015047466219876688855040.000000', '48\t1000000015047466219876688855040.000000', '3\t1000000015047466219876688855040.000000', '2\t1000000015047466219876688855040.000000', '1\t1000000015047466219876688855040.000000']
+Replay: --case numeric --seed 20261109
+Recent SQL (long history entries abbreviated):
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0,0,0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  SET vector_mode = ann
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0,0,0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  UPDATE items SET emb = '[-1.0000000150474662e+30,0,0,0,0,0,0,0]' WHERE id = 10
+  DELETE FROM items WHERE id = 15
+  INSERT INTO items VALUES (15,9223372036854775807,'large',' leading','[9.9999996826552254e-21,0,0,0,0,0,0,0]')
+  BEGIN
+  UPDATE items SET emb = '[0,0,0,0,0,0,0,0]' WHERE id = 11
+  SET vector_mode = exact
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+
+case=numeric seed=20261109 dim=8 statement=397 mode=ann
+SQL: SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+row 1 column=id: actual='61', expected=1; expected row=(1, 1.0000000150474662e+30); actual rows=['13\t0.000000', '61\t1000000015047466219876688855040.000000', '60\t1000000015047466219876688855040.000000', '51\t1000000015047466219876688855040.000000', '40\t1000000015047466219876688855040.000000', '43\t1000000015047466219876688855040.000000', '48\t1000000015047466219876688855040.000000', '3\t1000000015047466219876688855040.000000', '2\t1000000015047466219876688855040.000000', '1\t1000000015047466219876688855040.000000']
+Replay: --case numeric --seed 20261109
+Recent SQL (long history entries abbreviated):
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0,0,0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  UPDATE items SET emb = '[-1.0000000150474662e+30,0,0,0,0,0,0,0]' WHERE id = 10
+  DELETE FROM items WHERE id = 15
+  INSERT INTO items VALUES (15,9223372036854775807,'large',' leading','[9.9999996826552254e-21,0,0,0,0,0,0,0]')
+  BEGIN
+  UPDATE items SET emb = '[0,0,0,0,0,0,0,0]' WHERE id = 11
+  SET vector_mode = exact
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+  SET vector_mode = ann
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+FAIL case=numeric seed=20261109 dim=31 statements=403
+2 query mismatches; first 2 examples:
+case=numeric seed=20261109 dim=31 statement=395 mode=exact
+SQL: SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+row 1 column=id: actual='61', expected=1; expected row=(1, 1.0000000150474662e+30); actual rows=['13\t0.000000', '61\t1000000015047466219876688855040.000000', '60\t1000000015047466219876688855040.000000', '51\t1000000015047466219876688855040.000000', '49\t1000000015047466219876688855040.000000', '44\t1000000015047466219876688855040.000000', '3\t1000000015047466219876688855040.000000', '2\t1000000015047466219876688855040.000000', '1\t1000000015047466219876688855040.000000', '30\t1000000015047466219876688855040.000000']
+Replay: --case numeric --seed 20261109
+Recent SQL (long history entries abbreviated):
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  SET vector_mode = ann
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  UPDATE items SET emb = '[-1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]' WHERE id = 10
+  DELETE FROM items WHERE id = 15
+  INSERT INTO items VALUES (15,-2,'large','甲乙','[9.9999996826552254e-21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]')
+  BEGIN
+  UPDATE items SET emb = '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]' WHERE id = 11
+  SET vector_mode = exact
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+
+case=numeric seed=20261109 dim=31 statement=397 mode=ann
+SQL: SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+row 1 column=id: actual='61', expected=1; expected row=(1, 1.0000000150474662e+30); actual rows=['13\t0.000000', '61\t1000000015047466219876688855040.000000', '60\t1000000015047466219876688855040.000000', '51\t1000000015047466219876688855040.000000', '49\t1000000015047466219876688855040.000000', '44\t1000000015047466219876688855040.000000', '3\t1000000015047466219876688855040.000000', '2\t1000000015047466219876688855040.000000', '1\t1000000015047466219876688855040.000000', '30\t1000000015047466219876688855040.000000']
+Replay: --case numeric --seed 20261109
+Recent SQL (long history entries abbreviated):
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  UPDATE items SET emb = '[-1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]' WHERE id = 10
+  DELETE FROM items WHERE id = 15
+  INSERT INTO items VALUES (15,-2,'large','甲乙','[9.9999996826552254e-21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]')
+  BEGIN
+  UPDATE items SET emb = '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]' WHERE id = 11
+  SET vector_mode = exact
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+  SET vector_mode = ann
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+FAIL case=numeric seed=20261109 dim=32 statements=403
+2 query mismatches; first 2 examples:
+case=numeric seed=20261109 dim=32 statement=395 mode=exact
+SQL: SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+row 1 column=id: actual='61', expected=1; expected row=(1, 1.0000000150474662e+30); actual rows=['13\t0.000000', '61\t1000000015047466219876688855040.000000', '60\t1000000015047466219876688855040.000000', '48\t1000000015047466219876688855040.000000', '44\t1000000015047466219876688855040.000000', '43\t1000000015047466219876688855040.000000', '46\t1000000015047466219876688855040.000000', '50\t1000000015047466219876688855040.000000', '41\t1000000015047466219876688855040.000000', '49\t1000000015047466219876688855040.000000']
+Replay: --case numeric --seed 20261109
+Recent SQL (long history entries abbreviated):
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  SET vector_mode = ann
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  UPDATE items SET emb = '[-1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]' WHERE id = 10
+  DELETE FROM items WHERE id = 15
+  INSERT INTO items VALUES (15,2,'large','trailing ','[9.9999996826552254e-21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]')
+  BEGIN
+  UPDATE items SET emb = '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]' WHERE id = 11
+  SET vector_mode = exact
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+
+case=numeric seed=20261109 dim=32 statement=397 mode=ann
+SQL: SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+row 1 column=id: actual='61', expected=1; expected row=(1, 1.0000000150474662e+30); actual rows=['13\t0.000000', '61\t1000000015047466219876688855040.000000', '60\t1000000015047466219876688855040.000000', '48\t1000000015047466219876688855040.000000', '44\t1000000015047466219876688855040.000000', '43\t1000000015047466219876688855040.000000', '46\t1000000015047466219876688855040.000000', '50\t1000000015047466219876688855040.000000', '41\t1000000015047466219876688855040.000000', '49\t1000000015047466219876688855040.000000']
+Replay: --case numeric --seed 20261109
+Recent SQL (long history entries abbreviated):
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  UPDATE items SET emb = '[-1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]' WHERE id = 10
+  DELETE FROM items WHERE id = 15
+  INSERT INTO items VALUES (15,2,'large','trailing ','[9.9999996826552254e-21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]')
+  BEGIN
+  UPDATE items SET emb = '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]' WHERE id = 11
+  SET vector_mode = exact
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+  SET vector_mode = ann
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+FAIL case=numeric seed=20261109 dim=33 statements=403
+2 query mismatches; first 2 examples:
+case=numeric seed=20261109 dim=33 statement=395 mode=exact
+SQL: SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+row 1 column=id: actual='61', expected=1; expected row=(1, 1.0000000150474662e+30); actual rows=['13\t0.000000', '61\t1000000015047466219876688855040.000000', '60\t1000000015047466219876688855040.000000', '47\t1000000015047466219876688855040.000000', '46\t1000000015047466219876688855040.000000', '43\t1000000015047466219876688855040.000000', '44\t1000000015047466219876688855040.000000', '41\t1000000015047466219876688855040.000000', '51\t1000000015047466219876688855040.000000', '40\t1000000015047466219876688855040.000000']
+Replay: --case numeric --seed 20261109
+Recent SQL (long history entries abbreviated):
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  SET vector_mode = ann
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  UPDATE items SET emb = '[-1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]' WHERE id = 10
+  DELETE FROM items WHERE id = 15
+  INSERT INTO items VALUES (15,2,'large','O''Brien','[9.9999996826552254e-21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]')
+  BEGIN
+  UPDATE items SET emb = '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]' WHERE id = 11
+  SET vector_mode = exact
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+
+case=numeric seed=20261109 dim=33 statement=397 mode=ann
+SQL: SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+row 1 column=id: actual='61', expected=1; expected row=(1, 1.0000000150474662e+30); actual rows=['13\t0.000000', '61\t1000000015047466219876688855040.000000', '60\t1000000015047466219876688855040.000000', '47\t1000000015047466219876688855040.000000', '46\t1000000015047466219876688855040.000000', '43\t1000000015047466219876688855040.000000', '44\t1000000015047466219876688855040.000000', '41\t1000000015047466219876688855040.000000', '51\t1000000015047466219876688855040.000000', '40\t1000000015047466219876688855040.000000']
+Replay: --case numeric --seed 20261109
+Recent SQL (long history entries abbreviated):
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items WHERE tag = 'mixed' ORDER BY d DESC LIMIT 3 OFFSET 1
+  UPDATE items SET emb = '[-1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]' WHERE id = 10
+  DELETE FROM items WHERE id = 15
+  INSERT INTO items VALUES (15,2,'large','O''Brien','[9.9999996826552254e-21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]')
+  BEGIN
+  UPDATE items SET emb = '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]' WHERE id = 11
+  SET vector_mode = exact
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+  SET vector_mode = ann
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+FAIL case=numeric seed=20261109 dim=128 statements=403
+2 query mismatches; first 2 examples:
+case=numeric seed=20261109 dim=128 statement=395 mode=exact
+SQL: SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+row 1 column=id: actual='61', expected=1; expected row=(1, 1.0000000150474662e+30); actual rows=['13\t0.000000', '61\t1000000015047466219876688855040.000000', '60\t1000000015047466219876688855040.000000', '41\t1000000015047466219876688855040.000000', '48\t1000000015047466219876688855040.000000', '40\t1000000015047466219876688855040.000000', '45\t1000000015047466219876688855040.000000', '49\t1000000015047466219876688855040.000000', '44\t1000000015047466219876688855040.000000', '50\t1000000015047466219876688855040.000000']
+Replay: --case numeric --seed 20261109
+Recent SQL (long history entries abbreviated):
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM ite ...
+  SET vector_mode = ann
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM ite ...
+FAIL differential: 4/12 cases, 6070 SQL statements, 16 query mismatches
+  UPDATE items SET emb = '[-1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ...
+  DELETE FROM items WHERE id = 15
+  INSERT INTO items VALUES (15,-2,'large','back\\slash','[9.9999996826552254e-21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ...
+  BEGIN
+  UPDATE items SET emb = '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]' WHERE id = 11
+  SET vector_mode = exact
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ...
+
+case=numeric seed=20261109 dim=128 statement=397 mode=ann
+SQL: SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM items ORDER BY d ASC LIMIT 10 OFFSET 0
+row 1 column=id: actual='61', expected=1; expected row=(1, 1.0000000150474662e+30); actual rows=['13\t0.000000', '61\t1000000015047466219876688855040.000000', '60\t1000000015047466219876688855040.000000', '41\t1000000015047466219876688855040.000000', '48\t1000000015047466219876688855040.000000', '40\t1000000015047466219876688855040.000000', '45\t1000000015047466219876688855040.000000', '49\t1000000015047466219876688855040.000000', '44\t1000000015047466219876688855040.000000', '50\t1000000015047466219876688855040.000000']
+Replay: --case numeric --seed 20261109
+Recent SQL (long history entries abbreviated):
+  SELECT id,L2_DISTANCE(emb,'[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]') AS d FROM ite ...
+  UPDATE items SET emb = '[-1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ...
+  DELETE FROM items WHERE id = 15
+  INSERT INTO items VALUES (15,-2,'large','back\\slash','[9.9999996826552254e-21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ...
+  BEGIN
+  UPDATE items SET emb = '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]' WHERE id = 11
+  SET vector_mode = exact
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ...
+  SET vector_mode = ann
+  SELECT id,L2_DISTANCE(emb,'[1.0000000150474662e+30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ...

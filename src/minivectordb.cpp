@@ -96,12 +96,20 @@ std::string lower(std::string value) {
 }
 
 uint32_t crc32(const uint8_t *data, size_t size) {
+  static constexpr auto table = [] {
+    std::array<uint32_t, 256> values{};
+    for (uint32_t i = 0; i < values.size(); ++i) {
+      uint32_t value = i;
+      for (int bit = 0; bit < 8; ++bit) {
+        value = (value >> 1U) ^ (0xedb88320U & (0U - (value & 1U)));
+      }
+      values[i] = value;
+    }
+    return values;
+  }();
   uint32_t crc = 0xffffffffU;
   for (size_t i = 0; i < size; ++i) {
-    crc ^= data[i];
-    for (int bit = 0; bit < 8; ++bit) {
-      crc = (crc >> 1U) ^ (0xedb88320U & (0U - (crc & 1U)));
-    }
+    crc = (crc >> 8U) ^ table[(crc ^ data[i]) & 0xffU];
   }
   return ~crc;
 }
@@ -120,6 +128,9 @@ void appendScalar(std::vector<uint8_t> &out, T value) {
 }
 
 void appendBytes(std::vector<uint8_t> &out, const void *data, size_t size) {
+  if (size == 0) {
+    return;
+  }
   const auto *ptr = static_cast<const uint8_t *>(data);
   out.insert(out.end(), ptr, ptr + size);
 }
@@ -246,9 +257,21 @@ using Row = std::vector<Value>;
 size_t serializedRowSize(const Row &row) {
   size_t size = 4;
   for (const Value &value : row) {
-    size += 8;
+    size += 16;
     size += value.text.size();
     size += value.vector.size() * sizeof(float);
+  }
+  return size;
+}
+
+size_t cachedRowBytes(const Row &row) {
+  size_t size = sizeof(Row) + row.capacity() * sizeof(Value);
+  const size_t inline_text_capacity = std::string{}.capacity();
+  for (const Value &value : row) {
+    if (value.text.capacity() > inline_text_capacity) {
+      size += value.text.capacity() + 1;
+    }
+    size += value.vector.capacity() * sizeof(float);
   }
   return size;
 }
@@ -258,13 +281,18 @@ std::vector<uint8_t> serializeRow(const Row &row) {
     fail("VALUE_TOO_LARGE", "row has too many columns");
   }
   std::vector<uint8_t> out;
+  out.reserve(serializedRowSize(row));
   appendScalar<uint32_t>(out, static_cast<uint32_t>(row.size()));
   for (const Value &value : row) {
     appendScalar<int64_t>(out, value.integer);
     appendString(out, value.text);
     appendScalar<uint32_t>(out, static_cast<uint32_t>(value.vector.size()));
-    for (float component : value.vector) {
-      appendScalar<uint32_t>(out, std::bit_cast<uint32_t>(component));
+    if constexpr (std::endian::native == std::endian::little) {
+      appendBytes(out, value.vector.data(), value.vector.size() * sizeof(float));
+    } else {
+      for (float component : value.vector) {
+        appendScalar<uint32_t>(out, std::bit_cast<uint32_t>(component));
+      }
     }
   }
   return out;
@@ -286,10 +314,22 @@ Row deserializeRow(const std::vector<uint8_t> &data) {
     if (vector_size > (1U << 20U)) {
       fail("CORRUPT_DATA", "vector dimension is invalid");
     }
-    value.vector.reserve(vector_size);
-    for (uint32_t j = 0; j < vector_size; ++j) {
-      value.vector.push_back(
-          std::bit_cast<float>(readScalar<uint32_t>(data, pos)));
+    if (vector_size > (data.size() - pos) / sizeof(float)) {
+      fail("CORRUPT_DATA", "truncated vector value");
+    }
+    if constexpr (std::endian::native == std::endian::little) {
+      value.vector.resize(vector_size);
+      if (vector_size != 0) {
+        std::memcpy(value.vector.data(), data.data() + pos,
+                    vector_size * sizeof(float));
+      }
+      pos += vector_size * sizeof(float);
+    } else {
+      value.vector.reserve(vector_size);
+      for (uint32_t j = 0; j < vector_size; ++j) {
+        value.vector.push_back(
+            std::bit_cast<float>(readScalar<uint32_t>(data, pos)));
+      }
     }
     row.push_back(std::move(value));
   }
@@ -505,6 +545,7 @@ struct Condition {
 struct SelectItem {
   bool star = false;
   bool distance = false;
+  bool hidden = false;
   size_t column = 0;
   std::string source_name;
   std::vector<float> probe;
@@ -720,11 +761,15 @@ class Parser {
     if (peek().kind != TokenKind::Number) {
       fail("TYPE_MISMATCH", "vector component must be numeric");
     }
-    const std::string text = peek().text;
-    char *end = nullptr;
-    errno = 0;
-    double value = std::strtod(text.c_str(), &end);
-    if (errno == ERANGE || end != text.c_str() + text.size() ||
+    const std::string &text = peek().text;
+    const char *begin = text.data();
+    const char *end = begin + text.size();
+    if (begin != end && *begin == '+') {
+      ++begin;
+    }
+    double value = 0;
+    const auto parsed = std::from_chars(begin, end, value);
+    if (parsed.ec != std::errc() || parsed.ptr != end ||
         !isFiniteFloat32(value)) {
       fail("VALUE_OUT_OF_RANGE", "vector component is not a finite float32");
     }
@@ -756,6 +801,9 @@ class Parser {
 
   Value parseTypedValue(ColumnType type, uint32_t length) {
     Value value;
+    if (tokenIsKeyword(peek(), "null")) {
+      fail("UNSUPPORTED", "NULL values are not supported");
+    }
     if (type == ColumnType::BigInt) {
       value.integer = parseBigIntToken();
       return value;
@@ -814,7 +862,11 @@ class Parser {
       } else {
         fail("UNSUPPORTED", "only =, <, <=, >, >=, and AND are supported");
       }
-      condition.value = parseTypedValue(column.type, column.length);
+      // Predicate literals need not fit the target column's storage width.
+      condition.value = parseTypedValue(
+          column.type, column.type == ColumnType::VarChar
+                           ? std::numeric_limits<uint32_t>::max()
+                           : column.length);
       conditions.push_back(std::move(condition));
       if (!acceptKeyword("and")) {
         break;
@@ -848,7 +900,8 @@ class Parser {
         expectSymbol(")");
         item.output_name = item.source_name;
       } else {
-        item.output_name = expectIdentifier();
+        item.source_name = expectIdentifier();
+        item.output_name = item.source_name;
       }
       if (acceptKeyword("as")) {
         item.output_name = expectIdentifier();
@@ -872,7 +925,7 @@ class Parser {
                "query vector dimension does not match schema");
         }
       } else if (!item.star) {
-        item.column = table.columnIndex(item.output_name);
+        item.column = table.columnIndex(item.source_name);
       }
     }
     statement.conditions = parseConditions(table, true);
@@ -917,6 +970,31 @@ class Parser {
         statement.limit = parseNonNegativeInteger();
       } else if (acceptKeyword("offset")) {
         statement.offset = parseNonNegativeInteger();
+      }
+    }
+    for (const OrderKey &key : statement.order) {
+      if (!key.distance) {
+        continue;
+      }
+      const size_t column = table.columnIndex(key.source_name);
+      if (table.columns[column].type != ColumnType::Vector) {
+        fail("TYPE_MISMATCH", "L2_DISTANCE requires a VECTOR column");
+      }
+      if (key.probe.size() != table.columns[column].length) {
+        fail("VECTOR_DIMENSION_MISMATCH", "query vector dimension does not match schema");
+      }
+      const bool selected = std::any_of(
+          statement.items.begin(), statement.items.end(), [&](const SelectItem &item) {
+            return item.distance && item.column == column && item.probe == key.probe;
+          });
+      if (!selected) {
+        SelectItem item;
+        item.distance = true;
+        item.hidden = true;
+        item.column = column;
+        item.source_name = key.source_name;
+        item.probe = key.probe;
+        statement.items.push_back(std::move(item));
       }
     }
     expectEnd();
@@ -1022,6 +1100,9 @@ class Parser {
     bool saw_primary = false;
     while (true) {
       if (tokenIsKeyword(peek(), "primary")) {
+        if (saw_primary) {
+          fail("PRIMARY_KEY_REQUIRED", "a table supports exactly one primary key");
+        }
         ++pos_;
         expectKeyword("key");
         expectSymbol("(");
@@ -1042,6 +1123,11 @@ class Parser {
       } else {
         Column column;
         column.name = expectIdentifier();
+        for (const Column &existing : table.columns) {
+          if (lower(existing.name) == lower(column.name)) {
+            fail("SQL_SYNTAX", "duplicate column name '" + column.name + "'");
+          }
+        }
         std::string type = lower(expectIdentifier());
         if (type == "bigint") {
           column.type = ColumnType::BigInt;
@@ -1071,6 +1157,9 @@ class Parser {
         }
         while (true) {
           if (acceptKeyword("primary")) {
+            if (saw_primary) {
+              fail("PRIMARY_KEY_REQUIRED", "a table supports exactly one primary key");
+            }
             expectKeyword("key");
             table.primary_key = table.columns.size();
             saw_primary = true;
@@ -1429,7 +1518,8 @@ class Table {
         }
         offset += header.size() + payload_size;
         valid_bytes = offset;
-        max_seen_txid = std::max(max_seen_txid, record.txid);
+        // Never reuse an ID left by an interrupted, uncommitted transaction.
+        max_seen_txid = std::max(max_seen_txid, record.txid + 1);
         if (committed.contains(record.txid)) {
           applyRecord(record, payload, record_offset);
         }
@@ -1444,6 +1534,14 @@ class Table {
   const TableDef &definition() const { return definition_; }
   TableDef &definition() { return definition_; }
   const fs::path &dataPath() const { return data_path_; }
+
+  void setCacheLimit(size_t bytes) {
+    clearEqualityIndex();
+    cache_limit_bytes_ = bytes;
+    if (cache_bytes_ > cache_limit_bytes_) {
+      disableCache();
+    }
+  }
 
   bool findBase(int64_t primary, Row &out) const {
     auto found = versions_.find(primary);
@@ -1462,13 +1560,67 @@ class Table {
     return versions_.contains(primary);
   }
 
+  using IndexedRows = std::vector<std::pair<int64_t, const Row *>>;
+
+  const IndexedRows *equalityCandidates(const Condition &condition) {
+    if (!cache_enabled_) {
+      return nullptr;
+    }
+    const size_t column = condition.column;
+    const bool text = definition_.columns[column].type == ColumnType::VarChar;
+    const auto keyFor = [&](const Value &value) {
+      return text ? value.text : std::to_string(value.integer);
+    };
+    if (equality_column_ != column) {
+      clearEqualityIndex();
+      // Build off to the side: an allocation failure must never publish a
+      // partially populated candidate index to a later successful query.
+      decltype(equality_index_) staged;
+      const size_t available = cache_limit_bytes_ > cache_bytes_
+                                   ? cache_limit_bytes_ - cache_bytes_
+                                   : 0;
+      size_t allocated = 0;
+      for (const auto &[primary, version] : versions_) {
+        std::string key = keyFor(version.row[column]);
+        auto [entry, inserted] = staged.try_emplace(std::move(key));
+        if (inserted) {
+          allocated += sizeof(decltype(equality_index_)::value_type) + 64 +
+                       entry->first.capacity() + 1;
+        }
+        IndexedRows &rows = entry->second;
+        const size_t old_capacity = rows.capacity();
+        rows.emplace_back(primary, &version.row);
+        allocated += (rows.capacity() - old_capacity) * sizeof(IndexedRows::value_type);
+        if (allocated + staged.bucket_count() * sizeof(void *) > available) {
+          equality_column_ = column;
+          equality_disabled_ = true;
+          return nullptr;
+        }
+      }
+      equality_index_.swap(staged);
+      equality_column_ = column;
+    }
+    if (equality_disabled_) {
+      return nullptr;
+    }
+    const auto found = equality_index_.find(keyFor(condition.value));
+    static const IndexedRows empty;
+    return found == equality_index_.end() ? &empty : &found->second;
+  }
+
   template <typename Callback>
   void forEachBase(Callback &&callback) const {
+    // Reuse one stream for an entire out-of-cache scan, rather than opening
+    // and closing the same data file for every row.
+    std::ifstream input;
     for (const auto &[primary, version] : versions_) {
       if (version.cached) {
         callback(primary, version.row);
       } else {
-        Row row = readRow(version.offset);
+        if (!input.is_open()) {
+          input.open(data_path_, std::ios::binary);
+        }
+        Row row = readRow(version.offset, input);
         callback(primary, row);
       }
     }
@@ -1501,6 +1653,9 @@ class Table {
   }
 
   void applyPending(const std::vector<PendingRecord> &pending) {
+    // Entries point to immutable committed row objects. Invalidate before
+    // replacing/deleting a row or changing the cache's residency.
+    clearEqualityIndex();
     for (const PendingRecord &record : pending) {
       if (record.oid != definition_.oid) {
         continue;
@@ -1508,7 +1663,7 @@ class Table {
       if (record.op == 3) {
         auto existing = versions_.find(record.primary);
         if (existing != versions_.end() && existing->second.cached) {
-          const size_t bytes = serializedRowSize(existing->second.row);
+          const size_t bytes = cachedRowBytes(existing->second.row);
           cache_bytes_ = cache_bytes_ > bytes ? cache_bytes_ - bytes : 0;
         }
         versions_.erase(record.primary);
@@ -1516,7 +1671,7 @@ class Table {
       }
       auto existing = versions_.find(record.primary);
       if (existing != versions_.end() && existing->second.cached) {
-        const size_t bytes = serializedRowSize(existing->second.row);
+        const size_t bytes = cachedRowBytes(existing->second.row);
         cache_bytes_ = cache_bytes_ > bytes ? cache_bytes_ - bytes : 0;
       }
       Version value;
@@ -1524,10 +1679,10 @@ class Table {
       value.cached = cache_enabled_;
       if (value.cached) {
         value.row = record.row;
-        cache_bytes_ += serializedRowSize(value.row);
+        cache_bytes_ += cachedRowBytes(value.row);
       }
       versions_[record.primary] = std::move(value);
-      if (cache_bytes_ > cacheLimitBytes()) {
+      if (cache_bytes_ > cache_limit_bytes_) {
         disableCache();
       }
     }
@@ -1546,7 +1701,7 @@ class Table {
       int64_t primary = readScalar<int64_t>(payload, pos);
       auto existing = versions_.find(primary);
       if (existing != versions_.end() && existing->second.cached) {
-        const size_t bytes = serializedRowSize(existing->second.row);
+        const size_t bytes = cachedRowBytes(existing->second.row);
         cache_bytes_ = cache_bytes_ > bytes ? cache_bytes_ - bytes : 0;
       }
       versions_.erase(primary);
@@ -1561,19 +1716,24 @@ class Table {
       version.row = row;
       auto existing = versions_.find(primary);
       if (existing != versions_.end() && existing->second.cached) {
-        const size_t bytes = serializedRowSize(existing->second.row);
+        const size_t bytes = cachedRowBytes(existing->second.row);
         cache_bytes_ = cache_bytes_ > bytes ? cache_bytes_ - bytes : 0;
       }
-      cache_bytes_ += serializedRowSize(row);
+      cache_bytes_ += cachedRowBytes(version.row);
     }
     versions_[primary] = std::move(version);
-    if (cache_bytes_ > cacheLimitBytes()) {
+    if (cache_bytes_ > cache_limit_bytes_) {
       disableCache();
     }
   }
 
   Row readRow(uint64_t offset) const {
     std::ifstream input(data_path_, std::ios::binary);
+    return readRow(offset, input);
+  }
+
+  Row readRow(uint64_t offset, std::ifstream &input) const {
+    input.clear();
     input.seekg(static_cast<std::streamoff>(offset));
     std::array<uint8_t, 32> header{};
     if (!readExact(input, header.data(), header.size())) {
@@ -1596,12 +1756,13 @@ class Table {
   }
 
   void disableCache() {
+    clearEqualityIndex();
     cache_enabled_ = false;
     cache_bytes_ = 0;
     for (auto &[primary, version] : versions_) {
       (void)primary;
       version.cached = false;
-      version.row.clear();
+      Row{}.swap(version.row);
     }
   }
 
@@ -1610,13 +1771,24 @@ class Table {
   std::unordered_map<int64_t, Version> versions_;
   bool cache_enabled_ = true;
   size_t cache_bytes_ = 0;
+  size_t cache_limit_bytes_ = cacheLimitBytes();
   uint64_t next_offset_ = 0;
+  size_t equality_column_ = std::numeric_limits<size_t>::max();
+  bool equality_disabled_ = false;
+  std::unordered_map<std::string, IndexedRows> equality_index_;
+
+  void clearEqualityIndex() {
+    decltype(equality_index_){}.swap(equality_index_);
+    equality_column_ = std::numeric_limits<size_t>::max();
+    equality_disabled_ = false;
+  }
 };
 
 struct ExecResult {
   bool select = false;
   std::optional<uint64_t> affected;
   std::vector<std::vector<std::string>> rows;
+  std::vector<std::string> columns{};
 };
 
 bool valuesCompare(const Value &left, const Value &right, CompareOp op,
@@ -1652,6 +1824,7 @@ class Database {
       : data_dir_(std::move(data_dir)), ann_mode_(ann) {
     fs::create_directories(data_dir_);
     loadCatalog();
+    rebalanceRowCaches();
     ScanStats wal = scanCommitLog(data_dir_ / "mvd.wal");
     committed_txids_ = wal.committed;
     next_txid_ = wal.max_txid + 1;
@@ -1714,7 +1887,19 @@ class Database {
       finishMutation();
       return result;
     }
-    return executeSelect(std::get<SelectStatement>(statement));
+    const SelectStatement &select = std::get<SelectStatement>(statement);
+    ExecResult result = executeSelect(select);
+    const TableDef &definition = requireTable(select.table).definition();
+    for (const SelectItem &item : select.items) {
+      if (item.star) {
+        for (const Column &column : definition.columns) {
+          result.columns.push_back(column.name);
+        }
+      } else if (!item.hidden) {
+        result.columns.push_back(item.output_name);
+      }
+    }
+    return result;
   }
 
   void rollbackSilently() noexcept {
@@ -1819,7 +2004,16 @@ class Database {
     appendCatalog(definition);
     tables_[key] = std::make_unique<Table>(
         definition, data_dir_ / ("t" + std::to_string(definition.oid) + ".dat"));
+    rebalanceRowCaches();
     return ExecResult{};
+  }
+
+  void rebalanceRowCaches() {
+    const size_t per_table = cacheLimitBytes() / std::max<size_t>(1, tables_.size());
+    for (auto &[name, table] : tables_) {
+      (void)name;
+      table->setCacheLimit(per_table);
+    }
   }
 
   ExecResult createIndex(const CreateIndexStatement &statement) {
@@ -1972,6 +2166,49 @@ class Database {
     return ExecResult{false, static_cast<uint64_t>(statement.rows.size()), {}};
   }
 
+  template <typename Callback>
+  void forEachCandidate(Table &table, const std::vector<Condition> &conditions,
+                        Callback &&callback) {
+    for (const Condition &condition : conditions) {
+      if (condition.column == table.definition().primary_key &&
+          condition.op == CompareOp::Eq) {
+        Row row;
+        if (currentRow(table, condition.value.integer, row)) {
+          callback(condition.value.integer, row);
+        }
+        return;
+      }
+    }
+    for (const Condition &condition : conditions) {
+      if (condition.op != CompareOp::Eq) {
+        continue;
+      }
+      const auto *indexed = table.equalityCandidates(condition);
+      if (indexed == nullptr) {
+        continue;
+      }
+      const auto changed_table = overlay_.find(table.definition().oid);
+      for (const auto &[primary, row] : *indexed) {
+        if (changed_table == overlay_.end() ||
+            !changed_table->second.contains(primary)) {
+          callback(primary, *row);
+        }
+      }
+      if (changed_table != overlay_.end()) {
+        for (const auto &[primary, row] : changed_table->second) {
+          if (row.has_value() &&
+              valuesCompare((*row)[condition.column], condition.value,
+                            CompareOp::Eq,
+                            table.definition().columns[condition.column].type)) {
+            callback(primary, *row);
+          }
+        }
+      }
+      return;
+    }
+    forEachVisible(table, std::forward<Callback>(callback));
+  }
+
   ExecResult executeUpdate(const UpdateStatement &statement) {
     Table &table = requireTable(statement.table);
     const TableDef &definition = table.definition();
@@ -1981,7 +2218,7 @@ class Database {
       }
     }
     std::vector<std::pair<int64_t, Row>> replacements;
-    forEachVisible(table, [&](int64_t primary, const Row &row) {
+    forEachCandidate(table, statement.conditions, [&](int64_t primary, const Row &row) {
       if (!matches(definition, row, statement.conditions)) {
         return;
       }
@@ -2002,7 +2239,7 @@ class Database {
     Table &table = requireTable(statement.table);
     const TableDef &definition = table.definition();
     std::vector<int64_t> matches_to_delete;
-    forEachVisible(table, [&](int64_t primary, const Row &row) {
+    forEachCandidate(table, statement.conditions, [&](int64_t primary, const Row &row) {
       if (matches(definition, row, statement.conditions)) {
         matches_to_delete.push_back(primary);
       }
@@ -2020,6 +2257,9 @@ class Database {
     const TableDef &definition = table.definition();
     std::vector<Projection> projections;
     for (const SelectItem &item : statement.items) {
+      if (item.hidden) {
+        continue;
+      }
       if (item.star) {
         for (size_t i = 0; i < definition.columns.size(); ++i) {
           projections.push_back({false, i, definition.columns[i].name});
@@ -2028,9 +2268,6 @@ class Database {
         projections.push_back(
             {item.distance, item.column, item.output_name});
       }
-    }
-    if (statement.limit == 0) {
-      return ExecResult{true, std::nullopt, {}};
     }
     std::vector<ResolvedOrder> resolved_order;
     resolved_order.reserve(statement.order.size());
@@ -2078,8 +2315,14 @@ class Database {
       }
       if (!resolved.distance) {
         resolved.column_type = definition.columns[resolved.column].type;
+        if (resolved.column_type == ColumnType::Vector) {
+          fail("UNSUPPORTED", "VECTOR columns cannot be ordered directly");
+        }
       }
       resolved_order.push_back(resolved);
+    }
+    if (statement.limit == 0) {
+      return ExecResult{true, std::nullopt, {}};
     }
     auto makeOutput = [&](const Row &row) {
       SelectedRow output;
@@ -2099,6 +2342,9 @@ class Database {
       for (size_t item_index = 0; item_index < statement.items.size();
            ++item_index) {
         const SelectItem &item = statement.items[item_index];
+        if (item.hidden) {
+          continue;
+        }
         if (item.star) {
           for (size_t column = 0; column < definition.columns.size(); ++column) {
             output.output[output_index++] = valueToString(
@@ -2130,24 +2376,41 @@ class Database {
       distance_item = static_cast<int>(i);
     }
     if (statement.limit >= 0 && distance_item >= 0 &&
-        !resolved_order.empty() && resolved_order.front().distance &&
+        resolved_order.size() == 1 && resolved_order.front().distance &&
         !resolved_order.front().descending &&
         resolved_order.front().distance_index ==
             static_cast<size_t>(distance_item)) {
       struct Candidate {
-        float squared_distance = 0;
+        double squared_distance = 0;
         int64_t primary = 0;
         Row row;
       };
       struct WorseFirst {
+        size_t column;
+        const std::vector<float> *probe;
         bool operator()(const Candidate &left, const Candidate &right) const {
-          if (left.squared_distance != right.squared_distance) {
-            return left.squared_distance < right.squared_distance;
+          const int comparison = compareDistances(
+              left.squared_distance, left.row[column].vector,
+              right.squared_distance, right.row[column].vector, *probe);
+          if (comparison != 0) {
+            return comparison < 0;
           }
           return left.primary < right.primary;
         }
       };
       const SelectItem &distance_spec = statement.items[distance_item];
+      // The probe is constant for the scan. Widen it and resolve the CPU kernel
+      // once, retaining float32 storage and double-precision distance semantics.
+      const std::vector<double> prepared_probe(distance_spec.probe.begin(),
+                                                distance_spec.probe.end());
+      using DistanceKernel = double (*)(const float *, const double *, size_t);
+      DistanceKernel distance_kernel = &squaredDistanceScalar<double>;
+#if !defined(MVD_FORCE_SCALAR) && (defined(__GNUC__) || defined(__clang__)) && \
+    (defined(__x86_64__) || defined(__i386__))
+      if (__builtin_cpu_supports("avx2") && __builtin_cpu_supports("fma")) {
+        distance_kernel = &squaredDistanceAvx2<double>;
+      }
+#endif
       const int64_t wanted =
           statement.offset >
                   std::numeric_limits<int64_t>::max() - statement.limit
@@ -2155,24 +2418,46 @@ class Database {
               : statement.offset + statement.limit;
       const size_t capacity = static_cast<size_t>(
           wanted);
-      std::priority_queue<Candidate, std::vector<Candidate>, WorseFirst> heap;
-      forEachVisible(table, [&](int64_t primary, const Row &row) {
+      const WorseFirst candidateLess{distance_spec.column, &distance_spec.probe};
+      std::priority_queue<Candidate, std::vector<Candidate>, WorseFirst> heap(candidateLess);
+      // Most scanned rows are well outside the current TopK. Cache an outward
+      // rounded rejection boundary after heap changes instead of rebuilding
+      // the precision check (and calling its cold exact path) for every row.
+      const double rejection_multiplier =
+          1 + (static_cast<double>(prepared_probe.size()) + 16) * 16 *
+                  std::numeric_limits<double>::epsilon();
+      double reject_above = std::numeric_limits<double>::infinity();
+      const auto updateRejectionBoundary = [&] {
+        reject_above = std::nextafter(
+            heap.top().squared_distance * rejection_multiplier,
+            std::numeric_limits<double>::infinity());
+      };
+      forEachCandidate(table, statement.conditions, [&](int64_t primary, const Row &row) {
         if (!matches(definition, row, statement.conditions)) {
           return;
         }
-        float squared =
-            static_cast<float>(squaredDistance(row[distance_spec.column].vector,
-                                               distance_spec.probe));
+        const auto &vector = row[distance_spec.column].vector;
+        if (vector.size() != prepared_probe.size()) {
+          fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
+        }
+        double squared = distance_kernel(vector.data(), prepared_probe.data(),
+                                         prepared_probe.size());
         if (heap.size() < capacity) {
           heap.push(Candidate{squared, primary, row});
+          updateRejectionBoundary();
         } else if (capacity == 0) {
+          return;
+        } else if (squared > reject_above) {
           return;
         } else {
           const Candidate &worst = heap.top();
-          if (squared < worst.squared_distance ||
-              (squared == worst.squared_distance && primary < worst.primary)) {
+          const int comparison = compareDistances(
+              squared, vector, worst.squared_distance,
+              worst.row[distance_spec.column].vector, distance_spec.probe);
+          if (comparison < 0 || (comparison == 0 && primary < worst.primary)) {
             heap.pop();
             heap.push(Candidate{squared, primary, row});
+            updateRejectionBoundary();
           }
         }
       });
@@ -2182,13 +2467,7 @@ class Database {
         candidates.push_back(heap.top());
         heap.pop();
       }
-      std::sort(candidates.begin(), candidates.end(),
-                [](const Candidate &left, const Candidate &right) {
-                  if (left.squared_distance != right.squared_distance) {
-                    return left.squared_distance < right.squared_distance;
-                  }
-                  return left.primary < right.primary;
-                });
+      std::sort(candidates.begin(), candidates.end(), candidateLess);
       ExecResult result;
       result.select = true;
       if (statement.offset < static_cast<int64_t>(candidates.size())) {
@@ -2204,42 +2483,70 @@ class Database {
       return result;
     }
 
-    std::vector<SelectedRow> selected;
-    forEachVisible(table, [&](int64_t primary, const Row &row) {
-      (void)primary;
-      if (!matches(definition, row, statement.conditions)) {
-        return;
+    const auto selectedLess = [&](const SelectedRow &left, const SelectedRow &right) {
+      for (const ResolvedOrder &key : resolved_order) {
+        int comparison = 0;
+        if (key.distance) {
+          const double a = left.distances[key.distance_index];
+          const double b = right.distances[key.distance_index];
+          const SelectItem &item = statement.items[key.distance_index];
+          comparison = compareDistances(a, left.source[item.column].vector,
+                                        b, right.source[item.column].vector,
+                                        item.probe);
+        } else {
+          comparison = compareValues(left.source[key.column], right.source[key.column],
+                                     key.column_type);
+        }
+        if (comparison != 0) {
+          return key.descending ? comparison > 0 : comparison < 0;
+        }
       }
-      selected.push_back(makeOutput(row));
-    });
+      return left.source[definition.primary_key].integer <
+             right.source[definition.primary_key].integer;
+    };
+    const bool unlimited = statement.limit < 0 ||
+        statement.offset > std::numeric_limits<int64_t>::max() - statement.limit;
+    const int64_t wanted = unlimited ? std::numeric_limits<int64_t>::max()
+                                    : statement.offset + statement.limit;
+    const size_t capacity = static_cast<size_t>(wanted);
+    std::vector<SelectedRow> selected;
+    if (!resolved_order.empty() && statement.limit >= 0) {
+      // Bounded selection applies the complete ordering, including secondary
+      // keys, without retaining every vector row when only a small LIMIT is needed.
+      std::priority_queue<SelectedRow, std::vector<SelectedRow>, decltype(selectedLess)>
+          heap(selectedLess);
+      forEachCandidate(table, statement.conditions, [&](int64_t, const Row &row) {
+        if (!matches(definition, row, statement.conditions)) {
+          return;
+        }
+        SelectedRow candidate = makeOutput(row);
+        if (heap.size() < capacity) {
+          heap.push(std::move(candidate));
+        } else if (selectedLess(candidate, heap.top())) {
+          heap.pop();
+          heap.push(std::move(candidate));
+        }
+      });
+      selected.reserve(heap.size());
+      while (!heap.empty()) {
+        selected.push_back(heap.top());
+        heap.pop();
+      }
+    } else {
+      forEachCandidate(table, statement.conditions, [&](int64_t, const Row &row) {
+        if (selected.size() < capacity && matches(definition, row, statement.conditions)) {
+          selected.push_back(makeOutput(row));
+        }
+      });
+    }
     if (!resolved_order.empty()) {
-      const TableDef &definition_ref = definition;
-      std::sort(selected.begin(), selected.end(),
-                [&](const SelectedRow &left, const SelectedRow &right) {
-                  for (const ResolvedOrder &key : resolved_order) {
-                    int comparison = 0;
-                    if (key.distance) {
-                      double a = left.distances[key.distance_index];
-                      double b = right.distances[key.distance_index];
-                      comparison = (a < b) ? -1 : (a > b ? 1 : 0);
-                    } else {
-                      comparison = compareValues(
-                          left.source[key.column], right.source[key.column],
-                          key.column_type);
-                    }
-                    if (comparison != 0) {
-                      return key.descending ? comparison > 0 : comparison < 0;
-                    }
-                  }
-                  return left.source[definition_ref.primary_key].integer <
-                         right.source[definition_ref.primary_key].integer;
-                });
+      std::sort(selected.begin(), selected.end(), selectedLess);
     }
 
     int64_t begin = std::min<int64_t>(statement.offset, selected.size());
     int64_t end = selected.size();
     if (statement.limit >= 0) {
-      end = std::min<int64_t>(begin + statement.limit, selected.size());
+      end = begin + std::min<int64_t>(statement.limit, end - begin);
     }
     ExecResult result;
     result.select = true;
@@ -2248,6 +2555,74 @@ class Database {
       result.rows.push_back(std::move(selected[static_cast<size_t>(i)].output));
     }
     return result;
+  }
+
+  // A finite float32 value is an integer times 2^-149. Its squared distance
+  // therefore has an exact integer representation in units of 2^-298. Ten
+  // 64-bit words cover all float32 exponents and even a UINT32_MAX dimension.
+  using ExactDistance = std::array<uint64_t, 10>;
+
+  static void accumulateShifted(ExactDistance &sum, uint64_t value,
+                                unsigned shift, bool subtract) {
+    size_t word = shift / 64;
+    const unsigned offset = shift % 64;
+    const uint64_t low = value << offset;
+    const uint64_t high = offset == 0 ? 0 : value >> (64 - offset);
+    const uint64_t previous = sum[word];
+    sum[word] = subtract ? previous - low : previous + low;
+    uint64_t carry = high + (subtract ? previous < low : sum[word] < previous);
+    while (carry != 0) {
+      if (++word == sum.size()) {
+        fail("VALUE_OUT_OF_RANGE", "distance accumulator overflow");
+      }
+      const uint64_t old = sum[word];
+      sum[word] = subtract ? old - carry : old + carry;
+      carry = subtract ? old < carry : sum[word] < old;
+    }
+  }
+
+  static ExactDistance exactSquaredDistance(const std::vector<float> &left,
+                                            const std::vector<float> &right) {
+    ExactDistance sum{};
+    for (size_t i = 0; i < left.size(); ++i) {
+      const uint32_t a = std::bit_cast<uint32_t>(left[i]);
+      const uint32_t b = std::bit_cast<uint32_t>(right[i]);
+      const unsigned ae = (a >> 23) & 255U;
+      const unsigned be = (b >> 23) & 255U;
+      const uint64_t am = (a & 0x7fffffU) | (ae == 0 ? 0 : 0x800000U);
+      const uint64_t bm = (b & 0x7fffffU) | (be == 0 ? 0 : 0x800000U);
+      const unsigned as = ae == 0 ? 0 : ae - 1;
+      const unsigned bs = be == 0 ? 0 : be - 1;
+      accumulateShifted(sum, am * am, 2 * as, false);
+      accumulateShifted(sum, bm * bm, 2 * bs, false);
+      // Add the nonnegative squares before subtracting a positive cross term.
+      accumulateShifted(sum, 2 * am * bm, as + bs, ((a ^ b) >> 31) == 0);
+    }
+    return sum;
+  }
+
+  static int compareDistances(double a, const std::vector<float> &left,
+                              double b, const std::vector<float> &right,
+                              const std::vector<float> &probe) {
+    // Positive-term double accumulation has a bounded rounding error. Use a
+    // deliberately conservative bound for either L2 or squared-L2 scores, and
+    // only pay for exact integer comparison when their error intervals overlap.
+    const double tolerance = (static_cast<double>(probe.size()) + 16) * 8 *
+                             std::numeric_limits<double>::epsilon() * std::max(a, b);
+    if (std::abs(a - b) > tolerance) {
+      return a < b ? -1 : 1;
+    }
+    if (left == right) {
+      return 0;
+    }
+    const ExactDistance exact_left = exactSquaredDistance(left, probe);
+    const ExactDistance exact_right = exactSquaredDistance(right, probe);
+    for (size_t i = exact_left.size(); i-- > 0;) {
+      if (exact_left[i] != exact_right[i]) {
+        return exact_left[i] < exact_right[i] ? -1 : 1;
+      }
+    }
+    return 0;
   }
 
   static double l2Distance(const std::vector<float> &left,
@@ -2260,7 +2635,7 @@ class Database {
     if (left.size() != right.size()) {
       fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
     }
-#if (defined(__GNUC__) || defined(__clang__)) && \
+#if !defined(MVD_FORCE_SCALAR) && (defined(__GNUC__) || defined(__clang__)) && \
     (defined(__x86_64__) || defined(__i386__))
     if (__builtin_cpu_supports("avx2") && __builtin_cpu_supports("fma")) {
       return squaredDistanceAvx2(left.data(), right.data(), left.size());
@@ -2271,62 +2646,79 @@ class Database {
 
 #if (defined(__GNUC__) || defined(__clang__)) && \
     (defined(__x86_64__) || defined(__i386__))
+  __attribute__((target("avx2,fma"))) static __m256d loadProbe4(
+      const float *probe) {
+    return _mm256_cvtps_pd(_mm_loadu_ps(probe));
+  }
+
+  __attribute__((target("avx2,fma"))) static __m256d loadProbe4(
+      const double *probe) {
+    return _mm256_loadu_pd(probe);
+  }
+
+  template <typename Probe>
   __attribute__((target("avx2,fma"))) static double squaredDistanceAvx2(
-      const float *left, const float *right, size_t size) {
-    __m256 sum0 = _mm256_setzero_ps();
-    __m256 sum1 = _mm256_setzero_ps();
-    __m256 sum2 = _mm256_setzero_ps();
-    __m256 sum3 = _mm256_setzero_ps();
+      const float *left, const Probe *right, size_t size) {
+    // Widen before subtracting: all finite float32 inputs, including subnormal
+    // and near-FLT_MAX values, have finite, non-underflowing squares in double.
+    __m256d sum0 = _mm256_setzero_pd();
+    __m256d sum1 = _mm256_setzero_pd();
+    __m256d sum2 = _mm256_setzero_pd();
+    __m256d sum3 = _mm256_setzero_pd();
     size_t i = 0;
-    for (; i + 32 <= size; i += 32) {
-      const __m256 d0 =
-          _mm256_sub_ps(_mm256_loadu_ps(left + i), _mm256_loadu_ps(right + i));
-      const __m256 d1 = _mm256_sub_ps(_mm256_loadu_ps(left + i + 8),
-                                       _mm256_loadu_ps(right + i + 8));
-      const __m256 d2 = _mm256_sub_ps(_mm256_loadu_ps(left + i + 16),
-                                       _mm256_loadu_ps(right + i + 16));
-      const __m256 d3 = _mm256_sub_ps(_mm256_loadu_ps(left + i + 24),
-                                       _mm256_loadu_ps(right + i + 24));
-      sum0 = _mm256_fmadd_ps(d0, d0, sum0);
-      sum1 = _mm256_fmadd_ps(d1, d1, sum1);
-      sum2 = _mm256_fmadd_ps(d2, d2, sum2);
-      sum3 = _mm256_fmadd_ps(d3, d3, sum3);
+    for (; i + 16 <= size; i += 16) {
+      const __m256d d0 = _mm256_sub_pd(
+          _mm256_cvtps_pd(_mm_loadu_ps(left + i)),
+          loadProbe4(right + i));
+      const __m256d d1 = _mm256_sub_pd(
+          _mm256_cvtps_pd(_mm_loadu_ps(left + i + 4)),
+          loadProbe4(right + i + 4));
+      const __m256d d2 = _mm256_sub_pd(
+          _mm256_cvtps_pd(_mm_loadu_ps(left + i + 8)),
+          loadProbe4(right + i + 8));
+      const __m256d d3 = _mm256_sub_pd(
+          _mm256_cvtps_pd(_mm_loadu_ps(left + i + 12)),
+          loadProbe4(right + i + 12));
+      sum0 = _mm256_fmadd_pd(d0, d0, sum0);
+      sum1 = _mm256_fmadd_pd(d1, d1, sum1);
+      sum2 = _mm256_fmadd_pd(d2, d2, sum2);
+      sum3 = _mm256_fmadd_pd(d3, d3, sum3);
     }
-    sum0 = _mm256_add_ps(sum0, sum1);
-    sum2 = _mm256_add_ps(sum2, sum3);
-    sum0 = _mm256_add_ps(sum0, sum2);
-    alignas(32) float lanes[8];
-    _mm256_store_ps(lanes, sum0);
-    float sum = lanes[0] + lanes[1] + lanes[2] + lanes[3] + lanes[4] +
-                lanes[5] + lanes[6] + lanes[7];
+    sum0 = _mm256_add_pd(sum0, sum1);
+    sum2 = _mm256_add_pd(sum2, sum3);
+    sum0 = _mm256_add_pd(sum0, sum2);
+    alignas(32) double lanes[4];
+    _mm256_store_pd(lanes, sum0);
+    double sum = lanes[0] + lanes[1] + lanes[2] + lanes[3];
     for (; i < size; ++i) {
-      const float difference = left[i] - right[i];
+      const double difference = static_cast<double>(left[i]) - right[i];
       sum += difference * difference;
     }
     return static_cast<double>(sum);
   }
 #endif
 
-  static double squaredDistanceScalar(const float *left, const float *right,
+  template <typename Probe>
+  static double squaredDistanceScalar(const float *left, const Probe *right,
                                       size_t size) {
-    float s0 = 0.0F;
-    float s1 = 0.0F;
-    float s2 = 0.0F;
-    float s3 = 0.0F;
+    double s0 = 0.0;
+    double s1 = 0.0;
+    double s2 = 0.0;
+    double s3 = 0.0;
     size_t i = 0;
     for (; i + 4 <= size; i += 4) {
-      float d0 = left[i] - right[i];
-      float d1 = left[i + 1] - right[i + 1];
-      float d2 = left[i + 2] - right[i + 2];
-      float d3 = left[i + 3] - right[i + 3];
+      double d0 = static_cast<double>(left[i]) - right[i];
+      double d1 = static_cast<double>(left[i + 1]) - right[i + 1];
+      double d2 = static_cast<double>(left[i + 2]) - right[i + 2];
+      double d3 = static_cast<double>(left[i + 3]) - right[i + 3];
       s0 += d0 * d0;
       s1 += d1 * d1;
       s2 += d2 * d2;
       s3 += d3 * d3;
     }
-    float sum = s0 + s1 + s2 + s3;
+    double sum = s0 + s1 + s2 + s3;
     for (; i < size; ++i) {
-      const float difference = left[i] - right[i];
+      const double difference = static_cast<double>(left[i]) - right[i];
       sum += difference * difference;
     }
     return static_cast<double>(sum);
@@ -2460,8 +2852,16 @@ std::vector<std::string> splitStatements(std::string_view input) {
   return statements;
 }
 
-void printResult(const ExecResult &result, const std::optional<std::string> &marker) {
+void printResult(const ExecResult &result, const std::optional<std::string> &marker,
+                 bool column_header) {
   if (result.select) {
+    if (column_header) {
+      std::cout << "COLUMNS";
+      for (const std::string &column : result.columns) {
+        std::cout << '\t' << column;
+      }
+      std::cout << '\n';
+    }
     for (const auto &row : result.rows) {
       for (size_t i = 0; i < row.size(); ++i) {
         if (i != 0) {
@@ -2525,6 +2925,7 @@ struct Options {
   fs::path data_dir = "/data";
   bool ann = false;
   bool numeric_errors = false;
+  bool column_header = false;
   std::optional<std::string> marker;
   std::optional<std::string> startup_marker;
 };
@@ -2565,11 +2966,13 @@ Options parseOptions(int argc, char **argv) {
       options.startup_marker = argv[++i];
     } else if (argument == "--numeric-errors") {
       options.numeric_errors = true;
+    } else if (argument == "--column-header") {
+      options.column_header = true;
     } else if (argument == "--help" || argument == "-h") {
       std::cout
           << "Usage: minivectordb [--data-dir PATH] [--vector-mode exact|ann]\n"
              "       [--ready-marker TOKEN] [--startup-marker TOKEN]\n"
-             "       [--numeric-errors]\n";
+             "       [--numeric-errors] [--column-header]\n";
       std::exit(0);
     } else {
       fail("UNSUPPORTED", "unknown command-line argument '" + argument + "'");
@@ -2606,7 +3009,7 @@ int run(int argc, char **argv) {
       return;
     }
     try {
-      printResult(database.execute(sql), options.marker);
+      printResult(database.execute(sql), options.marker, options.column_header);
     } catch (const DBError &error) {
       printError(error, options.numeric_errors, options.marker);
     } catch (const std::exception &error) {
@@ -2689,6 +3092,10 @@ int run(int argc, char **argv) {
 }  // namespace mvd
 
 int main(int argc, char **argv) {
+  // Responses explicitly flush stdout. Avoid flushing it, and synchronizing
+  // with C stdio, for every get()/peek() while reading a SQL request.
+  std::ios::sync_with_stdio(false);
+  std::cin.tie(nullptr);
   try {
     return mvd::run(argc, argv);
   } catch (const mvd::DBError &error) {

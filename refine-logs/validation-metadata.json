@@ -1,0 +1,130 @@
+{
+  "schema_version": "minivectordb-validation-v1",
+  "recorded_at": "2026-11-09T18:22:45+08:00",
+  "branch": "2026-competition-round2",
+  "official_baseline_commit": "a3dba559c1e7ebdc48bc990ffb1a4c75d1c1075c",
+  "local_comparison_commit": "3659b39d6de0537fb81bd08a70b6f580c4e26f37",
+  "official_remote_verified": "2026-11-09",
+  "official_baseline_is_ancestor": true,
+  "official_mysqltest_unchanged": true,
+  "hash_scope": "SHA256 of local worktree bytes, before Git line-ending normalization; executable bytes checked against final reports",
+  "sha256": {
+    "bench/results/comparison-submit.json": "75c21104a1fcc791c608e061ba53281a740965c5b6f65f99ec4cb0b34555a61b",
+    "tests/test_public_harness.py": "ec539a5c2f179a72cd598c7ce836a697c79967a1cc2102df640948fbedf8fc88",
+    "tests/test_hidden_edges.py": "1dee60223cd20891c7bfe1013748557d97c0f19ff2fe2ae8a21b6852ede3a960",
+    "bench/evaluate.py": "2aba46411263b05bcbfbb2b0dd77a8b65894da6c797d22f6b2429bd97feb64ac",
+    "src/minivectordb.cpp": "a803f1ba69ee2a602850390d7b81dc552a00814ecb0bf1a56e24b3ffad3caf19",
+    "tests/test_extended.py": "d75f16ab2cb04823285661290eb8c1e84ff4b459bc2695a1eda14d8712792b3a",
+    "tests/run_public.py": "4f6234254c42dc974d87fa491ba25b2118e892c374c1de04183fb3eead3c8a74",
+    "build/minivectordb.exe": "020d7c11b4a0e56ac5c2f3ca88bfcc16de7c6311e653ae49233084d27717142d",
+    "tests/test_disk_scan.py": "ea7949b98b55aa03a166690f1fdb20e9a10756c59a62bd14a7a1b883fcef9fa7",
+    "bench/results/comparison-disk-submit.json": "55f32256b29e36130bc0ece86332ba3c4ec20f6257e88243a14713b288c7ff2b",
+    "build/scalar/minivectordb.exe": "0e0c0b49cc614cd0fbfe5cb2080dccf571160fb9dfb0b50a6719469f78ce783a",
+    "build/baseline/minivectordb.exe": "a6e36e481dd699863b56a42133e8d3e223391f87998d40a0db1239b3d274bb23",
+    "Dockerfile": "55b84045ddfe9a9f99e68e913382d59716a40941f1de37e0fa972d8a90953438",
+    "tests/test_exact_distance.py": "e20e78c7bc867603998c9a2f41473ac946b263d367fb7bd5dbd7e80679de5338",
+    "CMakeLists.txt": "1ef43344a83e2e968522087f221f7fa7ef5f027ef540861b8c6a86d494854189",
+    "tests/test_differential.py": "bea23e1d05a2d1d59b40045e9f8e958734966e6cbaccdb877599923728381e03",
+    "tests/test_semantics.py": "a692de3b8980eaa44930f2ff24ad2d2fe9dbcd9b0659f291a48ec16668d26742",
+    "refine-logs/validation-submit.txt": "ddb42d5abd2420a1486a2d734914c22c4a112d9d899b5cbe021e0d4f49948591"
+  },
+  "build": {
+    "platform": "Windows x86_64",
+    "compiler": "GNU 16.2.0 (MinGW)",
+    "build_system": "CMake/Ninja Release; -O3 -DNDEBUG; static-libstdc++ and static-libgcc",
+    "default_commands": [
+      "cmake --build build --parallel 2"
+    ],
+    "scalar_commands": [
+      "cmake -S . -B build/scalar -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-DMVD_FORCE_SCALAR",
+      "cmake --build build/scalar --parallel 2"
+    ],
+    "scalar_notice": "Bypasses explicit AVX2/FMA distance dispatch; not a global guarantee that every dependency contains no AVX."
+  },
+  "validation": {
+    "log": "refine-logs/validation-submit.txt",
+    "both_default_and_scalar": {
+      "public_groups": 5,
+      "public_sql": 32,
+      "hidden_edge_tests": 17,
+      "differential_cases": 12,
+      "differential_sql": 6070,
+      "differential_query_mismatches": 0,
+      "exact_database_tests": 6,
+      "exact_sql": 497,
+      "exact_order_selects": 416,
+      "extended": "PASS",
+      "semantics": "PASS",
+      "disk_scan": "PASS"
+    },
+    "default_random_stress": {
+      "seeds": [
+        13,
+        2147483647,
+        20261123
+      ],
+      "steps_per_seed": 4000,
+      "sql": [
+        9027,
+        8995,
+        8977
+      ],
+      "total_sql": 26999,
+      "query_mismatches": 0
+    },
+    "oracle_self_checks": 2,
+    "harness_mock_tests": 3,
+    "result": "PASS"
+  },
+  "performance": {
+    "full_report": "bench/results/comparison-submit.json",
+    "disk_report": "bench/results/comparison-disk-submit.json",
+    "full_parameters": {
+      "batch": 100,
+      "dim": 128,
+      "k": 10,
+      "queries": 1000,
+      "rows": 10000,
+      "runs": 3,
+      "seed": 20261109,
+      "timeout": 60
+    },
+    "disk_parameters": {
+      "batch": 100,
+      "dim": 128,
+      "k": 10,
+      "queries": 40,
+      "rows": 3000,
+      "runs": 3,
+      "seed": 20261109,
+      "timeout": 60
+    },
+    "disk_row_cache_mib": 1,
+    "full_status": "passed",
+    "disk_status": "passed",
+    "all_queries_checked": true,
+    "all_persistence_columns_and_vectors_checked": true,
+    "recall_both_groups_each_run": 1,
+    "full_ratio_of_medians": {
+      "write": 5.586110073911396,
+      "query": 1.849955173673281
+    },
+    "disk_query_ratio_of_medians": 18.667413273510128,
+    "metric_scope": "local request/response wall time; Windows process CPU/memory/IO diagnostics only; not official physical IO, cgroup memory or score"
+  },
+  "review": {
+    "same_model_subagents": "Completed focused code and independent-oracle reviews",
+    "formal_aris_cross_model": "REVIEW_UNAVAILABLE: required reviewer MCP backend unavailable"
+  },
+  "not_run": [
+    "Official hidden cases / complete driver",
+    "Docker build and Linux x86_64 execution",
+    "Linux cgroup v2 physical IO / memory.peak / resource-limited recovery",
+    "Official E, rank or submission"
+  ],
+  "correctness_limitations": [
+    "Unknown official hidden inputs are not proven to pass.",
+    "Row cache can fall back to disk; PK metadata, committed-ID set, transaction overlays and unlimited result sets remain memory-resident.",
+    "Original double reference produced 16 false-tie mismatches; failed log retained; independent integer/Fraction oracle strengthened without dropping assertions."
+  ]
+}

@@ -1,0 +1,48 @@
+COMMAND: python -X utf8 -B tests/run_public.py build/minivectordb.exe
+PASS sql_crud
+PASS sql_comparisons
+PASS sql_ordering
+PASS sql_empty
+PASS vector_euclidean
+PASS 5 public cases
+COMMAND: python -X utf8 -B tests/test_extended.py build/minivectordb.exe
+PASS extended transaction, vector, persistence, and recovery tests
+COMMAND: python -X utf8 -B tests/test_semantics.py build/minivectordb.exe
+PASS SQL boundary, atomicity, and error semantics
+COMMAND: python -X utf8 -B tests/test_disk_scan.py build/minivectordb.exe
+PASS out-of-cache disk scan and filtered TopK
+COMMAND: python -X utf8 -B tests/test_hidden_edges.py build/minivectordb.exe
+test_recovery_does_not_reuse_cross_table_txid (__main__.HiddenEdges.test_recovery_does_not_reuse_cross_table_txid)
+Simulated interrupted-commit storage fixture, not a real process crash. ... ok
+test_large_finite_distances (__main__.HiddenEdges.test_large_finite_distances) ... ok
+test_tiny_distances_preserve_exact_topk (__main__.HiddenEdges.test_tiny_distances_preserve_exact_topk) ... ok
+test_near_distances_are_not_false_ties (__main__.HiddenEdges.test_near_distances_are_not_false_ties) ... ok
+test_topk_respects_all_order_keys_and_offset (__main__.HiddenEdges.test_topk_respects_all_order_keys_and_offset) ... ok
+test_ordinary_aliases_keep_the_source_column (__main__.HiddenEdges.test_ordinary_aliases_keep_the_source_column) ... ok
+test_where_literals_can_exceed_varchar_length (__main__.HiddenEdges.test_where_literals_can_exceed_varchar_length) ... ok
+test_long_where_literals_in_update_and_delete (__main__.HiddenEdges.test_long_where_literals_in_update_and_delete) ... ok
+test_varchar_write_lengths_remain_enforced (__main__.HiddenEdges.test_varchar_write_lengths_remain_enforced) ... ok
+test_query_edges_invalid_create_is_atomic (__main__.HiddenEdges.test_query_edges_invalid_create_is_atomic) ... ok
+test_query_edges_null_writes_are_statement_atomic (__main__.HiddenEdges.test_query_edges_null_writes_are_statement_atomic) ... ok
+test_query_edges_unprojected_distance_orders (__main__.HiddenEdges.test_query_edges_unprojected_distance_orders) ... ok
+test_query_edges_maximum_limit_and_offset (__main__.HiddenEdges.test_query_edges_maximum_limit_and_offset) ... ok
+test_query_edges_vector_order_is_always_rejected (__main__.HiddenEdges.test_query_edges_vector_order_is_always_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.575s
+
+OK
+COMMAND: python -X utf8 -B tests/test_differential.py build/minivectordb.exe
+PASS case=random seed=7 dim=4 statements=850
+PASS case=random seed=429 dim=8 statements=828
+PASS case=random seed=20261109 dim=33 statements=849
+PASS case=semantics seed=7 dim=4 statements=319
+PASS case=numeric seed=20261109 dim=1 statements=403
+PASS case=numeric seed=20261109 dim=3 statements=403
+PASS case=numeric seed=20261109 dim=4 statements=403
+PASS case=numeric seed=20261109 dim=8 statements=403
+PASS case=numeric seed=20261109 dim=31 statements=403
+PASS case=numeric seed=20261109 dim=32 statements=403
+PASS case=numeric seed=20261109 dim=33 statements=403
+PASS case=numeric seed=20261109 dim=128 statements=403
+PASS differential: 12/12 cases, 6070 SQL statements, 0 query mismatches

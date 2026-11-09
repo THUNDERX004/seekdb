@@ -1,0 +1,5 @@
+PASS exact distance oracle: 1D large-probe order and Fraction boundaries
+PASS case=random seed=13 dim=8 statements=9027
+PASS case=random seed=2147483647 dim=8 statements=8995
+PASS case=random seed=20261123 dim=33 statements=8977
+PASS differential: 3/3 cases, 26999 SQL statements, 0 query mismatches

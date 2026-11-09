@@ -1,0 +1,150 @@
+COMMAND: python -X utf8 -B tests/run_public.py build/minivectordb.exe
+PASS sql_crud
+PASS sql_comparisons
+PASS sql_ordering
+PASS sql_empty
+PASS vector_euclidean
+PASS 5 public cases
+COMMAND: python -X utf8 -B tests/test_extended.py build/minivectordb.exe
+PASS extended transaction, vector, persistence, and recovery tests
+COMMAND: python -X utf8 -B tests/test_semantics.py build/minivectordb.exe
+PASS SQL boundary, atomicity, and error semantics
+COMMAND: python -X utf8 -B tests/test_disk_scan.py build/minivectordb.exe
+PASS out-of-cache disk scan and filtered TopK
+COMMAND: python -X utf8 -B tests/test_hidden_edges.py build/minivectordb.exe
+test_recovery_does_not_reuse_cross_table_txid (__main__.HiddenEdges.test_recovery_does_not_reuse_cross_table_txid)
+Simulated interrupted-commit storage fixture, not a real process crash. ... ok
+test_large_finite_distances (__main__.HiddenEdges.test_large_finite_distances) ... ok
+test_tiny_distances_preserve_exact_topk (__main__.HiddenEdges.test_tiny_distances_preserve_exact_topk) ... ok
+test_near_distances_are_not_false_ties (__main__.HiddenEdges.test_near_distances_are_not_false_ties) ... ok
+test_mixed_scale_16d_order_is_kernel_independent (__main__.HiddenEdges.test_mixed_scale_16d_order_is_kernel_independent) ... ok
+test_exact_order_when_double_and_fsum_tie (__main__.HiddenEdges.test_exact_order_when_double_and_fsum_tie) ... ok
+test_exact_key_maximum_subnormal_and_cancellation (__main__.HiddenEdges.test_exact_key_maximum_subnormal_and_cancellation) ... ok
+test_topk_respects_all_order_keys_and_offset (__main__.HiddenEdges.test_topk_respects_all_order_keys_and_offset) ... ok
+test_ordinary_aliases_keep_the_source_column (__main__.HiddenEdges.test_ordinary_aliases_keep_the_source_column) ... ok
+test_where_literals_can_exceed_varchar_length (__main__.HiddenEdges.test_where_literals_can_exceed_varchar_length) ... ok
+test_long_where_literals_in_update_and_delete (__main__.HiddenEdges.test_long_where_literals_in_update_and_delete) ... ok
+test_varchar_write_lengths_remain_enforced (__main__.HiddenEdges.test_varchar_write_lengths_remain_enforced) ... ok
+test_query_edges_invalid_create_is_atomic (__main__.HiddenEdges.test_query_edges_invalid_create_is_atomic) ... ok
+test_query_edges_null_writes_are_statement_atomic (__main__.HiddenEdges.test_query_edges_null_writes_are_statement_atomic) ... ok
+test_query_edges_unprojected_distance_orders (__main__.HiddenEdges.test_query_edges_unprojected_distance_orders) ... ok
+test_query_edges_maximum_limit_and_offset (__main__.HiddenEdges.test_query_edges_maximum_limit_and_offset) ... ok
+test_query_edges_vector_order_is_always_rejected (__main__.HiddenEdges.test_query_edges_vector_order_is_always_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.678s
+
+OK
+COMMAND: python -X utf8 -B tests/test_differential.py build/minivectordb.exe
+PASS exact distance oracle: 1D large-probe order and Fraction boundaries
+PASS case=random seed=7 dim=4 statements=850
+PASS case=random seed=429 dim=8 statements=828
+PASS case=random seed=20261109 dim=33 statements=849
+PASS case=semantics seed=7 dim=4 statements=319
+PASS case=numeric seed=20261109 dim=1 statements=403
+PASS case=numeric seed=20261109 dim=3 statements=403
+PASS case=numeric seed=20261109 dim=4 statements=403
+PASS case=numeric seed=20261109 dim=8 statements=403
+PASS case=numeric seed=20261109 dim=31 statements=403
+PASS case=numeric seed=20261109 dim=32 statements=403
+PASS case=numeric seed=20261109 dim=33 statements=403
+PASS case=numeric seed=20261109 dim=128 statements=403
+PASS differential: 12/12 cases, 6070 SQL statements, 0 query mismatches
+COMMAND: python -X utf8 -B tests/run_public.py build/scalar/minivectordb.exe
+PASS sql_crud
+PASS sql_comparisons
+PASS sql_ordering
+PASS sql_empty
+PASS vector_euclidean
+PASS 5 public cases
+COMMAND: python -X utf8 -B tests/test_extended.py build/scalar/minivectordb.exe
+PASS extended transaction, vector, persistence, and recovery tests
+COMMAND: python -X utf8 -B tests/test_semantics.py build/scalar/minivectordb.exe
+PASS SQL boundary, atomicity, and error semantics
+COMMAND: python -X utf8 -B tests/test_disk_scan.py build/scalar/minivectordb.exe
+PASS out-of-cache disk scan and filtered TopK
+COMMAND: python -X utf8 -B tests/test_hidden_edges.py build/scalar/minivectordb.exe
+test_recovery_does_not_reuse_cross_table_txid (__main__.HiddenEdges.test_recovery_does_not_reuse_cross_table_txid)
+Simulated interrupted-commit storage fixture, not a real process crash. ... ok
+test_large_finite_distances (__main__.HiddenEdges.test_large_finite_distances) ... ok
+test_tiny_distances_preserve_exact_topk (__main__.HiddenEdges.test_tiny_distances_preserve_exact_topk) ... ok
+test_near_distances_are_not_false_ties (__main__.HiddenEdges.test_near_distances_are_not_false_ties) ... ok
+test_mixed_scale_16d_order_is_kernel_independent (__main__.HiddenEdges.test_mixed_scale_16d_order_is_kernel_independent) ... ok
+test_exact_order_when_double_and_fsum_tie (__main__.HiddenEdges.test_exact_order_when_double_and_fsum_tie) ... ok
+test_exact_key_maximum_subnormal_and_cancellation (__main__.HiddenEdges.test_exact_key_maximum_subnormal_and_cancellation) ... ok
+test_topk_respects_all_order_keys_and_offset (__main__.HiddenEdges.test_topk_respects_all_order_keys_and_offset) ... ok
+test_ordinary_aliases_keep_the_source_column (__main__.HiddenEdges.test_ordinary_aliases_keep_the_source_column) ... ok
+test_where_literals_can_exceed_varchar_length (__main__.HiddenEdges.test_where_literals_can_exceed_varchar_length) ... ok
+test_long_where_literals_in_update_and_delete (__main__.HiddenEdges.test_long_where_literals_in_update_and_delete) ... ok
+test_varchar_write_lengths_remain_enforced (__main__.HiddenEdges.test_varchar_write_lengths_remain_enforced) ... ok
+test_query_edges_invalid_create_is_atomic (__main__.HiddenEdges.test_query_edges_invalid_create_is_atomic) ... ok
+test_query_edges_null_writes_are_statement_atomic (__main__.HiddenEdges.test_query_edges_null_writes_are_statement_atomic) ... ok
+test_query_edges_unprojected_distance_orders (__main__.HiddenEdges.test_query_edges_unprojected_distance_orders) ... ok
+test_query_edges_maximum_limit_and_offset (__main__.HiddenEdges.test_query_edges_maximum_limit_and_offset) ... ok
+test_query_edges_vector_order_is_always_rejected (__main__.HiddenEdges.test_query_edges_vector_order_is_always_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.671s
+
+OK
+COMMAND: python -X utf8 -B tests/test_differential.py build/scalar/minivectordb.exe
+PASS exact distance oracle: 1D large-probe order and Fraction boundaries
+PASS case=random seed=7 dim=4 statements=850
+PASS case=random seed=429 dim=8 statements=828
+PASS case=random seed=20261109 dim=33 statements=849
+PASS case=semantics seed=7 dim=4 statements=319
+PASS case=numeric seed=20261109 dim=1 statements=403
+PASS case=numeric seed=20261109 dim=3 statements=403
+PASS case=numeric seed=20261109 dim=4 statements=403
+PASS case=numeric seed=20261109 dim=8 statements=403
+PASS case=numeric seed=20261109 dim=31 statements=403
+PASS case=numeric seed=20261109 dim=32 statements=403
+PASS case=numeric seed=20261109 dim=33 statements=403
+PASS case=numeric seed=20261109 dim=128 statements=403
+PASS differential: 12/12 cases, 6070 SQL statements, 0 query mismatches
+test_exact_identities_and_double_collision (__main__.OracleTests.test_exact_identities_and_double_collision) ... ok
+test_float32_roundtrip_and_lattice (__main__.OracleTests.test_float32_roundtrip_and_lattice) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+OK
+Running default: D:\Projects\OceanBase\seekdb-minivectordb\build\minivectordb.exe
+test_carry_borrow_and_extreme_exponent_mixture (__main__.ExactDistanceTests.test_carry_borrow_and_extreme_exponent_mixture) ... ok
+test_common_large_component_has_distinct_exact_topk (__main__.ExactDistanceTests.test_common_large_component_has_distinct_exact_topk) ... ok
+test_opposite_signs_and_nonzero_tiny_probes (__main__.ExactDistanceTests.test_opposite_signs_and_nonzero_tiny_probes) ... ok
+test_seeded_bit_patterns_cover_simd_blocks_and_tails (__main__.ExactDistanceTests.test_seeded_bit_patterns_cover_simd_blocks_and_tails) ... ok
+test_subnormal_boundaries_and_signed_zero (__main__.ExactDistanceTests.test_subnormal_boundaries_and_signed_zero) ... ok
+test_true_distance_ties_use_secondary_keys_then_pk (__main__.ExactDistanceTests.test_true_distance_ties_use_secondary_keys_then_pk) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.217s
+
+OK
+PASS default: 6 database tests, 497 SQL statements, 416 exact-order SELECTs
+Running scalar: D:\Projects\OceanBase\seekdb-minivectordb\build\scalar\minivectordb.exe
+test_carry_borrow_and_extreme_exponent_mixture (__main__.ExactDistanceTests.test_carry_borrow_and_extreme_exponent_mixture) ... ok
+test_common_large_component_has_distinct_exact_topk (__main__.ExactDistanceTests.test_common_large_component_has_distinct_exact_topk) ... ok
+test_opposite_signs_and_nonzero_tiny_probes (__main__.ExactDistanceTests.test_opposite_signs_and_nonzero_tiny_probes) ... ok
+test_seeded_bit_patterns_cover_simd_blocks_and_tails (__main__.ExactDistanceTests.test_seeded_bit_patterns_cover_simd_blocks_and_tails) ... ok
+test_subnormal_boundaries_and_signed_zero (__main__.ExactDistanceTests.test_subnormal_boundaries_and_signed_zero) ... ok
+test_true_distance_ties_use_secondary_keys_then_pk (__main__.ExactDistanceTests.test_true_distance_ties_use_secondary_keys_then_pk) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.213s
+
+OK
+PASS scalar: 6 database tests, 497 SQL statements, 416 exact-order SELECTs
+test_affected_rows_and_rows_are_not_ignored (__main__.PublicHarnessTests.test_affected_rows_and_rows_are_not_ignored) ... ok
+test_column_names_are_compared_even_for_empty_results (__main__.PublicHarnessTests.test_column_names_are_compared_even_for_empty_results) ... ok
+test_empty_expectation_does_not_hide_control_error (__main__.PublicHarnessTests.test_empty_expectation_does_not_hide_control_error) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.052s
+
+OK
+PASS exact distance oracle: 1D large-probe order and Fraction boundaries
+PASS case=random seed=13 dim=8 statements=9027
+PASS case=random seed=2147483647 dim=8 statements=8995
+PASS case=random seed=20261123 dim=33 statements=8977
+PASS differential: 3/3 cases, 26999 SQL statements, 0 query mismatches

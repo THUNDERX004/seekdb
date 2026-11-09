@@ -1,0 +1,16 @@
+{
+  "dim": 128,
+  "k": 10,
+  "queries": 1000,
+  "queries_per_second": 3403.71,
+  "query_rows": 10000,
+  "query_seconds": 0.293797,
+  "recall": {
+    "filtered": 1.0,
+    "sample_queries": 25,
+    "unfiltered": 1.0
+  },
+  "rows": 10000,
+  "rows_per_second": 9611.61,
+  "write_seconds": 1.040408
+}

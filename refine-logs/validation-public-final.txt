@@ -1,0 +1,6 @@
+PASS sql_crud
+PASS sql_comparisons
+PASS sql_ordering
+PASS sql_empty
+PASS vector_euclidean
+PASS 5 public cases

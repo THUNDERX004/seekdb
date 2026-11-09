@@ -1,0 +1,33 @@
+test_exact_identities_and_double_collision (__main__.OracleTests.test_exact_identities_and_double_collision) ... ok
+test_float32_roundtrip_and_lattice (__main__.OracleTests.test_float32_roundtrip_and_lattice) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.002s
+
+OK
+Running default: D:\Projects\OceanBase\seekdb-minivectordb\build\minivectordb.exe
+test_carry_borrow_and_extreme_exponent_mixture (__main__.ExactDistanceTests.test_carry_borrow_and_extreme_exponent_mixture) ... ok
+test_common_large_component_has_distinct_exact_topk (__main__.ExactDistanceTests.test_common_large_component_has_distinct_exact_topk) ... ok
+test_opposite_signs_and_nonzero_tiny_probes (__main__.ExactDistanceTests.test_opposite_signs_and_nonzero_tiny_probes) ... ok
+test_seeded_bit_patterns_cover_simd_blocks_and_tails (__main__.ExactDistanceTests.test_seeded_bit_patterns_cover_simd_blocks_and_tails) ... ok
+test_subnormal_boundaries_and_signed_zero (__main__.ExactDistanceTests.test_subnormal_boundaries_and_signed_zero) ... ok
+test_true_distance_ties_use_secondary_keys_then_pk (__main__.ExactDistanceTests.test_true_distance_ties_use_secondary_keys_then_pk) ... ok
+PASS default: 6 database tests, 497 SQL statements, 416 exact-order SELECTs
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.244s
+
+OK
+Running scalar: D:\Projects\OceanBase\seekdb-minivectordb\build\scalar\minivectordb.exe
+test_carry_borrow_and_extreme_exponent_mixture (__main__.ExactDistanceTests.test_carry_borrow_and_extreme_exponent_mixture) ... ok
+test_common_large_component_has_distinct_exact_topk (__main__.ExactDistanceTests.test_common_large_component_has_distinct_exact_topk) ... ok
+test_opposite_signs_and_nonzero_tiny_probes (__main__.ExactDistanceTests.test_opposite_signs_and_nonzero_tiny_probes) ... ok
+test_seeded_bit_patterns_cover_simd_blocks_and_tails (__main__.ExactDistanceTests.test_seeded_bit_patterns_cover_simd_blocks_and_tails) ... ok
+test_subnormal_boundaries_and_signed_zero (__main__.ExactDistanceTests.test_subnormal_boundaries_and_signed_zero) ... ok
+test_true_distance_ties_use_secondary_keys_then_pk (__main__.ExactDistanceTests.test_true_distance_ties_use_secondary_keys_then_pk) ... ok
+PASS scalar: 6 database tests, 497 SQL statements, 416 exact-order SELECTs
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.235s
+
+OK

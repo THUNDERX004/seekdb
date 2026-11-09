@@ -1,0 +1,8 @@
+test_affected_rows_and_rows_are_not_ignored (__main__.PublicHarnessTests.test_affected_rows_and_rows_are_not_ignored) ... ok
+test_column_names_are_compared_even_for_empty_results (__main__.PublicHarnessTests.test_column_names_are_compared_even_for_empty_results) ... ok
+test_empty_expectation_does_not_hide_control_error (__main__.PublicHarnessTests.test_empty_expectation_does_not_hide_control_error) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.094s
+
+OK
