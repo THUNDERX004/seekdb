@@ -1,0 +1,23 @@
+evidence_data=C:\Users\11946\AppData\Local\Temp\mvd-catalog-before-06c6c212c75e488286746006e3ee85ab
+[minivectordb] ready data_dir=C:\Users\11946\AppData\Local\Temp\mvd-catalog-before-06c6c212c75e488286746006e3ee85ab mode=exact
+OK
+END
+OK 1
+END
+[minivectordb] ready data_dir=C:\Users\11946\AppData\Local\Temp\mvd-catalog-before-06c6c212c75e488286746006e3ee85ab mode=exact
+ERROR INTERNAL_ERROR: std::bad_alloc
+END
+ERROR UNKNOWN_TABLE: unknown table 'unexpected'
+END
+OK 1
+END
+1
+2
+END
+fault_exit=0
+[minivectordb] ready data_dir=C:\Users\11946\AppData\Local\Temp\mvd-catalog-before-06c6c212c75e488286746006e3ee85ab mode=exact
+END
+1
+2
+END
+reload_exit=0

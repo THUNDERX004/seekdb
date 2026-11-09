@@ -55,6 +55,9 @@ def main():
         ("commit-failure-regressions", [sys.executable, "-X", "utf8", "-B",
                                         str(root / "tests/test_commit_publication.py"),
                                         str(binaries["normal"]), str(binaries["fault"])]),
+        ("catalog-failure-regressions", [sys.executable, "-X", "utf8", "-B",
+                                         str(root / "tests/test_catalog_publication.py"),
+                                         str(binaries["normal"]), str(binaries["fault"])]),
         ("normal/long-random", [sys.executable, "-X", "utf8", "-B",
                                str(root / "tests/test_differential.py"),
                                str(binaries["normal"]), "--case", "random",
@@ -79,6 +82,7 @@ def main():
               "runs": []}
     environment = os.environ.copy()
     for key in ("MVD_TEST_FAIL_COMMIT_PUBLICATION", "MVD_TEST_FAIL_WAL_APPEND",
+                "MVD_TEST_FAIL_CATALOG_APPEND", "MVD_TEST_FAIL_CATALOG_PUBLICATION",
                 "MVD_CACHE_LIMIT_MB"):
         environment.pop(key, None)
     transcript = []

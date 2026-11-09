@@ -144,12 +144,12 @@ class DBError : public std::runtime_error {
   std::string code_;
 };
 
-// Once a commit has started writing, an exceptional partial in-memory publish
-// must never be followed by another request. Restart replays the atomic WAL.
+// Once a commit or catalog append has started writing, an exceptional partial
+// publication must not be followed by another request. Restart recovers files.
 class RecoveryRequired : public std::exception {
  public:
   const char *what() const noexcept override {
-    return "commit interrupted by an internal failure; restart required";
+    return "durable write interrupted by an internal failure; restart required";
   }
 };
 
@@ -2160,9 +2160,29 @@ class Database {
   }
 
   void appendCatalog(const TableDef &definition) {
+    auto record = encodeCatalogRecord(definition);
     FileWriter writer(data_dir_ / "catalog.bin");
-    writer.append(encodeCatalogRecord(definition));
-    writer.sync();
+    try {
+#ifdef MVD_TEST_FAULTS
+      if (std::getenv("MVD_TEST_FAIL_CATALOG_APPEND") != nullptr) {
+        record.resize(record.size() / 2);
+        writer.append(record);
+        writer.sync();
+        throw std::bad_alloc();
+      }
+#endif
+      writer.append(record);
+      writer.sync();
+#ifdef MVD_TEST_FAULTS
+      if (std::getenv("MVD_TEST_FAIL_CATALOG_PUBLICATION") != nullptr) {
+        throw std::bad_alloc();
+      }
+#endif
+    } catch (...) {
+      // A short append or failed sync may leave a complete or torn record.
+      // Continuing could publish metadata that recovery cannot safely replay.
+      throw RecoveryRequired();
+    }
   }
 
   ExecResult createTable(TableDef definition) {

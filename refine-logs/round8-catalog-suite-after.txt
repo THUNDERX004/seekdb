@@ -1,0 +1,13 @@
+PASS table-torn-fail-stop: writer exit=1; complete transcript, catalog, and rows checked through two normal restarts
+PASS table-full-fail-stop: writer exit=1; complete transcript, catalog, and rows checked through two normal restarts
+PASS table-normal-without-env: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts
+PASS table-fault-build-without-env: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts
+PASS table-normal-ignores-torn: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts
+PASS table-normal-ignores-full: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts
+PASS index-torn-fail-stop: writer exit=1; complete transcript, catalog, and rows checked through two normal restarts
+PASS index-full-fail-stop: writer exit=1; complete transcript, catalog, and rows checked through two normal restarts
+PASS index-normal-without-env: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts
+PASS index-fault-build-without-env: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts
+PASS index-normal-ignores-torn: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts
+PASS index-normal-ignores-full: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts
+PASS catalog publication: 12 cases, 48 child processes, 0.670s total

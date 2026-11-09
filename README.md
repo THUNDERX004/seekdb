@@ -24,6 +24,13 @@ The container runs in the foreground and does not open a network port.
 
 ## Protocol
 
+The following describes this implementation and its local test adapter, not
+a confirmed official wire contract. The available official mysqltest package
+specifies SQL files and JSON expected-result assertions but explicitly omits
+the complete process driver. Its .result JSON is not a stdout encoding.
+Official compatibility still requires checking that companion driver's
+framing, result fields, errors, readiness and shutdown against this program.
+
 - Input is UTF-8 SQL over stdin. Statements end with `;` and may span lines.
 - A complete statement responds immediately at its semicolon; an extra newline
   or EOF is not required. Empty/comment-only input produces no response.
@@ -135,8 +142,9 @@ The full local validator accepts optional --allocation-normal and
   checkpoint implementation.
 - Approximate indexing is intentionally replaced by exact search for the first
   correctness-complete submission.
-- The official hidden cases, complete driver, and official baseline are not yet
-  public, so formal evaluation cannot be reproduced locally.
+- The available official package withholds nine groups' inputs and does not
+  include the complete process driver or frozen resource configuration.
+  Local public-case success therefore does not establish formal acceptance.
 
 ## Statement-validation corrections (2026-11-09)
 

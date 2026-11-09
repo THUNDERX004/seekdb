@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_catalog_publication.py", line 252, in <module>
+    main()
+    ~~~~^^
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_catalog_publication.py", line 239, in main
+    run_case(root, normal, fault, ddl, f"{ddl}-{phase}-fail-stop",
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+             fault_env=hook, fatal=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_catalog_publication.py", line 184, in run_case
+    code = run_process(writer, data_dir, prefix + [target] + suffix, label,
+                       fault_env=fault_env, stopped_before=prefix if fatal else None)
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_catalog_publication.py", line 119, in run_process
+    raise AssertionError(
+    ...<3 lines>...
+    )
+AssertionError: table-torn-fail-stop: expected nonzero exit, got 0; stderr='[minivectordb] ready data_dir=C:\\Users\\11946\\AppData\\Local\\Temp\\mvd-catalog-publication-jt_mhjwl\\table-torn-fail-stop mode=exact\n'; stdout="__CATALOG_PUBLICATION_READY__\nOK\n__CATALOG_PUBLICATION_END__\nOK 1\n__CATALOG_PUBLICATION_END__\n1\tpending-before-ddl\t[7,-8]\n2\tstable-two\t[-3,4]\n__CATALOG_PUBLICATION_END__\nERROR INTERNAL_ERROR: std::bad_alloc\n__CATALOG_PUBLICATION_END__\nOK 1\n__CATALOG_PUBLICATION_END__\nOK 1\n__CATALOG_PUBLICATION_END__\nOK\n__CATALOG_PUBLICATION_END__\nERROR INTERNAL_ERROR: std::bad_alloc\n__CATALOG_PUBLICATION_END__\nERROR UNKNOWN_TABLE: unknown table 'after_ddl'\n__CATALOG_PUBLICATION_END__\n1\tpending-before-ddl\t[7,-8]\n2\texecuted-after-ddl\t[8,9]\n99\tinserted-after-ddl\t[9,10]\n__CATALOG_PUBLICATION_END__\nERROR UNKNOWN_TABLE: unknown table 'after_ddl'\n__CATALOG_PUBLICATION_END__\nERROR UNKNOWN_TABLE: unknown table 'created'\n__CATALOG_PUBLICATION_END__\n"
