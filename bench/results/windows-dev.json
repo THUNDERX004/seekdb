@@ -1,0 +1,16 @@
+{
+  "dim": 128,
+  "exact_sampling": {
+    "filtered_recall_at_10": 1.0,
+    "queries_sampled": 25,
+    "unfiltered_recall_at_10": 1.0
+  },
+  "k": 10,
+  "platform": "Windows development host; not the official Linux/cgroup evaluator",
+  "queries": 1000,
+  "queries_per_second": 2580.86,
+  "query_seconds": 0.387468,
+  "rows": 10000,
+  "write_rows_per_second": 4832.21,
+  "write_seconds": 2.069445
+}

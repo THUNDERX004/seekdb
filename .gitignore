@@ -1,3 +1,7 @@
+############# MiniVectorDB local #############
+/build/
+/minivectordb.exe
+
 ############# root #############
 *.a
 *.bak

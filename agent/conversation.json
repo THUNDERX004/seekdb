@@ -1,0 +1,134 @@
+{
+  "schema_version": "agent-learning-evidence-input-v1",
+  "synthetic": false,
+  "material_notice": "This file preserves real competition-planning prompts and the corresponding implementation and test results. Agent-generated architecture and summaries are not represented as the student's own technical explanation.",
+  "student_prompts": [
+    {
+      "id": "p1",
+      "text": "题包是代码 还是什么文档说明  现在发布题包了吗",
+      "context": "The student was determining what the contest package contains and whether the public material was sufficient to begin implementation."
+    },
+    {
+      "id": "p2",
+      "text": "那这个分支需要我下到本地吗",
+      "context": "The student was deciding how to establish an isolated development checkout without disturbing existing work."
+    },
+    {
+      "id": "p3",
+      "text": "那你做吧 先全部通过用例和性能评测 设个目标模式",
+      "context": "The student set the implementation priority: functional admission first, followed by performance evaluation."
+    },
+    {
+      "id": "p4",
+      "text": "我没给你加预算限制啊 你再设个目标模式继续做",
+      "context": "The student identified that an unintended execution limit had been introduced and instructed that work continue without that restriction."
+    }
+  ],
+  "conversations": [
+    {
+      "id": "turn-001",
+      "role": "student",
+      "content": "题包是代码 还是什么文档说明  现在发布题包了吗"
+    },
+    {
+      "id": "turn-002",
+      "role": "agent",
+      "content": "The agent inspected the official branch and reported that the published package contained a README, manifest, and 32 public SQL assertions, while the complete driver, hidden cases, baseline, and prompt materials were not yet present."
+    },
+    {
+      "id": "turn-003",
+      "role": "student",
+      "content": "那这个分支需要我下到本地吗"
+    },
+    {
+      "id": "turn-004",
+      "role": "student",
+      "content": "那你做吧 先全部通过用例和性能评测 设个目标模式"
+    },
+    {
+      "id": "turn-005",
+      "role": "student",
+      "content": "我没给你加预算限制啊 你再设个目标模式继续做"
+    }
+  ],
+  "student_evidence": [
+    {
+      "id": "e1",
+      "dimension": "问题理解与自主拆解",
+      "level": 0.5,
+      "student_pointer": "/student_prompts/0/text",
+      "student_quote": "题包是代码 还是什么文档说明  现在发布题包了吗",
+      "result_pointer": "",
+      "result_quote": "",
+      "reason": "The student asked to distinguish a source branch from the evaluator package and checked whether the required protocol/test material had been released."
+    },
+    {
+      "id": "e2",
+      "dimension": "问题理解与自主拆解",
+      "level": 0.5,
+      "student_pointer": "/student_prompts/1/text",
+      "student_quote": "那这个分支需要我下到本地吗",
+      "result_pointer": "",
+      "result_quote": "",
+      "reason": "The student planned an isolated local checkout and asked whether that was required before implementation."
+    },
+    {
+      "id": "e3",
+      "dimension": "独立验证与质疑",
+      "level": 1.0,
+      "student_pointer": "/student_prompts/3/text",
+      "student_quote": "我没给你加预算限制啊 你再设个目标模式继续做",
+      "result_pointer": "/experiments/1/output",
+      "result_quote": "PASS extended transaction, vector, persistence, and recovery tests",
+      "reason": "The student caught an unintended execution limitation; after correction, the requested implementation work continued and the extended test suite supplied concrete output."
+    }
+  ],
+  "experiments": [
+    {
+      "id": "x1",
+      "name": "Public SQL admission samples",
+      "command": "python -X utf8 -B tests/run_public.py ./build/minivectordb.exe",
+      "output": "PASS sql_crud\nPASS sql_comparisons\nPASS sql_ordering\nPASS sql_empty\nPASS vector_euclidean\nPASS 5 public cases",
+      "conclusion": "All currently published public cases pass on the CMake Release build."
+    },
+    {
+      "id": "x2",
+      "name": "Transactions, filters, persistence, and forced termination",
+      "command": "python -X utf8 -B tests/test_extended.py ./build/minivectordb.exe",
+      "output": "PASS extended transaction, vector, persistence, and recovery tests",
+      "conclusion": "The extended test covers rollback, read-own-writes, statement atomicity, clean restart, forced termination, committed deletes, and mid-COMMIT all-or-none recovery."
+    },
+    {
+      "id": "x3",
+      "name": "SQL boundary and error semantics",
+      "command": "python -X utf8 -B tests/test_semantics.py ./build/minivectordb.exe",
+      "output": "PASS SQL boundary, atomicity, and error semantics",
+      "conclusion": "The test covers BIGINT minimum, Unicode length, invalid vectors, unknown columns, unsupported OR, failed statement atomicity, and restart persistence."
+    },
+    {
+      "id": "x4",
+      "name": "Out-of-cache disk scan",
+      "command": "python -X utf8 -B tests/test_disk_scan.py ./build/minivectordb.exe",
+      "output": "PASS out-of-cache disk scan and filtered TopK",
+      "conclusion": "With a 1 MiB cache, a 3000-row vector table is read back from disk and filtered TopK remains correct."
+    },
+    {
+      "id": "x5",
+      "name": "Local contest-shaped benchmark",
+      "command": "python -X utf8 -B bench/bench.py ./build/minivectordb.exe",
+      "output": "10000 rows, 128 dimensions, 1000 queries, K=10; write 2.069445 s, query 0.387468 s; sampled Recall@10 1.0 for filtered and unfiltered groups",
+      "conclusion": "This is a local Windows development measurement, not the official Linux cgroup result."
+    }
+  ],
+  "retrospective": {
+    "authored_by": "agent",
+    "not_counted_as_student_evidence": true,
+    "summary": "The implementation prioritizes the functional admission gate. Commit records are durable before success is returned, incomplete tails are truncated, and visible state is reconstructed only from committed transactions. Exact vector search avoids ANN recall risk."
+  },
+  "limitations": [
+    "The official hidden MySQL cases and complete test driver were not public at the time of this record.",
+    "A local Docker daemon was unavailable, so the Dockerfile was build-step reviewed and the same source was built with CMake, but docker build itself was not executed.",
+    "The benchmark values come from a Windows development host rather than the official Linux cgroup v2 evaluator.",
+    "The student author should add further original explanations, counterexamples, and experimental decisions as the work continues; this file does not invent such evidence."
+  ]
+}
