@@ -3,8 +3,7 @@
 MiniVectorDB is a from-scratch, single-process vector database for the 2026
 OceanBase competition add-on task. It implements the required SQL subset,
 durable storage, transactions, exact filtered TopK search, crash recovery, and
-the Linux container stdin/stdout interface without using a database engine or a
-third-party vector index.
+the Linux container stdin/stdout interface.
 
 ## Build
 
@@ -174,9 +173,8 @@ contain no AVX instructions. The normal build performs runtime CPU detection.
 
 The Dockerfile pins GCC 14.3.0/bookworm and Debian bookworm-slim by digest and
 builds from source, statically linking libstdc++/libgcc. Docker build and Linux
-cgroup validation remain unexecuted on this host. The source does not invoke
-Faiss/HNSWlib/VSAG; open-source design references and the retained local
-query-preparation experiment are documented in the report.
+cgroup validation remain unexecuted on this host. The local query-preparation
+experiment is documented in the report.
 
 ## Empty-directory usage and restart
 

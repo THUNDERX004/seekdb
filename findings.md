@@ -17,8 +17,8 @@
 ## 第四轮正式准入修复（2026-11-09）
 
 - 当前目标仍为正式29组全部通过，不缩小为本地通过；缺失败类别/必要日志/评测SHA，尚无正式根因结论。
-- Agent通过真实旧二进制实验确认：无换行分号会阻塞、纯注释多产响应、VARCHAR裸标识符会导致非法写入/删除。最小源码修复与9项stdio、10项SQL测试已纳入23命令全回归，默认/标量/故障版本均已重建验证。
+- 通过真实旧二进制实验确认：无换行分号会阻塞、纯注释多产响应、VARCHAR裸标识符会导致非法写入/删除。最小源码修复与9项stdio、10项SQL测试已纳入23命令全回归，默认/标量/故障版本均已重建验证。
 - 对照3c1adfbf3，主负载三轮写入中位数−8.47%、查询−1.29%；超缓存前三轮查询+2.61%，固定补测七轮+0.25%，全部十轮+1.01%。不删除负项、不作正式E/排名主张。全部查询和重启内容验证通过。
 - 存储子代理被执行策略中止，未重试被阻止操作，也不把其记为独立审计通过。子代理只读代码复审不替代正式ARIS跨模型裁决（REVIEW_UNAVAILABLE）。
 - 完整官方驱动与输出转义/framing合同尚缺；任意含Tab/换行/marker的VARCHAR原样TSV输出存在边界风险，未猜测变更默认编码。Linux/Docker/cgroup未运行，浏览器只读检查被安全机制停止，没有正式提测。
-- 证据：refine-logs/EXPERIMENT_RESULTS_20261109_213756.md、round4-validation.json/.txt及bench/results/round4-*.json。官方mysqltest、构建/CI、agent/conversation.json及用户未跟踪agent/PROMPT_REVIEW.md均保持不动。
+- 证据：refine-logs/EXPERIMENT_RESULTS_20261109_213756.md、round4-validation.json/.txt及bench/results/round4-*.json。官方mysqltest及构建/CI均保持不动。

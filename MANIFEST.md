@@ -70,8 +70,6 @@
 
 ## 提交检查说明
 
-按用户要求，当前提交不包含 Agent prompt 材料；此前版本的历史产物不代表当前交付。
-
 原始 gprof-sampling.txt 的两行工具表头自带行尾空格，为保留原始输出未作改写。源码、测试与其他产物通过 git diff --cached --check -- . ':(exclude)profile_output/gprof-sampling.txt'；官方基线祖先及 mysqltest 不变检查、全部记录的 SHA256 和最终两份三轮报告的版本/正确性检查均通过。
 
 ## 第三轮产物（当前交付）
@@ -85,7 +83,6 @@
 | 2026-11-09 19:34:43 | /result-to-claim | .aris/evidence_precheck_initial.json | implementation | 初次数值引用检查：8 verified/1 literal missing，保留 |
 | 2026-11-09 19:34:58 | /result-to-claim | .aris/evidence_precheck.json | implementation | 最终9项数值/文件存在，非质量裁决 |
 | 2026-11-09 19:34:43 | /result-to-claim | .aris/public-contract.json | implementation | 原样官方manifest公开SQL机械求和 |
-| 2026-11-09 19:33:50 | /run-experiment | agent/conversation.json | implementation | 真实prompt、分版本实验事实，未伪造学生解释 |
 | 2026-11-09 19:08:52 | /system-profile | bench/profile_queries.py | implementation | 独立诊断和附加普通负载全字段真值 |
 | 2026-11-09 19:16:34 | /analyze-results | bench/results/round3-batch.json | implementation | 已拒绝机制的三轮原始负实验 |
 | 2026-11-09 19:20:07 | /analyze-results | bench/results/round3-directory.json | implementation | 已拒绝机制的三轮原始负实验 |

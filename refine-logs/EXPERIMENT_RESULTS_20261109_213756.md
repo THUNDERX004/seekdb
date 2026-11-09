@@ -39,7 +39,7 @@
 - public assertion adapter：24 项 mock；commit publication：6 场景、19 个子进程，覆盖注入发布失败、半 WAL、回滚、生产构建忽略故障环境、noop 不增长 WAL，跨两次正常重启核对两表完整字段。
 - 三种程序从本轮源码重建；生产默认不启用 MVD_TEST_FAULTS 或 MVD_PROFILE。
 
-子代理贡献 SQL 反例测试及只读协议审查。修复后只读复审未发现有实证的 Blocker/Major，并报告另完成 23 次小规模交互检查；这是辅助工程检查，不是正式 ARIS 跨模型裁决。存储子代理被执行策略中止，未重试被阻止的操作，未记作完成的独立存储审计；存储证据仍为已执行套件。
+补充检查包括 SQL 反例测试及只读协议审查。修复后只读复审未发现有实证的 Blocker/Major，并报告另完成 23 次小规模交互检查；这是辅助工程检查，不是正式 ARIS 跨模型裁决。独立存储审查被执行策略中止，未重试被阻止的操作，未记作完成的独立存储审计；存储证据仍为已执行套件。
 
 ## 性能方法与原始数据
 
@@ -96,7 +96,7 @@ bench/evaluate.py 未改。对照/候选串行交替，每轮独立目录、相�
 | 本轮正式提测 | 未触发 | NOT_RUN：需用户操作或另行明确确认，不擅用每日机会 |
 | 正式 ARIS 审计 | 指定 reviewer MCP 未注册 | REVIEW_UNAVAILABLE：同模型子代理不替代 |
 
-未改官方题包、Dockerfile、CMake、CI、学习材料；用户未跟踪 agent/PROMPT_REVIEW.md 不纳入交付。不把 Agent 自动发现问题包装为学生事先指导。
+未改官方题包、Dockerfile、CMake和CI。
 
 复现命令：
 

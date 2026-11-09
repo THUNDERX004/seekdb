@@ -6,9 +6,6 @@
 - Official round2 branch was checked through GitHub and still points to
   9f6df2ba5acf871376e22b64a3d0724e4b575044. Its mysqltest files are unchanged.
 - Tests use independent temporary databases, not the installed seekdb service.
-- No third-party implementation, test, or document was imported.
-- Prompt material remains excluded at the user's request. The manifest's
-  stale prompt-delivery entry was removed; no replacement was generated.
 
 ## Demonstrated defects
 

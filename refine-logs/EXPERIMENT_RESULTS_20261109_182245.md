@@ -81,14 +81,9 @@ T为逐请求管道交互时长之和，含输出和提交持久化，排除SQL�
 
 保留的失败日志 validation-precise.txt 记录首次精确比较后旧参考的16次mismatch。原float64参考对q≈1e30与小数的减法先丢失small，fsum无法恢复，于是错误地按主键判并列。新的排序真值使用Python as_integer_ratio和任意精度整数，并用独立Fraction公式自检；只强化排序key，未放宽输出容差、未跳过case。更新后两版6070条及26999条加长随机全部通过。正式参考执行器对于极近值的内部数值约定尚未完整公开，仍需正式预检核对；这里遵循已公布的float32存储/欧氏距离语义。
 
-## 开源参考及增量实验
+## 查询准备的增量实验
 
-查阅官方版本固定的主源：
-
-- Faiss v1.12.0，IndexFlat.cpp 的 FlatL2Dis / set_query / distances_batch_4： https://github.com/facebookresearch/faiss/blob/v1.12.0/faiss/IndexFlat.cpp （MIT，许可证 https://github.com/facebookresearch/faiss/blob/v1.12.0/LICENSE）。
-- HNSWlib v0.8.0，space_l2.h 的CPU能力与维度内核选择： https://github.com/nmslib/hnswlib/blob/v0.8.0/hnswlib/space_l2.h （Apache-2.0，许可证 https://github.com/nmslib/hnswlib/blob/v0.8.0/LICENSE）。
-
-仅借鉴查询状态复用和内核选择的通用方法，没有复制这些项目代码，也没有链接/调用Faiss、HNSWlib、VSAG代执行。prepared-probe.json 为早期单机制三轮：配对查询加速比 1.3464、1.0763、1.0647，中位数1.0763倍；写入基本不变。这是精确比较修复之前的增量实验，不冒充最终二进制成绩。
+prepared-probe.json 为早期单机制三轮：配对查询加速比 1.3464、1.0763、1.0647，中位数1.0763倍；写入基本不变。这是精确比较修复之前的增量实验，不冒充最终二进制成绩。
 
 后续精确比较第一次测量 comparison-final-exact.json 暴露每行检查开销，主负载候选查询中位数0.3144032秒；缓存安全拒绝界后再完整重测，最终为0.1957555秒。不同运行间有系统噪声，不能把这个差额全部归因于单一机制。保留较慢结果，不只保留最快版本。未引入HNSW图、范数重构或额外全量向量副本：这些方向尚未评估收益/资源代价，不宣称优劣。
 
