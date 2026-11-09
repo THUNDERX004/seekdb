@@ -237,14 +237,6 @@ std::string readString(const std::vector<uint8_t> &data, size_t &pos) {
   return value;
 }
 
-bool isFiniteFloat32(double value) {
-  if (!std::isfinite(value)) {
-    return false;
-  }
-  const float narrowed = static_cast<float>(value);
-  return std::isfinite(narrowed);
-}
-
 size_t countCodepointsStrict(std::string_view text) {
   size_t i = 0;
   size_t count = 0;
@@ -854,7 +846,44 @@ class Parser {
     return value;
   }
 
-  double parseDoubleToken() {
+  // Called only after from_chars consumed an entire decimal and reported a
+  // range error. A magnitude below one can only be zero-underflow, never
+  // float32 overflow. Compare decimal exponents without another FP conversion.
+  static bool decimalMagnitudeBelowOne(std::string_view text) {
+    if (!text.empty() && (text.front() == '-' || text.front() == '+')) {
+      text.remove_prefix(1);
+    }
+    const size_t e = text.find_first_of("eE");
+    const std::string_view significand = text.substr(0, e);
+    const size_t point = significand.find('.');
+    const size_t decimal_position = point == std::string_view::npos
+                                        ? significand.size() : point;
+    const size_t first = significand.find_first_of("123456789");
+    if (first == std::string_view::npos) {
+      return true;
+    }
+    const size_t first_digit = first - (first > decimal_position ? 1 : 0);
+    const int64_t threshold = static_cast<int64_t>(first_digit + 1) -
+                              static_cast<int64_t>(decimal_position);
+    if (e == std::string_view::npos) {
+      return 0 < threshold;
+    }
+    std::string_view exponent_text = text.substr(e + 1);
+    if (!exponent_text.empty() && exponent_text.front() == '+') {
+      exponent_text.remove_prefix(1);
+    }
+    int64_t exponent = 0;
+    const auto parsed = std::from_chars(exponent_text.data(),
+        exponent_text.data() + exponent_text.size(), exponent);
+    if (parsed.ec == std::errc::result_out_of_range) {
+      return !exponent_text.empty() && exponent_text.front() == '-';
+    }
+    return parsed.ec == std::errc() &&
+           parsed.ptr == exponent_text.data() + exponent_text.size() &&
+           exponent < threshold;
+  }
+
+  float parseFloat32Token() {
     if (peek().kind != TokenKind::Number) {
       fail("TYPE_MISMATCH", "vector component must be numeric");
     }
@@ -864,10 +893,17 @@ class Parser {
     if (begin != end && *begin == '+') {
       ++begin;
     }
-    double value = 0;
-    const auto parsed = std::from_chars(begin, end, value);
+    float value = 0;
+    auto parsed = std::from_chars(begin, end, value);
+    if (parsed.ec == std::errc::result_out_of_range && parsed.ptr == end &&
+        decimalMagnitudeBelowOne(std::string_view(begin, end - begin))) {
+      // from_chars reports underflow to zero as out-of-range. Preserve finite
+      // tiny inputs without double-rounding decimal-to-float32 boundaries.
+      value = begin != end && *begin == '-' ? -0.0f : 0.0f;
+      parsed.ec = std::errc();
+    }
     if (parsed.ec != std::errc() || parsed.ptr != end ||
-        !isFiniteFloat32(value)) {
+        !std::isfinite(value)) {
       fail("VALUE_OUT_OF_RANGE", "vector component is not a finite float32");
     }
     ++pos_;
@@ -881,7 +917,7 @@ class Parser {
       return result;
     }
     while (true) {
-      result.push_back(static_cast<float>(parseDoubleToken()));
+      result.push_back(parseFloat32Token());
       if (consumeSymbol("]")) {
         return result;
       }

@@ -1,0 +1,268 @@
+test_midpoint_ties_and_direction (__main__.LiteralOracle.test_midpoint_ties_and_direction) ... ok
+test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) ... 
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='1.0000000596046448') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-1.0000000596046448') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-1e-80') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-0.0000000000000000000000000000000000000000000007006492321624085354618636325180359758209479297709886522411862145809021795332420341686131824368920111314503133399741489973632698940877699996378040470101922210233169607818126678466796875') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-0.000000000000000000000000000000000000000000000700649232162408535461864791644958065640130970938257885878534141944895541342930300743319094181060791015625') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='0.0000000000000000000000000000000000000000000007006492321624085354618659507718801554593140121055271195158820693088889031526185673180250059252295708997996866600258510026367301059122300003621959529898077789766830392181873321533203125') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-0.0000000000000000000000000000000000000000000007006492321624085354618659507718801554593140121055271195158820693088889031526185673180250059252295708997996866600258510026367301059122300003621959529898077789766830392181873321533203125') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='0.0000000000000000000000000000000000000000000021019476964872256063855932158079521071012098716475044239982544984706932622191026356552513707990135931627003133399741489973632698940877699996378040470101922210233169607818126678466796875') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-0.0000000000000000000000000000000000000000000021019476964872256063855932158079521071012098716475044239982544984706932622191026356552513707990135931627003133399741489973632698940877699996378040470101922210233169607818126678466796875') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='0.0000000000000000000000000000000000000117549428075736429172788299103565060063065001084068631095603975469021032856583685758970576819749940747704291002003133399741489973632698940877699996378040470101922210233169607818126678466796875') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-0.0000000000000000000000000000000000000117549428075736429172788299103565060063065001084068631095603975469021032856583685758970576819749940747704291002003133399741489973632698940877699996378040470101922210233169607818126678466796875') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='0.0000000000000000000000000000000000000117549442088721072420959008340884075500668110270348873206146365786662419034361748811341923180250059252295708997996866600258510026367301059122300003621959529898077789766830392181873321533203125') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-0.0000000000000000000000000000000000000117549442088721072420959008340884075500668110270348873206146365786662419034361748811341923180250059252295708997996866600258510026367301059122300003621959529898077789766830392181873321533203125') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='1.0000000596046447753906250000000986076131526264756764660706603482787091508043886278755962848663330078125') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-1.0000000596046447753906250000000986076131526264756764660706603482787091508043886278755962848663330078125') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='1.0000001788139343261718749999999013923868473735243235339293396517212908491956113721244037151336669921875') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-1.0000001788139343261718749999999013923868473735243235339293396517212908491956113721244037151336669921875') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='16777217.0000000000000000000000016543612251060553497428173841399257071316242218017578125') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-16777217.0000000000000000000000016543612251060553497428173841399257071316242218017578125') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='340282336497324057985868971510908059648') ... FAIL
+  test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-340282336497324057985868971510908059648') ... FAIL
+test_literal_rounding_changes_stored_topk_membership (__main__.Float32Literals.test_literal_rounding_changes_stored_topk_membership) ... FAIL
+test_overflow_and_nonfinite_values_remain_atomic_errors (__main__.Float32Literals.test_overflow_and_nonfinite_values_remain_atomic_errors) ... ok
+test_probe_and_update_use_the_same_direct_rounding (__main__.Float32Literals.test_probe_and_update_use_the_same_direct_rounding) ... FAIL
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='1.0000000596046448')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1065353216 != 1065353217 : 1.0000000596046448
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-1.0000000596046448')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 3212836864 != 3212836865 : -1.0000000596046448
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-1e-80')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 2147483648 : -1e-80
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-0.0000000000000000000000000000000000000000000007006492321624085354618636325180359758209479297709886522411862145809021795332420341686131824368920111314503133399741489973632698940877699996378040470101922210233169607818126678466796875')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 2147483648 : -0.0000000000000000000000000000000000000000000007006492321624085354618636325180359758209479297709886522411862145809021795332420341686131824368920111314503133399741489973632698940877699996378040470101922210233169607818126678466796875
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-0.000000000000000000000000000000000000000000000700649232162408535461864791644958065640130970938257885878534141944895541342930300743319094181060791015625')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 2147483648 : -0.000000000000000000000000000000000000000000000700649232162408535461864791644958065640130970938257885878534141944895541342930300743319094181060791015625
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='0.0000000000000000000000000000000000000000000007006492321624085354618659507718801554593140121055271195158820693088889031526185673180250059252295708997996866600258510026367301059122300003621959529898077789766830392181873321533203125')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : 0.0000000000000000000000000000000000000000000007006492321624085354618659507718801554593140121055271195158820693088889031526185673180250059252295708997996866600258510026367301059122300003621959529898077789766830392181873321533203125
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-0.0000000000000000000000000000000000000000000007006492321624085354618659507718801554593140121055271195158820693088889031526185673180250059252295708997996866600258510026367301059122300003621959529898077789766830392181873321533203125')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 2147483649 : -0.0000000000000000000000000000000000000000000007006492321624085354618659507718801554593140121055271195158820693088889031526185673180250059252295708997996866600258510026367301059122300003621959529898077789766830392181873321533203125
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='0.0000000000000000000000000000000000000000000021019476964872256063855932158079521071012098716475044239982544984706932622191026356552513707990135931627003133399741489973632698940877699996378040470101922210233169607818126678466796875')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 1 : 0.0000000000000000000000000000000000000000000021019476964872256063855932158079521071012098716475044239982544984706932622191026356552513707990135931627003133399741489973632698940877699996378040470101922210233169607818126678466796875
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-0.0000000000000000000000000000000000000000000021019476964872256063855932158079521071012098716475044239982544984706932622191026356552513707990135931627003133399741489973632698940877699996378040470101922210233169607818126678466796875')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2147483650 != 2147483649 : -0.0000000000000000000000000000000000000000000021019476964872256063855932158079521071012098716475044239982544984706932622191026356552513707990135931627003133399741489973632698940877699996378040470101922210233169607818126678466796875
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='0.0000000000000000000000000000000000000117549428075736429172788299103565060063065001084068631095603975469021032856583685758970576819749940747704291002003133399741489973632698940877699996378040470101922210233169607818126678466796875')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 8388608 != 8388607 : 0.0000000000000000000000000000000000000117549428075736429172788299103565060063065001084068631095603975469021032856583685758970576819749940747704291002003133399741489973632698940877699996378040470101922210233169607818126678466796875
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-0.0000000000000000000000000000000000000117549428075736429172788299103565060063065001084068631095603975469021032856583685758970576819749940747704291002003133399741489973632698940877699996378040470101922210233169607818126678466796875')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2155872256 != 2155872255 : -0.0000000000000000000000000000000000000117549428075736429172788299103565060063065001084068631095603975469021032856583685758970576819749940747704291002003133399741489973632698940877699996378040470101922210233169607818126678466796875
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='0.0000000000000000000000000000000000000117549442088721072420959008340884075500668110270348873206146365786662419034361748811341923180250059252295708997996866600258510026367301059122300003621959529898077789766830392181873321533203125')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 8388608 != 8388609 : 0.0000000000000000000000000000000000000117549442088721072420959008340884075500668110270348873206146365786662419034361748811341923180250059252295708997996866600258510026367301059122300003621959529898077789766830392181873321533203125
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-0.0000000000000000000000000000000000000117549442088721072420959008340884075500668110270348873206146365786662419034361748811341923180250059252295708997996866600258510026367301059122300003621959529898077789766830392181873321533203125')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2155872256 != 2155872257 : -0.0000000000000000000000000000000000000117549442088721072420959008340884075500668110270348873206146365786662419034361748811341923180250059252295708997996866600258510026367301059122300003621959529898077789766830392181873321533203125
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='1.0000000596046447753906250000000986076131526264756764660706603482787091508043886278755962848663330078125')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1065353216 != 1065353217 : 1.0000000596046447753906250000000986076131526264756764660706603482787091508043886278755962848663330078125
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-1.0000000596046447753906250000000986076131526264756764660706603482787091508043886278755962848663330078125')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 3212836864 != 3212836865 : -1.0000000596046447753906250000000986076131526264756764660706603482787091508043886278755962848663330078125
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='1.0000001788139343261718749999999013923868473735243235339293396517212908491956113721244037151336669921875')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1065353218 != 1065353217 : 1.0000001788139343261718749999999013923868473735243235339293396517212908491956113721244037151336669921875
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-1.0000001788139343261718749999999013923868473735243235339293396517212908491956113721244037151336669921875')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 3212836866 != 3212836865 : -1.0000001788139343261718749999999013923868473735243235339293396517212908491956113721244037151336669921875
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='16777217.0000000000000000000000016543612251060553497428173841399257071316242218017578125')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1266679808 != 1266679809 : 16777217.0000000000000000000000016543612251060553497428173841399257071316242218017578125
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-16777217.0000000000000000000000016543612251060553497428173841399257071316242218017578125')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 3414163456 != 3414163457 : -16777217.0000000000000000000000016543612251060553497428173841399257071316242218017578125
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='340282336497324057985868971510908059648')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2139095038 != 2139095039 : 340282336497324057985868971510908059648
+
+======================================================================
+FAIL: test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) (literal='-340282336497324057985868971510908059648')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 125, in test_insert_rounds_exact_decimal_directly_to_float32
+    self.assertEqual(result_bits(vector), nearest_bits(text), text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 4286578686 != 4286578687 : -340282336497324057985868971510908059648
+
+======================================================================
+FAIL: test_literal_rounding_changes_stored_topk_membership (__main__.Float32Literals.test_literal_rounding_changes_stored_topk_membership)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 130, in test_literal_rounding_changes_stored_topk_membership
+    self.expect("SELECT id FROM t ORDER BY L2_DISTANCE(v,'[1]') LIMIT 1", ["2"])
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 112, in expect
+    self.assertEqual(self.session.execute(sql), expected, sql)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['1'] != ['2']
+
+First differing element 0:
+'1'
+'2'
+
+- ['1']
+?   ^
+
++ ['2']
+?   ^
+ : SELECT id FROM t ORDER BY L2_DISTANCE(v,'[1]') LIMIT 1
+
+======================================================================
+FAIL: test_probe_and_update_use_the_same_direct_rounding (__main__.Float32Literals.test_probe_and_update_use_the_same_direct_rounding)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 138, in test_probe_and_update_use_the_same_direct_rounding
+    self.expect("SELECT id FROM t ORDER BY "
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                f"L2_DISTANCE(v,'[1.0000000596046448]'){suffix} LIMIT 1", ["2"])
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_float32_literals.py", line 112, in expect
+    self.assertEqual(self.session.execute(sql), expected, sql)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['1'] != ['2']
+
+First differing element 0:
+'1'
+'2'
+
+- ['1']
+?   ^
+
++ ['2']
+?   ^
+ : SELECT id FROM t ORDER BY L2_DISTANCE(v,'[1.0000000596046448]') LIMIT 1
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.086s
+
+FAILED (failures=23)

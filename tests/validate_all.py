@@ -44,7 +44,7 @@ def main():
               "test_exact_distance.py", "test_selection_paths.py",
               "test_stdio_contract.py", "test_formal_sql_edges.py",
               "test_round6_sql_contract.py", "test_round6_stream_contract.py",
-              "test_stream_followup.py")
+              "test_stream_followup.py", "test_float32_literals.py")
     commands = []
     for label in ("normal", "scalar"):
         commands.extend((f"{label}/{suite}",
