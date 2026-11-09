@@ -688,6 +688,8 @@ class Parser {
          const std::unordered_map<std::string, TableDef> &tables)
       : tokens_(Lexer(sql).tokenize()), tables_(tables) {}
 
+  bool empty() const { return tokens_.front().kind == TokenKind::End; }
+
   Statement parse() {
     if (acceptKeyword("select")) {
       return parseSelect();
@@ -881,7 +883,6 @@ class Parser {
     }
     if (type == ColumnType::VarChar) {
       if (peek().kind != TokenKind::String &&
-          peek().kind != TokenKind::Identifier &&
           peek().kind != TokenKind::Number) {
         fail("TYPE_MISMATCH", "VARCHAR requires a string literal");
       }
@@ -1967,11 +1968,16 @@ class Database {
 
   ~Database() { rollbackSilently(); }
 
-  ExecResult execute(std::string_view sql) {
+  std::optional<ExecResult> execute(std::string_view sql) {
     MVD_PROFILE_SCOPE(execute_profile, Execute, 0);
     MVD_PROFILE_SCOPE(parse_profile, Parse, 0);
     auto definitions = tableDefinitions();
     Parser parser(sql, definitions);
+    // A comment-only tail is not a request and must not emit a response frame.
+    // Reuse the parsed token stream instead of lexing every request twice.
+    if (parser.empty()) {
+      return std::nullopt;
+    }
     const std::string first = parser.firstKeyword();
     Statement statement = parser.parse();
     MVD_PROFILE_END(parse_profile);
@@ -3199,7 +3205,9 @@ int run(int argc, char **argv) {
       return;
     }
     try {
-      printResult(database.execute(sql), options.marker, options.column_header);
+      if (auto result = database.execute(sql)) {
+        printResult(*result, options.marker, options.column_header);
+      }
     } catch (const RecoveryRequired &) {
       throw;
     } catch (const DBError &error) {
@@ -3213,9 +3221,7 @@ int run(int argc, char **argv) {
   std::string current;
   SplitState state = SplitState::Normal;
   char c = '\0';
-  char next = '\0';
   while (std::cin.get(c)) {
-    next = std::cin.peek();
     switch (state) {
       case SplitState::Normal:
         if (c == '\'') {
@@ -3224,13 +3230,13 @@ int run(int argc, char **argv) {
         } else if (c == '"') {
           state = SplitState::DoubleQuote;
           current.push_back(c);
-        } else if (c == '-' && next == '-') {
+        } else if (c == '-' && std::cin.peek() == '-') {
           state = SplitState::LineComment;
           current.push_back(c);
         } else if (c == '#') {
           state = SplitState::LineComment;
           current.push_back(c);
-        } else if (c == '/' && next == '*') {
+        } else if (c == '/' && std::cin.peek() == '*') {
           state = SplitState::BlockComment;
           current.push_back(c);
         } else if (c == ';') {

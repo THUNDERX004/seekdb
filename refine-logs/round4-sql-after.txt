@@ -1,0 +1,15 @@
+test_late_invalid_literals_preserve_prior_work_and_allow_commit (__main__.FormalSqlEdges.test_late_invalid_literals_preserve_prior_work_and_allow_commit) ... ok
+test_multirow_changes_see_prior_values_and_rollback_together (__main__.FormalSqlEdges.test_multirow_changes_see_prior_values_and_rollback_together) ... ok
+test_projection_metadata_aliases_and_unprojected_order_keys (__main__.FormalSqlEdges.test_projection_metadata_aliases_and_unprojected_order_keys) ... ok
+test_quoted_apostrophe_and_delimiters_remain_string_data (__main__.FormalSqlEdges.test_quoted_apostrophe_and_delimiters_remain_string_data) ... ok
+test_unicode_length_counts_codepoints_and_failed_batch_leaves_no_rows (__main__.FormalSqlEdges.test_unicode_length_counts_codepoints_and_failed_batch_leaves_no_rows) ... ok
+test_unicode_order_uses_codepoints_and_primary_key_ties (__main__.FormalSqlEdges.test_unicode_order_uses_codepoints_and_primary_key_ties) ... ok
+test_unknown_identifier_in_delete_cannot_remove_a_matching_literal (__main__.FormalSqlEdges.test_unknown_identifier_in_delete_cannot_remove_a_matching_literal) ... ok
+test_unknown_identifier_in_multirow_insert_is_atomic (__main__.FormalSqlEdges.test_unknown_identifier_in_multirow_insert_is_atomic) ... ok
+test_unknown_identifier_in_multirow_update_is_rejected (__main__.FormalSqlEdges.test_unknown_identifier_in_multirow_update_is_rejected) ... ok
+test_unknown_identifier_in_select_is_not_a_string (__main__.FormalSqlEdges.test_unknown_identifier_in_select_is_not_a_string) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.209s
+
+OK

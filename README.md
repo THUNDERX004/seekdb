@@ -26,6 +26,8 @@ The container runs in the foreground and does not open a network port.
 ## Protocol
 
 - Input is UTF-8 SQL over stdin. Statements end with `;` and may span lines.
+- A complete statement responds immediately at its semicolon; an extra newline
+  or EOF is not required. Empty/comment-only input produces no response.
 - `--`, `#`, and `/* ... */` comments are accepted.
 - stdout contains only query rows or status/error records.
 - `INSERT`, `UPDATE`, and `DELETE` return `OK <affected_rows>`.
@@ -202,7 +204,7 @@ ROLLBACK;
 After restarting, SELECT id,tag FROM docs ORDER BY id returns both committed
 rows; the rolled-back DELETE has no effect. Use a fresh directory for CREATE.
 
-## Current third-round optimization and validation
+## Third-round optimization and validation (historical)
 
 The public mysqltest package is merged unchanged from official round2 commit
 9f6df2ba5acf871376e22b64a3d0724e4b575044. Compared locally against the previous
@@ -247,3 +249,41 @@ See [the current report](refine-logs/EXPERIMENT_RESULTS.md),
 [profiling report](profile_output/PROFILE_REPORT.md). ARIS cross-model audit
 remains REVIEW_UNAVAILABLE because its reviewer MCP is not registered. Local
 engineering checks do not substitute for that verdict or formal evaluation.
+
+## Fourth-round admission fixes and validation
+
+The previous executable could block on a complete request with no byte after
+its final semicolon. The input scanner now looks ahead only where needed.
+Comment-only input no longer generates unsolicited errors or response markers.
+Bare identifiers are no longer silently converted to VARCHAR text in INSERT,
+UPDATE or predicates, preventing invalid statements from writing/deleting rows.
+
+The expanded local validation passed all 23 commands on rebuilt default,
+scalar and fault-injection binaries. This includes both public 20-group/95-SQL
+runs, nine real-pipe framing tests, ten independent SQL edge tests, the previous
+correctness/recovery suites and the long default differential sequence. Local
+results do not prove the withheld formal cases or identify the platform's actual
+failure without its necessary logs and locked commit SHA.
+
+Three local paired main-workload runs reduced median write time by 8.47% and
+query time by 1.29% against commit 3c1adfbf3. Out-of-row-cache query time regressed
+2.61% in the first three runs and 0.25% in seven additional fixed-seed runs;
+all ten combined regressed 1.01%. These negative samples are retained. All
+queries and full-field restart checks passed, with exact-mode Recall@10=1.0
+for both query groups. These are Windows development timings, not official
+cgroup metrics, E or rankings.
+
+Raw line/tab output remains unchanged. Arbitrary VARCHAR values containing
+line/tab delimiters or a chosen marker need a reversible encoding/framing
+contract with the official driver. Its complete protocol is not public here;
+this submission does not claim that unresolved boundary is fixed. Linux Docker
+build/run and cgroup checks also remain unexecuted on this host. No official
+submission attempt was triggered during this round.
+
+See refine-logs/EXPERIMENT_RESULTS_20261109_213756.md for all raw timing tables,
+version hashes, known gaps and failure-to-fix evidence. New regression commands:
+
+    python -X utf8 -B tests/test_stdio_contract.py ./build/minivectordb
+    python -X utf8 -B tests/test_formal_sql_edges.py ./build/minivectordb
+
+The existing tests/validate_all.py command now includes both new suites.

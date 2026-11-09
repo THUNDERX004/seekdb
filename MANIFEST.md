@@ -132,3 +132,20 @@
 机械数值verified不是正式审计PASS；正式experiment-audit/result-to-claim仍为REVIEW_UNAVAILABLE。未执行Linux/Docker/cgroup与隐藏输入，不生成正式E/名次。
 
 两份round3-validation*.txt是验证工具原始输出，末尾保留工具生成的空行，不改写原始日志。暂存空白检查仅排除这两份原始文本；其余本轮文件通过git diff --cached --check。
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | refine-logs/ROUND4_PLAN_20261109_212744.md | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | refine-logs/EXPERIMENT_PLAN.md | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | refine-logs/EXPERIMENT_RESULTS_20261109_213756.md | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | refine-logs/EXPERIMENT_RESULTS.md | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | refine-logs/EXPERIMENT_TRACKER_20261109_213756.md | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | refine-logs/EXPERIMENT_TRACKER.md | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | refine-logs/round4-stdio-before.txt | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | refine-logs/round4-stdio-after.txt | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | refine-logs/round4-sql-before.txt | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | refine-logs/round4-sql-after.txt | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | refine-logs/round4-validation.json | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | refine-logs/round4-validation.txt | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | bench/results/round4-main.json | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | bench/results/round4-disk.json | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | bench/results/round4-disk-confirm.json | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | tests/test_stdio_contract.py | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |
+| 2026-11-09 21:37:56 +08:00 | /experiment-plan + /analyze-results | tests/test_formal_sql_edges.py | implementation | 第四轮真实反例、修复或版本绑定验证；非正式通过证明 |

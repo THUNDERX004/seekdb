@@ -1,6 +1,6 @@
 # 实验记录
 
-以下R001—R014为上一轮提交666989f7d的历史记录，非当前验证。该轮二进制 020d7c11b4a0e56ac5c2f3ca88bfcc16de7c6311e653ae49233084d27717142d；证据与边界见EXPERIMENT_RESULTS.md和validation-metadata.json。
+以下R001—R014为上一轮提交666989f7d的历史记录，非当前验证。该轮二进制 020d7c11b4a0e56ac5c2f3ca88bfcc16de7c6311e653ae49233084d27717142d；证据与边界见EXPERIMENT_RESULTS_20261109_182245.md和validation-metadata.json。
 
 | ID | 目的 | 版本/负载 | 状态 | 实际结果 |
 | --- | --- | --- | --- | --- |
@@ -19,7 +19,7 @@
 | R013 | 正式ARIS跨模型审计 | 所需reviewer MCP | REVIEW_UNAVAILABLE | 同模型审查不冒充正式审计 |
 | R014 | Docker/Linux/官方隐藏/cgroup | 当前环境/完整驱动缺失 | NOT_RUN | 不计算正式E/名次，不消耗正式提交机会 |
 
-## 第三轮（当前交付）
+## 第三轮（历史交付）
 
 最终默认二进制88ecccd8adf6f53102ae446d3d65377427a18038a25bb28a6704d6db142dd424；本地对照666989f7d，官方基线9f6df2ba5acf871376e22b64a3d0724e4b575044。
 
@@ -43,3 +43,21 @@
 | R3-16 | Linux/Docker/cgroup/隐藏输入 | EXPERIMENT_RESULTS.md | NOT_RUN | 不计算正式E、排名或保证全部29正式case |
 
 未指定目录的结果JSON位于bench/results/，验证日志位于refine-logs/。
+
+## 第四轮（当前工程候选，正式目标未完成）
+
+对照3c1adfbf3；候选默认SHA256 f1fd4e9c348a3c0544ec13708b061dc654d59fe1d20f65d8c8d7149d1cee8d7c。完整数据见EXPERIMENT_RESULTS_20261109_213756.md。
+
+| Run ID | 目的 | 证据 | 状态 | 实际结果/边界 |
+| --- | --- | --- | --- | --- |
+| R4-01 | 合同、官方版本 | ROUND4_PLAN_20261109_212744.md；git核查 | DONE_WITH_LIMITS | 官方9f6df2ba；mysqltest零差异；没有正式失败日志/SHA |
+| R4-02 | 无换行分号/注释尾反例 | round4-stdio-before.txt | REPRODUCED | 9方法有17处失败断言；真实管道保持stdin打开 |
+| R4-03 | 裸标识符反例 | round4-sql-before.txt | REPRODUCED | 10方法6过4失败，包含错误删除/写入及事务状态 |
+| R4-04 | 最小修复及专项 | round4-stdio-after.txt；round4-sql-after.txt | DONE | 9+10项全部通过；默认协议、fsync不变 |
+| R4-05 | 完整本地回归 | round4-validation.json/.txt | DONE | 默认/标量/故障共23命令全过，公开20组95SQL；默认差分33104、标量6070，均0mismatch |
+| R4-06 | 主负载三轮 | bench/results/round4-main.json | DONE | 写入中位数−8.47%，查询−1.29%；全查询及重启全字段通过 |
+| R4-07 | 超缓存三轮 | bench/results/round4-disk.json | DONE_WITH_REGRESSION | 查询中位数+2.61%，保留负项 |
+| R4-08 | 超缓存固定七轮补测 | bench/results/round4-disk-confirm.json | DONE_WITH_LIMITS | 查询+0.25%；全部十轮合计+1.01%，不据此证明没有性能代价 |
+| R4-09 | 子代理检查 | 工程只读复审及反例测试 | DONE_WITH_LIMITS | SQL/协议反馈已整合；存储子代理策略中止未重试，不作正式审计 |
+| R4-10 | 正式结果/协议/Linux/cgroup | EXPERIMENT_RESULTS.md未验证项 | PENDING_EXTERNAL | 需要正式必要日志、锁定SHA、完整协议或平台预检；未擅用提测次数 |
+| R4-11 | ARIS跨模型裁决 | 指定reviewer MCP不可用 | REVIEW_UNAVAILABLE | 不以同模型子代理替代裁决 |

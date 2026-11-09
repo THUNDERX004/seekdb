@@ -1,0 +1,14 @@
+test_adjacent_statements_receive_separate_responses (__main__.StdioContract.test_adjacent_statements_receive_separate_responses) ... ok
+test_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) ... ok
+test_comments_and_empty_statements_do_not_add_responses (__main__.StdioContract.test_comments_and_empty_statements_do_not_add_responses) ... ok
+test_complete_request_needs_no_newline_or_eof (__main__.StdioContract.test_complete_request_needs_no_newline_or_eof) ... ok
+test_default_protocol_flushes_at_semicolon (__main__.StdioContract.test_default_protocol_flushes_at_semicolon) ... ok
+test_error_response_does_not_need_following_byte (__main__.StdioContract.test_error_response_does_not_need_following_byte) ... ok
+test_malformed_comment_or_string_still_returns_error (__main__.StdioContract.test_malformed_comment_or_string_still_returns_error) ... ok
+test_split_comments_quotes_and_utf8_do_not_split_statements (__main__.StdioContract.test_split_comments_quotes_and_utf8_do_not_split_statements) ... ok
+test_trailing_comments_do_not_generate_extra_frames (__main__.StdioContract.test_trailing_comments_do_not_generate_extra_frames) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.348s
+
+OK

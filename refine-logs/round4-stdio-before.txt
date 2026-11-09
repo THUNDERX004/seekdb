@@ -1,0 +1,404 @@
+test_adjacent_statements_receive_separate_responses (__main__.StdioContract.test_adjacent_statements_receive_separate_responses) ... FAIL
+test_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) ... 
+  test_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) (text='-- tail') ... FAIL
+  test_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) (text='-- tail\n') ... FAIL
+  test_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) (text='# tail') ... FAIL
+  test_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) (text='/* tail */') ... FAIL
+  test_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) (text='/* ; \' " */ ; -- tail') ... FAIL
+  test_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) (text='\ufeff/* comment */\n# tail\n') ... FAIL
+test_comments_and_empty_statements_do_not_add_responses (__main__.StdioContract.test_comments_and_empty_statements_do_not_add_responses) ... FAIL
+test_complete_request_needs_no_newline_or_eof (__main__.StdioContract.test_complete_request_needs_no_newline_or_eof) ... FAIL
+test_default_protocol_flushes_at_semicolon (__main__.StdioContract.test_default_protocol_flushes_at_semicolon) ... FAIL
+test_error_response_does_not_need_following_byte (__main__.StdioContract.test_error_response_does_not_need_following_byte) ... FAIL
+test_malformed_comment_or_string_still_returns_error (__main__.StdioContract.test_malformed_comment_or_string_still_returns_error) ... ok
+test_split_comments_quotes_and_utf8_do_not_split_statements (__main__.StdioContract.test_split_comments_quotes_and_utf8_do_not_split_statements) ... FAIL
+test_trailing_comments_do_not_generate_extra_frames (__main__.StdioContract.test_trailing_comments_do_not_generate_extra_frames) ... 
+  test_trailing_comments_do_not_generate_extra_frames (__main__.StdioContract.test_trailing_comments_do_not_generate_extra_frames) (tail='-- tail') ... FAIL
+  test_trailing_comments_do_not_generate_extra_frames (__main__.StdioContract.test_trailing_comments_do_not_generate_extra_frames) (tail='-- tail\n') ... FAIL
+  test_trailing_comments_do_not_generate_extra_frames (__main__.StdioContract.test_trailing_comments_do_not_generate_extra_frames) (tail='# tail') ... FAIL
+  test_trailing_comments_do_not_generate_extra_frames (__main__.StdioContract.test_trailing_comments_do_not_generate_extra_frames) (tail='/* tail */') ... FAIL
+  test_trailing_comments_do_not_generate_extra_frames (__main__.StdioContract.test_trailing_comments_do_not_generate_extra_frames) (tail="/* ; ' */\n-- end\n") ... FAIL
+
+======================================================================
+FAIL: test_adjacent_statements_receive_separate_responses (__main__.StdioContract.test_adjacent_statements_receive_separate_responses)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 54, in line
+    result = self.lines.get(timeout=3)
+  File "C:\Users\11946\anaconda3\Lib\queue.py", line 209, in get
+    raise Empty
+_queue.Empty
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 134, in test_adjacent_statements_receive_separate_responses
+    self.assertEqual(session.response(), ["OK"])
+                     ~~~~~~~~~~~~~~~~^^
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 75, in response
+    line = self.line()
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 56, in line
+    raise AssertionError(
+    ...<2 lines>...
+    ) from error
+AssertionError: no response within 3s after a complete semicolon-terminated request; stdin is still open and no newline/EOF was supplied
+
+======================================================================
+FAIL: test_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) (text='-- tail')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 164, in test_comment_only_eof_has_no_response
+    self.assertEqual(self.batch(text), [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['ERROR SQL_SYNTAX: unsupported or invalid statement'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'ERROR SQL_SYNTAX: unsupported or invalid statement'
+
+- ['ERROR SQL_SYNTAX: unsupported or invalid statement']
++ []
+
+======================================================================
+FAIL: test_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) (text='-- tail\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 164, in test_comment_only_eof_has_no_response
+    self.assertEqual(self.batch(text), [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['ERROR SQL_SYNTAX: unsupported or invalid statement'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'ERROR SQL_SYNTAX: unsupported or invalid statement'
+
+- ['ERROR SQL_SYNTAX: unsupported or invalid statement']
++ []
+
+======================================================================
+FAIL: test_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) (text='# tail')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 164, in test_comment_only_eof_has_no_response
+    self.assertEqual(self.batch(text), [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['ERROR SQL_SYNTAX: unsupported or invalid statement'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'ERROR SQL_SYNTAX: unsupported or invalid statement'
+
+- ['ERROR SQL_SYNTAX: unsupported or invalid statement']
++ []
+
+======================================================================
+FAIL: test_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) (text='/* tail */')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 164, in test_comment_only_eof_has_no_response
+    self.assertEqual(self.batch(text), [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['ERROR SQL_SYNTAX: unsupported or invalid statement'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'ERROR SQL_SYNTAX: unsupported or invalid statement'
+
+- ['ERROR SQL_SYNTAX: unsupported or invalid statement']
++ []
+
+======================================================================
+FAIL: test_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) (text='/* ; \' " */ ; -- tail')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 164, in test_comment_only_eof_has_no_response
+    self.assertEqual(self.batch(text), [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['ERROR SQL_SYNTAX: unsupported or invalid[61 chars]ent'] != []
+
+First list contains 2 additional elements.
+First extra element 0:
+'ERROR SQL_SYNTAX: unsupported or invalid statement'
+
++ []
+- ['ERROR SQL_SYNTAX: unsupported or invalid statement',
+-  'ERROR SQL_SYNTAX: unsupported or invalid statement']
+
+======================================================================
+FAIL: test_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) (text='\ufeff/* comment */\n# tail\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 164, in test_comment_only_eof_has_no_response
+    self.assertEqual(self.batch(text), [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['ERROR SQL_SYNTAX: unsupported or invalid statement'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'ERROR SQL_SYNTAX: unsupported or invalid statement'
+
+- ['ERROR SQL_SYNTAX: unsupported or invalid statement']
++ []
+
+======================================================================
+FAIL: test_comments_and_empty_statements_do_not_add_responses (__main__.StdioContract.test_comments_and_empty_statements_do_not_add_responses)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 176, in test_comments_and_empty_statements_do_not_add_responses
+    self.assertEqual(
+    ~~~~~~~~~~~~~~~~^
+        self.batch(";;/* ; */;# ;\n;BEGIN;-- ;\nROLLBACK;;;/* done */"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ["OK", "OK"],
+        ^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: Lists differ: ['ERROR SQL_SYNTAX: unsupported or invalid [126 chars]ent'] != ['OK', 'OK']
+
+First differing element 0:
+'ERROR SQL_SYNTAX: unsupported or invalid statement'
+'OK'
+
+First list contains 3 additional elements.
+First extra element 2:
+'OK'
+
++ ['OK', 'OK']
+- ['ERROR SQL_SYNTAX: unsupported or invalid statement',
+-  'ERROR SQL_SYNTAX: unsupported or invalid statement',
+-  'OK',
+-  'OK',
+-  'ERROR SQL_SYNTAX: unsupported or invalid statement']
+
+======================================================================
+FAIL: test_complete_request_needs_no_newline_or_eof (__main__.StdioContract.test_complete_request_needs_no_newline_or_eof)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 54, in line
+    result = self.lines.get(timeout=3)
+  File "C:\Users\11946\anaconda3\Lib\queue.py", line 209, in get
+    raise Empty
+_queue.Empty
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 121, in test_complete_request_needs_no_newline_or_eof
+    self.assertEqual(session.response(), ["OK"], request)
+                     ~~~~~~~~~~~~~~~~^^
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 75, in response
+    line = self.line()
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 56, in line
+    raise AssertionError(
+    ...<2 lines>...
+    ) from error
+AssertionError: no response within 3s after a complete semicolon-terminated request; stdin is still open and no newline/EOF was supplied
+
+======================================================================
+FAIL: test_default_protocol_flushes_at_semicolon (__main__.StdioContract.test_default_protocol_flushes_at_semicolon)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 54, in line
+    result = self.lines.get(timeout=3)
+  File "C:\Users\11946\anaconda3\Lib\queue.py", line 209, in get
+    raise Empty
+_queue.Empty
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 126, in test_default_protocol_flushes_at_semicolon
+    self.assertEqual(session.line(), "OK")
+                     ~~~~~~~~~~~~^^
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 56, in line
+    raise AssertionError(
+    ...<2 lines>...
+    ) from error
+AssertionError: no response within 3s after a complete semicolon-terminated request; stdin is still open and no newline/EOF was supplied
+
+======================================================================
+FAIL: test_error_response_does_not_need_following_byte (__main__.StdioContract.test_error_response_does_not_need_following_byte)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 54, in line
+    result = self.lines.get(timeout=3)
+  File "C:\Users\11946\anaconda3\Lib\queue.py", line 209, in get
+    raise Empty
+_queue.Empty
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 152, in test_error_response_does_not_need_following_byte
+    error = session.response()
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 75, in response
+    line = self.line()
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 56, in line
+    raise AssertionError(
+    ...<2 lines>...
+    ) from error
+AssertionError: no response within 3s after a complete semicolon-terminated request; stdin is still open and no newline/EOF was supplied
+
+======================================================================
+FAIL: test_split_comments_quotes_and_utf8_do_not_split_statements (__main__.StdioContract.test_split_comments_quotes_and_utf8_do_not_split_statements)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 54, in line
+    result = self.lines.get(timeout=3)
+  File "C:\Users\11946\anaconda3\Lib\queue.py", line 209, in get
+    raise Empty
+_queue.Empty
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 139, in test_split_comments_quotes_and_utf8_do_not_split_statements
+    self.assertEqual(session.response(), ["OK"])
+                     ~~~~~~~~~~~~~~~~^^
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 75, in response
+    line = self.line()
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 56, in line
+    raise AssertionError(
+    ...<2 lines>...
+    ) from error
+AssertionError: no response within 3s after a complete semicolon-terminated request; stdin is still open and no newline/EOF was supplied
+
+======================================================================
+FAIL: test_trailing_comments_do_not_generate_extra_frames (__main__.StdioContract.test_trailing_comments_do_not_generate_extra_frames) (tail='-- tail')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 170, in test_trailing_comments_do_not_generate_extra_frames
+    self.assertEqual(
+    ~~~~~~~~~~~~~~~~^
+        self.batch("BEGIN;ROLLBACK;" + tail, f"--ready-marker={END}"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ["OK", END, "OK", END],
+        ^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: Lists differ: ['OK'[43 chars]ND__', 'ERROR SQL_SYNTAX: unsupported or inval[30 chars]D__'] != ['OK'[43 chars]ND__']
+
+First list contains 2 additional elements.
+First extra element 4:
+'ERROR SQL_SYNTAX: unsupported or invalid statement'
+
++ ['OK', '__MVD_STDIO_END__', 'OK', '__MVD_STDIO_END__']
+- ['OK',
+-  '__MVD_STDIO_END__',
+-  'OK',
+-  '__MVD_STDIO_END__',
+-  'ERROR SQL_SYNTAX: unsupported or invalid statement',
+-  '__MVD_STDIO_END__']
+
+======================================================================
+FAIL: test_trailing_comments_do_not_generate_extra_frames (__main__.StdioContract.test_trailing_comments_do_not_generate_extra_frames) (tail='-- tail\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 170, in test_trailing_comments_do_not_generate_extra_frames
+    self.assertEqual(
+    ~~~~~~~~~~~~~~~~^
+        self.batch("BEGIN;ROLLBACK;" + tail, f"--ready-marker={END}"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ["OK", END, "OK", END],
+        ^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: Lists differ: ['OK'[43 chars]ND__', 'ERROR SQL_SYNTAX: unsupported or inval[30 chars]D__'] != ['OK'[43 chars]ND__']
+
+First list contains 2 additional elements.
+First extra element 4:
+'ERROR SQL_SYNTAX: unsupported or invalid statement'
+
++ ['OK', '__MVD_STDIO_END__', 'OK', '__MVD_STDIO_END__']
+- ['OK',
+-  '__MVD_STDIO_END__',
+-  'OK',
+-  '__MVD_STDIO_END__',
+-  'ERROR SQL_SYNTAX: unsupported or invalid statement',
+-  '__MVD_STDIO_END__']
+
+======================================================================
+FAIL: test_trailing_comments_do_not_generate_extra_frames (__main__.StdioContract.test_trailing_comments_do_not_generate_extra_frames) (tail='# tail')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 170, in test_trailing_comments_do_not_generate_extra_frames
+    self.assertEqual(
+    ~~~~~~~~~~~~~~~~^
+        self.batch("BEGIN;ROLLBACK;" + tail, f"--ready-marker={END}"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ["OK", END, "OK", END],
+        ^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: Lists differ: ['OK'[43 chars]ND__', 'ERROR SQL_SYNTAX: unsupported or inval[30 chars]D__'] != ['OK'[43 chars]ND__']
+
+First list contains 2 additional elements.
+First extra element 4:
+'ERROR SQL_SYNTAX: unsupported or invalid statement'
+
++ ['OK', '__MVD_STDIO_END__', 'OK', '__MVD_STDIO_END__']
+- ['OK',
+-  '__MVD_STDIO_END__',
+-  'OK',
+-  '__MVD_STDIO_END__',
+-  'ERROR SQL_SYNTAX: unsupported or invalid statement',
+-  '__MVD_STDIO_END__']
+
+======================================================================
+FAIL: test_trailing_comments_do_not_generate_extra_frames (__main__.StdioContract.test_trailing_comments_do_not_generate_extra_frames) (tail='/* tail */')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 170, in test_trailing_comments_do_not_generate_extra_frames
+    self.assertEqual(
+    ~~~~~~~~~~~~~~~~^
+        self.batch("BEGIN;ROLLBACK;" + tail, f"--ready-marker={END}"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ["OK", END, "OK", END],
+        ^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: Lists differ: ['OK'[43 chars]ND__', 'ERROR SQL_SYNTAX: unsupported or inval[30 chars]D__'] != ['OK'[43 chars]ND__']
+
+First list contains 2 additional elements.
+First extra element 4:
+'ERROR SQL_SYNTAX: unsupported or invalid statement'
+
++ ['OK', '__MVD_STDIO_END__', 'OK', '__MVD_STDIO_END__']
+- ['OK',
+-  '__MVD_STDIO_END__',
+-  'OK',
+-  '__MVD_STDIO_END__',
+-  'ERROR SQL_SYNTAX: unsupported or invalid statement',
+-  '__MVD_STDIO_END__']
+
+======================================================================
+FAIL: test_trailing_comments_do_not_generate_extra_frames (__main__.StdioContract.test_trailing_comments_do_not_generate_extra_frames) (tail="/* ; ' */\n-- end\n")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_stdio_contract.py", line 170, in test_trailing_comments_do_not_generate_extra_frames
+    self.assertEqual(
+    ~~~~~~~~~~~~~~~~^
+        self.batch("BEGIN;ROLLBACK;" + tail, f"--ready-marker={END}"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ["OK", END, "OK", END],
+        ^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: Lists differ: ['OK'[43 chars]ND__', 'ERROR SQL_SYNTAX: unsupported or inval[30 chars]D__'] != ['OK'[43 chars]ND__']
+
+First list contains 2 additional elements.
+First extra element 4:
+'ERROR SQL_SYNTAX: unsupported or invalid statement'
+
++ ['OK', '__MVD_STDIO_END__', 'OK', '__MVD_STDIO_END__']
+- ['OK',
+-  '__MVD_STDIO_END__',
+-  'OK',
+-  '__MVD_STDIO_END__',
+-  'ERROR SQL_SYNTAX: unsupported or invalid statement',
+-  '__MVD_STDIO_END__']
+
+----------------------------------------------------------------------
+Ran 9 tests in 15.307s
+
+FAILED (failures=17)

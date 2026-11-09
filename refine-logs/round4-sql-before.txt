@@ -1,0 +1,123 @@
+test_late_invalid_literals_preserve_prior_work_and_allow_commit (__main__.FormalSqlEdges.test_late_invalid_literals_preserve_prior_work_and_allow_commit) ... ok
+test_multirow_changes_see_prior_values_and_rollback_together (__main__.FormalSqlEdges.test_multirow_changes_see_prior_values_and_rollback_together) ... ok
+test_projection_metadata_aliases_and_unprojected_order_keys (__main__.FormalSqlEdges.test_projection_metadata_aliases_and_unprojected_order_keys) ... ok
+test_quoted_apostrophe_and_delimiters_remain_string_data (__main__.FormalSqlEdges.test_quoted_apostrophe_and_delimiters_remain_string_data) ... ok
+test_unicode_length_counts_codepoints_and_failed_batch_leaves_no_rows (__main__.FormalSqlEdges.test_unicode_length_counts_codepoints_and_failed_batch_leaves_no_rows) ... ok
+test_unicode_order_uses_codepoints_and_primary_key_ties (__main__.FormalSqlEdges.test_unicode_order_uses_codepoints_and_primary_key_ties) ... ok
+test_unknown_identifier_in_delete_cannot_remove_a_matching_literal (__main__.FormalSqlEdges.test_unknown_identifier_in_delete_cannot_remove_a_matching_literal) ... FAIL
+test_unknown_identifier_in_multirow_insert_is_atomic (__main__.FormalSqlEdges.test_unknown_identifier_in_multirow_insert_is_atomic) ... FAIL
+test_unknown_identifier_in_multirow_update_is_rejected (__main__.FormalSqlEdges.test_unknown_identifier_in_multirow_update_is_rejected) ... FAIL
+test_unknown_identifier_in_select_is_not_a_string (__main__.FormalSqlEdges.test_unknown_identifier_in_select_is_not_a_string) ... FAIL
+
+======================================================================
+FAIL: test_unknown_identifier_in_delete_cannot_remove_a_matching_literal (__main__.FormalSqlEdges.test_unknown_identifier_in_delete_cannot_remove_a_matching_literal)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_formal_sql_edges.py", line 107, in test_unknown_identifier_in_delete_cannot_remove_a_matching_literal
+    self.check_sql(
+    ~~~~~~~~~~~~~~^
+        ("CREATE TABLE t(id BIGINT PRIMARY KEY,s VARCHAR(8))", ["OK"]),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+        ("SELECT id,s FROM t ORDER BY id", prior),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_formal_sql_edges.py", line 67, in check_sql
+    self.fail("\n\n".join(failures))
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: SQL: DELETE FROM t WHERE s=missing
+expected: one ERROR with a nonempty code
+actual: ['OK 1']
+
+SQL: SELECT id,s FROM t ORDER BY id
+expected: ['COLUMNS\tid\ts', '1\tmissing', '2\tprior']
+actual: ['COLUMNS\tid\ts', '2\tprior']
+
+SQL: SELECT id,s FROM t ORDER BY id
+expected: ['COLUMNS\tid\ts', '1\tmissing', '2\tprior']
+actual: ['COLUMNS\tid\ts', '2\tprior']
+
+======================================================================
+FAIL: test_unknown_identifier_in_multirow_insert_is_atomic (__main__.FormalSqlEdges.test_unknown_identifier_in_multirow_insert_is_atomic)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_formal_sql_edges.py", line 80, in test_unknown_identifier_in_multirow_insert_is_atomic
+    self.check_sql(
+    ~~~~~~~~~~~~~~^
+        ("CREATE TABLE t(id BIGINT PRIMARY KEY,s VARCHAR(8))", ["OK"]),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+        ("SELECT id,s FROM t ORDER BY id", prior),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_formal_sql_edges.py", line 67, in check_sql
+    self.fail("\n\n".join(failures))
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: SQL: INSERT INTO t VALUES (2,'valid'),(3,missing)
+expected: one ERROR with a nonempty code
+actual: ['OK 2']
+
+SQL: SELECT id,s FROM t ORDER BY id
+expected: ['COLUMNS\tid\ts', '1\tprior']
+actual: ['COLUMNS\tid\ts', '1\tprior', '2\tvalid', '3\tmissing']
+
+SQL: SELECT id,s FROM t ORDER BY id
+expected: ['COLUMNS\tid\ts', '1\tprior']
+actual: ['COLUMNS\tid\ts', '1\tprior', '2\tvalid', '3\tmissing']
+
+======================================================================
+FAIL: test_unknown_identifier_in_multirow_update_is_rejected (__main__.FormalSqlEdges.test_unknown_identifier_in_multirow_update_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_formal_sql_edges.py", line 93, in test_unknown_identifier_in_multirow_update_is_rejected
+    self.check_sql(
+    ~~~~~~~~~~~~~~^
+        ("CREATE TABLE t(id BIGINT PRIMARY KEY,s VARCHAR(8))", ["OK"]),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+        ("SELECT id,s FROM t ORDER BY id", ["COLUMNS\tid\ts", "1\tafter", "2\tprior"]),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_formal_sql_edges.py", line 67, in check_sql
+    self.fail("\n\n".join(failures))
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: SQL: UPDATE t SET s=missing WHERE id>=1
+expected: one ERROR with a nonempty code
+actual: ['OK 2']
+
+SQL: SELECT id,s FROM t ORDER BY id
+expected: ['COLUMNS\tid\ts', '1\told', '2\tprior']
+actual: ['COLUMNS\tid\ts', '1\tmissing', '2\tmissing']
+
+SQL: SELECT id,s FROM t ORDER BY id
+expected: ['COLUMNS\tid\ts', '1\tafter', '2\tprior']
+actual: ['COLUMNS\tid\ts', '1\tafter', '2\tmissing']
+
+======================================================================
+FAIL: test_unknown_identifier_in_select_is_not_a_string (__main__.FormalSqlEdges.test_unknown_identifier_in_select_is_not_a_string)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_formal_sql_edges.py", line 70, in test_unknown_identifier_in_select_is_not_a_string
+    self.check_sql(
+    ~~~~~~~~~~~~~~^
+        ("CREATE TABLE t(id BIGINT PRIMARY KEY,s VARCHAR(8))", ["OK"]),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        ("SELECT id,s FROM t ORDER BY id", ["COLUMNS\tid\ts", "1\tmissing", "2\tkeep"]),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_formal_sql_edges.py", line 67, in check_sql
+    self.fail("\n\n".join(failures))
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: SQL: SELECT id FROM t WHERE s=missing ORDER BY id
+expected: one ERROR with a nonempty code
+actual: ['COLUMNS\tid', '1']
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.188s
+
+FAILED (failures=4)
