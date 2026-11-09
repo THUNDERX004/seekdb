@@ -1,0 +1,15 @@
+COUNTEREXAMPLE CREATE_TABLE budget=38 exception=bad_alloc catalog_bytes=0->67 live_table=UNKNOWN_TABLE restart_table=present directory=C:\Users\11946\AppData\Local\Temp\mvd-allocation-1l3fqk_g\CREATE_TABLE-38
+COUNTEREXAMPLE CREATE_TABLE budget=39 exception=bad_alloc catalog_bytes=0->67 live_table=UNKNOWN_TABLE restart_table=present directory=C:\Users\11946\AppData\Local\Temp\mvd-allocation-1l3fqk_g\CREATE_TABLE-39
+COUNTEREXAMPLE CREATE_TABLE budget=40 exception=bad_alloc catalog_bytes=0->67 live_table=UNKNOWN_TABLE restart_table=present directory=C:\Users\11946\AppData\Local\Temp\mvd-allocation-1l3fqk_g\CREATE_TABLE-40
+COUNTEREXAMPLE CREATE_TABLE budget=41 exception=bad_alloc catalog_bytes=0->67 live_table=UNKNOWN_TABLE restart_table=present directory=C:\Users\11946\AppData\Local\Temp\mvd-allocation-1l3fqk_g\CREATE_TABLE-41
+COUNTEREXAMPLE CREATE_TABLE budget=42 exception=bad_alloc catalog_bytes=0->67 live_table=UNKNOWN_TABLE restart_table=present directory=C:\Users\11946\AppData\Local\Temp\mvd-allocation-1l3fqk_g\CREATE_TABLE-42
+COUNTEREXAMPLE CREATE_TABLE budget=43 exception=bad_alloc catalog_bytes=0->67 live_table=UNKNOWN_TABLE restart_table=present directory=C:\Users\11946\AppData\Local\Temp\mvd-allocation-1l3fqk_g\CREATE_TABLE-43
+COUNTEREXAMPLE CREATE_TABLE budget=44 exception=bad_alloc catalog_bytes=0->67 live_table=UNKNOWN_TABLE restart_table=present directory=C:\Users\11946\AppData\Local\Temp\mvd-allocation-1l3fqk_g\CREATE_TABLE-44
+COUNTEREXAMPLE CREATE_TABLE budget=45 exception=bad_alloc catalog_bytes=0->67 live_table=UNKNOWN_TABLE restart_table=present directory=C:\Users\11946\AppData\Local\Temp\mvd-allocation-1l3fqk_g\CREATE_TABLE-45
+COUNTEREXAMPLE CREATE_TABLE budget=46 exception=bad_alloc catalog_bytes=0->67 live_table=UNKNOWN_TABLE restart_table=present directory=C:\Users\11946\AppData\Local\Temp\mvd-allocation-1l3fqk_g\CREATE_TABLE-46
+COUNTEREXAMPLE CREATE_TABLE budget=47 exception=bad_alloc catalog_bytes=0->67 live_table=UNKNOWN_TABLE restart_table=present directory=C:\Users\11946\AppData\Local\Temp\mvd-allocation-1l3fqk_g\CREATE_TABLE-47
+COUNTEREXAMPLE CREATE_TABLE budget=48 exception=bad_alloc catalog_bytes=0->67 live_table=UNKNOWN_TABLE restart_table=present directory=C:\Users\11946\AppData\Local\Temp\mvd-allocation-1l3fqk_g\CREATE_TABLE-48
+COUNTEREXAMPLE CREATE_TABLE budget=49 exception=bad_alloc catalog_bytes=0->67 live_table=UNKNOWN_TABLE restart_table=present directory=C:\Users\11946\AppData\Local\Temp\mvd-allocation-1l3fqk_g\CREATE_TABLE-49
+COUNTEREXAMPLE CREATE_TABLE budget=50 exception=bad_alloc catalog_bytes=0->67 live_table=UNKNOWN_TABLE restart_table=present directory=C:\Users\11946\AppData\Local\Temp\mvd-allocation-1l3fqk_g\CREATE_TABLE-50
+SUMMARY CREATE_TABLE failures=51 violations=13 first_success_budget=51
+SUMMARY CREATE_INDEX failures=39 violations=0 first_success_budget=39

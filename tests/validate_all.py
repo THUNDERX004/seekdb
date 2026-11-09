@@ -25,15 +25,20 @@ def main():
     parser.add_argument("--fault", type=Path, required=True)
     parser.add_argument("--allocation-normal", type=Path)
     parser.add_argument("--allocation-scalar", type=Path)
+    parser.add_argument("--commit-allocation-normal", type=Path)
+    parser.add_argument("--commit-allocation-scalar", type=Path)
+    parser.add_argument("--catalog-allocation-normal", type=Path)
+    parser.add_argument("--catalog-allocation-scalar", type=Path)
     parser.add_argument("--prefix", type=Path, required=True)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     binaries = {name: getattr(args, name).resolve(strict=True)
                 for name in ("normal", "scalar", "fault")}
-    for label in ("normal", "scalar"):
-        allocation = getattr(args, "allocation_" + label)
-        if allocation is not None:
-            binaries["allocation-" + label] = allocation.resolve(strict=True)
+    for kind in ("allocation", "commit-allocation", "catalog-allocation"):
+        for label in ("normal", "scalar"):
+            allocation = getattr(args, kind.replace("-", "_") + "_" + label)
+            if allocation is not None:
+                binaries[kind + "-" + label] = allocation.resolve(strict=True)
     suites = ("run_public.py", "test_extended.py", "test_semantics.py",
               "test_disk_scan.py", "test_hidden_edges.py", "test_differential.py",
               "test_exact_distance.py", "test_selection_paths.py",
@@ -56,12 +61,13 @@ def main():
                                "--steps", "4000", "--seed", "13",
                                "--seed", "2147483647", "--seed", "20261129"]),
     ]
-    for label in ("normal", "scalar"):
-        key = "allocation-" + label
-        if key in binaries:
-            commands.append((key, [sys.executable, "-X", "utf8", "-B",
-                                   str(root / "tests/test_statement_allocation.py"),
-                                   str(binaries[key])]))
+    for kind in ("allocation", "commit-allocation", "catalog-allocation"):
+        for label in ("normal", "scalar"):
+            key = kind + "-" + label
+            if key in binaries:
+                commands.append((key, [sys.executable, "-X", "utf8", "-B",
+                                       str(root / "tests/test_statement_allocation.py"),
+                                       str(binaries[key])]))
     paths = [root / "src/minivectordb.cpp", root / "CMakeLists.txt", root / "Dockerfile",
              *sorted((root / "tests").glob("*.py")),
              *sorted((root / "tests").glob("*.cpp")), root / "mysqltest/manifest.json"]

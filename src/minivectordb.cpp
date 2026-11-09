@@ -1635,7 +1635,7 @@ class Table {
   TableDef &definition() { return definition_; }
   const fs::path &dataPath() const { return data_path_; }
 
-  void setCacheLimit(size_t bytes) {
+  void setCacheLimit(size_t bytes) noexcept {
     clearEqualityIndex();
     cache_limit_bytes_ = bytes;
     if (cache_bytes_ > cache_limit_bytes_) {
@@ -1909,7 +1909,7 @@ class Table {
     return deserializeRow(payload);
   }
 
-  void disableCache() {
+  void disableCache() noexcept {
     clearEqualityIndex();
     cache_enabled_ = false;
     cache_bytes_ = 0;
@@ -1931,7 +1931,7 @@ class Table {
   bool equality_disabled_ = false;
   std::unordered_map<std::string, IndexedRows> equality_index_;
 
-  void clearEqualityIndex() {
+  void clearEqualityIndex() noexcept {
     decltype(equality_index_){}.swap(equality_index_);
     equality_column_ = std::numeric_limits<size_t>::max();
     equality_disabled_ = false;
@@ -2170,15 +2170,24 @@ class Database {
     if (tables_.contains(key)) {
       fail("TABLE_EXISTS", "table '" + definition.name + "' already exists");
     }
-    definition.oid = next_oid_++;
-    appendCatalog(definition);
-    tables_[key] = std::make_unique<Table>(
+    definition.oid = next_oid_;
+    auto table = std::make_unique<Table>(
         definition, data_dir_ / ("t" + std::to_string(definition.oid) + ".dat"));
+    // Prepare the table and map node before the catalog becomes durable.
+    // Requests are serialized, so this staged entry cannot be observed here.
+    auto entry = tables_.emplace(key, std::move(table)).first;
+    try {
+      appendCatalog(definition);
+    } catch (...) {
+      tables_.erase(entry);
+      throw;
+    }
+    ++next_oid_;
     rebalanceRowCaches();
     return ExecResult{};
   }
 
-  void rebalanceRowCaches() {
+  void rebalanceRowCaches() noexcept {
     const size_t per_table = cacheLimitBytes() / std::max<size_t>(1, tables_.size());
     for (auto &[name, table] : tables_) {
       (void)name;
@@ -2263,10 +2272,12 @@ class Database {
       }
       overlay_.clear();
     } catch (...) {
-      overlay_.clear();
       if (write_started) {
+        overlay_.clear();
         throw RecoveryRequired();
       }
+      // Before any append, an explicit transaction can safely retry COMMIT.
+      // Autocommit still discards its statement through finishMutation().
       throw;
     }
   }

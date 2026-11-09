@@ -1,0 +1,2 @@
+SUMMARY CREATE_TABLE failures=51 violations=0 first_success_budget=51
+SUMMARY CREATE_INDEX failures=39 violations=0 first_success_budget=39

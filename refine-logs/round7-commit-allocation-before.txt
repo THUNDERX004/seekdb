@@ -1,0 +1,2 @@
+COMMIT allocation failure #5 discarded pending work before returning a retryable error
+FAIL retryable COMMIT failure lost prior successful work
