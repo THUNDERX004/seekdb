@@ -1,37 +1,58 @@
-# 性能诊断报告
+# 第三轮性能诊断报告
 
-日期：2026-11-09T18:22:45+08:00。最终二进制 020d7c11b4a0e56ac5c2f3ca88bfcc16de7c6311e653ae49233084d27717142d。
+记录：2026-11-09 19:27:39 +08:00。正式计时使用未插桩默认二进制88ecccd8adf6f53102ae446d3d65377427a18038a25bb28a6704d6db142dd424；诊断构建不冒充交付二进制。上一轮报告PROFILE_REPORT_20261109_182245.md原样保留。
 
-## 诊断事实
+## 诊断事实与观察者效应
 
-| 维度 | 基线中位数 | 候选中位数 | 边界 |
-| --- | ---: | ---: | --- |
-| 写入进程CPU秒 | 1.6875 | 0.21875 | Windows子进程计数，非函数采样 |
-| 查询进程CPU秒 | 0.328125 | 0.171875 | 量化计数，无调用栈 |
-| 主负载peak working set字节 | 15486976 | 15503360 | 进程生命周期峰值，不是cgroup内存 |
-| 主负载peak commit charge字节 | 11563008 | 11403264 | 不是磁盘pagefile读写量 |
-| 1MiB缓存查询墙钟秒 | 6.8366545 | 0.3662347 | 超行缓存，不保证OS冷缓存 |
+MVD_PROFILE仅独立编译启用：Execute/Parse/Select逐调用计时，Distance/Output每256次取一次样，Heap每32次取一次样；完整calls仍计数。嵌套墙钟不可相加，也不是排他CPU调用栈采样。确定性采样可能有偏，时钟和计数会改变执行成本，不外推热点百分比。Parse/Execute包含建表/插入，Select只含查询。
 
-GetProcessIoCounters包含stdin/stdout管道，不能从中推算物理磁盘B。本机没有Linux perf/cgroup测量；GPU/互连不适用于该单进程CPU任务。
+TopK：10000行、128维、1000查询、K10、seed20261109。两版全部查询独立校验，两个Recall组均1.0。原始round3-before-topk.json/round3-final-topk.json：
 
-## 归因与局限
+| 路径 | 对照calls | 最终calls | 对照采样数 | 最终采样数 |
+| --- | ---: | ---: | ---: | ---: |
+| execute | 1101 | 1101 | 1101 | 1101 |
+| parse | 1101 | 1101 | 1101 | 1101 |
+| select | 1000 | 1000 | 1000 | 1000 |
+| distance | 5500000 | 5500000 | 21485 | 21485 |
+| output | 10000 | 10000 | 40 | 40 |
+| heap | 67171 | 67171 | 2100 | 2100 |
 
-写入CPU明显下降，与保留的CRC/解析/序列化/流同步消融方向一致；这些历史消融使用bench.py且部分版本合并改动，不能精确归因单个函数。低缓存扫描大幅改善，与复用文件流消除逐行open/close一致。有过滤查询的改善与减少候选扫描一致。均为机制分析，不是函数热点采样证明。
+两版扫描距离次数相同，说明本轮主收益并非减少向量距离数量。保留行引用/移动堆减少候选行副本是机制解释，不把嵌套计时当作因果分解。
 
-独立-pg profiling构建运行后，gprof平面报告只有表头、没有函数采样。原输出见gprof-sampling.txt；无有效函数热点图，不能声称gprof确认某函数占比。对应profile构建、gmon.out留在被忽略的build/profile目录，未提交二进制。正式负载没有启用-pg或循环内计时。
+普通排序附加负载：10000行、128维、20查询，SELECT id,payload,emb，ORDER BY cat,payload LIMIT 10 OFFSET 7。两版逐查询全字段独立校验：
 
-查询预转换/每查询dispatch的三轮增量中位数配对加速1.0763倍；最终近等距离精确兜底后，对明显更远的行缓存拒绝界，消除每行重复精度判断。最终三轮与全部正确性证据见refine-logs/EXPERIMENT_RESULTS.md；历史较慢版本均保留。
+| 路径 | 对照calls | 最终calls | 对照采样数 | 最终采样数 |
+| --- | ---: | ---: | ---: | ---: |
+| execute | 121 | 121 | 121 | 121 |
+| parse | 121 | 121 | 121 | 121 |
+| select | 20 | 20 | 20 | 20 |
+| distance | 0 | 0 | 0 | 0 |
+| output | 200000 | 200 | 782 | 1 |
+| heap | 0 | 0 | 0 | 0 |
 
-下一步按优先级：官方Linux容器预检与cgroup v2资源采集；受限内存恢复与metadata/事务overlay压力测试；只有采样确认CPU扫描仍主导时才评估batch距离或新索引。不得通过绕过fsync、遗漏过滤、丢失精确排序或延迟计量外写回换性能。
+诊断查询墙钟21.6901721→0.0255960秒；输出格式化调用200000→200。提前为淘汰候选格式化向量/字符串的浪费已消除。此值只属独立插桩负载。未插桩附加对照另使用每轮5查询，共3轮，原始round3-ordinary-{before,final}-{1,2,3}.json；不能称官方主负载提升704倍。
+
+## 未插桩结果和资源边界
+
+- 主负载三轮中位数：写入0.3031224→0.2947664秒，查询0.2040616→0.1955412秒。
+- 1MiB行缓存查询0.3603338→0.1737551秒；固定256项Version块按offset扫描及相邻记录少seek与该改善一致，不意味着物理设备IO减少同样倍数。
+- working-set峰值中位数15372288→15446016字节，commit-charge11452416→11620352字节，略增；超缓存写入中位数略慢。
+- Windows进程计数不是cgroup v2 memory.peak/io.stat；GetProcessIoCounters含管道。无Linux perf、可用Docker daemon或WSL；没有CPU排他热点图。GPU/互连不适用于本单进程CPU程序。
+- batch四行距离和连续Row指针目录未显示稳定收益，已移除。原始负实验保留，不以单轮/中位数之比挑选正结果。
+
+完整原始三轮、均值/样本标准差、正确性和版本指纹见refine-logs/EXPERIMENT_RESULTS.md与bench/results/round3-summary.json。
 
 ## 诊断/插桩改动清单
 
-| 文件 | 类型 | 内容 |
-| --- | --- | --- |
-| bench/evaluate.py | 新增 | 同种子串行交替、逐请求计时、Windows CPU/内存/I/O快照、独立全查询与持久化检查、二进制指纹 |
-| bench/results/*.json | 新增原始数据 | 每轮实际计时、参数、摘要与诊断，旧结果未删除 |
-| profile_output/gprof-sampling.txt | 新增 | 无有效采样的原始gprof平面输出 |
-| profile_output/PROFILE_REPORT*.md | 新增 | 本报告及时间戳版本 |
-| build/profile/minivectordb.exe、gmon.out | 本地忽略产物 | 独立-pg构建，不是提测二进制，不提交 |
+| 文件 | 类型 | 内容 | 行 |
+| --- | --- | --- | --- |
+| src/minivectordb.cpp | 修改，仅宏启用 | ProfileCounter/ProfileScope、stderr结构化报告及关闭宏 | 36、57—111 |
+| src/minivectordb.cpp | 修改，仅宏启用 | Execute/Parse/Select/Output/Distance/Heap采样作用域 | 1971、2429、2513、2628、2633、2643、3287 |
+| bench/profile_queries.py | 新增 | 独立负载、请求计时、全字段真值、插桩原始stderr、指纹 | 全文件 |
+| profile_output/round3-*.json | 新增 | 原始诊断/未插桩普通负载，区分binary hash | 各文件 |
+| profile_output/PROFILE_REPORT*.md | 新增/更新 | 本报告及历史副本 | 全文件 |
+| build/round3-profile-{before,final}/ | 本地忽略产物 | 独立宏构建；不提交二进制 | — |
 
-生产源码没有PROFILE计时、stdout诊断或采样探针；内核优化不是插桩。诊断脚本可在不影响数据库运行的情况下不执行，故本轮没有删除用户产物。
+MVD_TEST_FAULTS是另一个独立测试宏，不是性能诊断；仅故障构建启用。生产默认/标量构建不启用两宏，stdout协议不变。插桩已编译隔离，可在后续不需要诊断时按上表移除，不删除本轮原始证据。
+
+下一步优先官方Linux容器预检、cgroup真实资源和受限内存恢复压力；只有新证据明确瓶颈后才尝试新索引/布局。不减fsync、不损失精确排序和过滤语义。正式跨模型审计REVIEW_UNAVAILABLE。

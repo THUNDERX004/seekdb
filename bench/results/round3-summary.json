@@ -1,0 +1,471 @@
+{
+  "schema_version": "minivectordb-round3-summary-v1",
+  "timestamp_utc": "2026-11-09T11:35:56.324036+00:00",
+  "official_score": null,
+  "official_rank": null,
+  "source_sha256": "91f6f43f1aeeb74ec160784113f02a0a2951b592ba8c05ba0901220050a67b45",
+  "binary_sha256": "88ecccd8adf6f53102ae446d3d65377427a18038a25bb28a6704d6db142dd424",
+  "scope": "local Windows diagnostics; no Linux/cgroup/hidden-case guarantee",
+  "main": {
+    "source": "bench/results/round3-final-main.json",
+    "binaries": {
+      "baseline": {
+        "mtime_ns": 1794219602777220300,
+        "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round3-before\\minivectordb.exe",
+        "sha256": "020d7c11b4a0e56ac5c2f3ca88bfcc16de7c6311e653ae49233084d27717142d",
+        "size_bytes": 3600813
+      },
+      "candidate": {
+        "mtime_ns": 1794223400141870900,
+        "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\minivectordb.exe",
+        "sha256": "88ecccd8adf6f53102ae446d3d65377427a18038a25bb28a6704d6db142dd424",
+        "size_bytes": 3595337
+      }
+    },
+    "parameters": {
+      "batch": 100,
+      "dim": 128,
+      "k": 10,
+      "queries": 1000,
+      "rows": 10000,
+      "runs": 3,
+      "seed": 20261119,
+      "timeout": 60
+    },
+    "statistics": {
+      "write_seconds": {
+        "baseline": {
+          "values": [
+            0.3104247,
+            0.3031224,
+            0.2991007
+          ],
+          "median": 0.3031224,
+          "mean": 0.30421593333333335,
+          "sample_stddev": 0.005740653740065963,
+          "min": 0.2991007,
+          "max": 0.3104247
+        },
+        "candidate": {
+          "values": [
+            0.2947664,
+            0.2942676,
+            0.2989409
+          ],
+          "median": 0.2947664,
+          "mean": 0.29599163333333334,
+          "sample_stddev": 0.0025662873501097554,
+          "min": 0.2942676,
+          "max": 0.2989409
+        },
+        "ratio_of_medians": 1.0283478713991827,
+        "paired_ratios": {
+          "values": [
+            1.0531210477177861,
+            1.0300909784155645,
+            1.0005345538198354
+          ],
+          "median": 1.0300909784155645,
+          "mean": 1.027915526651062,
+          "sample_stddev": 0.026360657766917758,
+          "min": 1.0005345538198354,
+          "max": 1.0531210477177861
+        }
+      },
+      "query_seconds": {
+        "baseline": {
+          "values": [
+            0.2011774,
+            0.2040616,
+            0.2085274
+          ],
+          "median": 0.2040616,
+          "mean": 0.20458880000000002,
+          "sample_stddev": 0.003703252608181081,
+          "min": 0.2011774,
+          "max": 0.2085274
+        },
+        "candidate": {
+          "values": [
+            0.1919541,
+            0.1955412,
+            0.201221
+          ],
+          "median": 0.1955412,
+          "mean": 0.19623876666666668,
+          "sample_stddev": 0.004672666085152398,
+          "min": 0.1919541,
+          "max": 0.201221
+        },
+        "ratio_of_medians": 1.0435734259583147,
+        "paired_ratios": {
+          "values": [
+            1.0480495076687606,
+            1.0435734259583147,
+            1.0363103254630481
+          ],
+          "median": 1.0435734259583147,
+          "mean": 1.0426444196967077,
+          "sample_stddev": 0.005924473747963412,
+          "min": 1.0363103254630481,
+          "max": 1.0480495076687606
+        }
+      }
+    }
+  },
+  "disk": {
+    "source": "bench/results/round3-final-disk.json",
+    "binaries": {
+      "baseline": {
+        "mtime_ns": 1794219602777220300,
+        "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round3-before\\minivectordb.exe",
+        "sha256": "020d7c11b4a0e56ac5c2f3ca88bfcc16de7c6311e653ae49233084d27717142d",
+        "size_bytes": 3600813
+      },
+      "candidate": {
+        "mtime_ns": 1794223400141870900,
+        "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\minivectordb.exe",
+        "sha256": "88ecccd8adf6f53102ae446d3d65377427a18038a25bb28a6704d6db142dd424",
+        "size_bytes": 3595337
+      }
+    },
+    "parameters": {
+      "batch": 100,
+      "dim": 128,
+      "k": 10,
+      "queries": 40,
+      "rows": 3000,
+      "runs": 3,
+      "seed": 20261119,
+      "timeout": 60
+    },
+    "statistics": {
+      "write_seconds": {
+        "baseline": {
+          "values": [
+            0.0965576,
+            0.0993312,
+            0.0948384
+          ],
+          "median": 0.0965576,
+          "mean": 0.09690906666666667,
+          "sample_stddev": 0.0022669273418734256,
+          "min": 0.0948384,
+          "max": 0.0993312
+        },
+        "candidate": {
+          "values": [
+            0.0951693,
+            0.0980015,
+            0.0974569
+          ],
+          "median": 0.0974569,
+          "mean": 0.0968759,
+          "sample_stddev": 0.001502833976192982,
+          "min": 0.0951693,
+          "max": 0.0980015
+        },
+        "ratio_of_medians": 0.9907723311535663,
+        "paired_ratios": {
+          "values": [
+            1.014587687416005,
+            1.0135681596710253,
+            0.9731317125826905
+          ],
+          "median": 1.0135681596710253,
+          "mean": 1.0004291865565735,
+          "sample_stddev": 0.02364580138675393,
+          "min": 0.9731317125826905,
+          "max": 1.014587687416005
+        }
+      },
+      "query_seconds": {
+        "baseline": {
+          "values": [
+            0.3603338,
+            0.3629901,
+            0.3595255
+          ],
+          "median": 0.3603338,
+          "mean": 0.3609498,
+          "sample_stddev": 0.0018125824919158792,
+          "min": 0.3595255,
+          "max": 0.3629901
+        },
+        "candidate": {
+          "values": [
+            0.1737551,
+            0.1718994,
+            0.1745021
+          ],
+          "median": 0.1737551,
+          "mean": 0.17338553333333334,
+          "sample_stddev": 0.0013401292711277195,
+          "min": 0.1718994,
+          "max": 0.1745021
+        },
+        "ratio_of_medians": 2.0738027257904945,
+        "paired_ratios": {
+          "values": [
+            2.0738027257904945,
+            2.1116426235344625,
+            2.060293257215816
+          ],
+          "median": 2.0738027257904945,
+          "mean": 2.081912868846924,
+          "sample_stddev": 0.026618042201267494,
+          "min": 2.060293257215816,
+          "max": 2.1116426235344625
+        }
+      }
+    }
+  },
+  "validation": {
+    "source": "refine-logs/round3-validation-final.json",
+    "commands_passed": 19,
+    "long_random_output": "PASS exact distance oracle: 1D large-probe order and Fraction boundaries\nPASS case=random seed=13 dim=8 statements=9027\nPASS case=random seed=2147483647 dim=8 statements=8995\nPASS case=random seed=20261129 dim=33 statements=9012\nPASS differential: 3/3 cases, 27034 SQL statements, 0 query mismatches\n"
+  },
+  "ordinary_supplemental": {
+    "before": {
+      "values": [
+        4.8057091,
+        4.824437,
+        4.747339
+      ],
+      "median": 4.8057091,
+      "mean": 4.792495033333333,
+      "sample_stddev": 0.040211740442354746,
+      "min": 4.747339,
+      "max": 4.824437
+    },
+    "final": {
+      "values": [
+        0.0069893,
+        0.0068261,
+        0.0066377
+      ],
+      "median": 0.0068261,
+      "mean": 0.0068177,
+      "sample_stddev": 0.0001759504475697635,
+      "min": 0.0066377,
+      "max": 0.0069893
+    },
+    "ratio_of_medians": 704.0197330833125
+  },
+  "rejected_experiments": {
+    "batch": {
+      "source": "bench/results/round3-batch.json",
+      "binaries": {
+        "baseline": {
+          "mtime_ns": 1794222839353507200,
+          "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round3-commit\\minivectordb.exe",
+          "sha256": "49f523c7abfc861163cb4e77db855751101cde0c49daa201ba62861d04a250bf",
+          "size_bytes": 3568798
+        },
+        "candidate": {
+          "mtime_ns": 1794222958907256300,
+          "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round3-batch\\minivectordb.exe",
+          "sha256": "7216b6b3d1d12f2e2b244153d8c4e6335f6706529401b5175cebaf671428c1bf",
+          "size_bytes": 3573838
+        }
+      },
+      "parameters": {
+        "batch": 100,
+        "dim": 128,
+        "k": 10,
+        "queries": 1000,
+        "rows": 10000,
+        "runs": 3,
+        "seed": 20261119,
+        "timeout": 60
+      },
+      "statistics": {
+        "write_seconds": {
+          "baseline": {
+            "values": [
+              0.2981075,
+              0.2985867,
+              0.3040833
+            ],
+            "median": 0.2985867,
+            "mean": 0.3002591666666667,
+            "sample_stddev": 0.003320452525384652,
+            "min": 0.2981075,
+            "max": 0.3040833
+          },
+          "candidate": {
+            "values": [
+              0.3067001,
+              0.3042065,
+              0.3002481
+            ],
+            "median": 0.3042065,
+            "mean": 0.3037182333333333,
+            "sample_stddev": 0.003253594820092569,
+            "min": 0.3002481,
+            "max": 0.3067001
+          },
+          "ratio_of_medians": 0.9815263644925404,
+          "paired_ratios": {
+            "values": [
+              0.9719837065589482,
+              0.9815263644925404,
+              1.0127734363681236
+            ],
+            "median": 0.9815263644925404,
+            "mean": 0.9887611691398707,
+            "sample_stddev": 0.021335587950421172,
+            "min": 0.9719837065589482,
+            "max": 1.0127734363681236
+          }
+        },
+        "query_seconds": {
+          "baseline": {
+            "values": [
+              0.193469,
+              0.1896049,
+              0.194604
+            ],
+            "median": 0.193469,
+            "mean": 0.1925593,
+            "sample_stddev": 0.0026207662562693418,
+            "min": 0.1896049,
+            "max": 0.194604
+          },
+          "candidate": {
+            "values": [
+              0.1970852,
+              0.1930161,
+              0.1970611
+            ],
+            "median": 0.1970611,
+            "mean": 0.1957208,
+            "sample_stddev": 0.0023423699046051585,
+            "min": 0.1930161,
+            "max": 0.1970852
+          },
+          "ratio_of_medians": 0.9817716434141492,
+          "paired_ratios": {
+            "values": [
+              0.9816515902766926,
+              0.9823268628886398,
+              0.9875312783700081
+            ],
+            "median": 0.9823268628886398,
+            "mean": 0.9838365771784469,
+            "sample_stddev": 0.0032174696496322557,
+            "min": 0.9816515902766926,
+            "max": 0.9875312783700081
+          }
+        }
+      }
+    },
+    "directory": {
+      "source": "bench/results/round3-directory.json",
+      "binaries": {
+        "baseline": {
+          "mtime_ns": 1794223086423196500,
+          "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round3-disk\\minivectordb.exe",
+          "sha256": "8ddcf05cfa786698c66fad56c69b171c0a28741f881af86a2c43a6428b502a34",
+          "size_bytes": 3593710
+        },
+        "candidate": {
+          "mtime_ns": 1794223169857093000,
+          "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round3-directory\\minivectordb.exe",
+          "sha256": "532a2570edb22cda8d60079376f3cf6cbc130ae4b002786e8e5dc03e12c78554",
+          "size_bytes": 3595951
+        }
+      },
+      "parameters": {
+        "batch": 100,
+        "dim": 128,
+        "k": 10,
+        "queries": 1000,
+        "rows": 10000,
+        "runs": 3,
+        "seed": 20261119,
+        "timeout": 60
+      },
+      "statistics": {
+        "write_seconds": {
+          "baseline": {
+            "values": [
+              0.2970689,
+              0.3077431,
+              0.2952548
+            ],
+            "median": 0.2970689,
+            "mean": 0.30002226666666665,
+            "sample_stddev": 0.006747680358710931,
+            "min": 0.2952548,
+            "max": 0.3077431
+          },
+          "candidate": {
+            "values": [
+              0.2943152,
+              0.2958933,
+              0.2978757
+            ],
+            "median": 0.2958933,
+            "mean": 0.2960280666666667,
+            "sample_stddev": 0.0017840716362672688,
+            "min": 0.2943152,
+            "max": 0.2978757
+          },
+          "ratio_of_medians": 1.0039730538001368,
+          "paired_ratios": {
+            "values": [
+              1.0093562955633961,
+              1.0400475441654136,
+              0.9912013635217641
+            ],
+            "median": 1.0093562955633961,
+            "mean": 1.0135350677501913,
+            "sample_stddev": 0.024689753818332365,
+            "min": 0.9912013635217641,
+            "max": 1.0400475441654136
+          }
+        },
+        "query_seconds": {
+          "baseline": {
+            "values": [
+              0.2237886,
+              0.2063852,
+              0.224181
+            ],
+            "median": 0.2237886,
+            "mean": 0.21811826666666667,
+            "sample_stddev": 0.010163027821143334,
+            "min": 0.2063852,
+            "max": 0.224181
+          },
+          "candidate": {
+            "values": [
+              0.2489966,
+              0.2205027,
+              0.2087841
+            ],
+            "median": 0.2205027,
+            "mean": 0.22609446666666666,
+            "sample_stddev": 0.020681203540977338,
+            "min": 0.2087841,
+            "max": 0.2489966
+          },
+          "ratio_of_medians": 1.0149018583445917,
+          "paired_ratios": {
+            "values": [
+              0.898761669838062,
+              0.9359758406586405,
+              1.0737455582106108
+            ],
+            "median": 0.9359758406586405,
+            "mean": 0.9694943562357711,
+            "sample_stddev": 0.0921816601193801,
+            "min": 0.898761669838062,
+            "max": 1.0737455582106108
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "schema_version": "minivectordb-query-profile-v1",
+  "timestamp_utc": "2026-11-09T11:10:12.015202+00:00",
+  "status": "passed",
+  "binary": {
+    "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round3-profile-before\\minivectordb.exe",
+    "sha256": "8353eccaf023acafc102b290961838fad258ba8d6c6cf485ce49377342c85ac0",
+    "size_bytes": 3603685,
+    "mtime_ns": 1794222542514776200
+  },
+  "parameters": {
+    "kind": "ordinary",
+    "rows": 10000,
+    "dim": 128,
+    "queries": 20,
+    "batch": 100,
+    "k": 10,
+    "seed": 20261109
+  },
+  "MVD_CACHE_LIMIT_MB": null,
+  "timing_ns": [
+    908108200,
+    908315400,
+    950364000,
+    1121341900,
+    1071555300,
+    1128820100,
+    1106052600,
+    1038152800,
+    1098220200,
+    1096015300,
+    1111530400,
+    1164020700,
+    1195620400,
+    1139855000,
+    1135144000,
+    1084022700,
+    1168951400,
+    1118369500,
+    1075690400,
+    1070021800
+  ],
+  "query_seconds": 21.6901721,
+  "profile": [
+    {
+      "execute": {
+        "calls": 121,
+        "sampled_calls": 121,
+        "sampled_ns": 21918940100
+      },
+      "parse": {
+        "calls": 121,
+        "sampled_calls": 121,
+        "sampled_ns": 83375000
+      },
+      "select": {
+        "calls": 20,
+        "sampled_calls": 20,
+        "sampled_ns": 21685785800
+      },
+      "distance": {
+        "calls": 0,
+        "sampled_calls": 0,
+        "sampled_ns": 0
+      },
+      "output": {
+        "calls": 200000,
+        "sampled_calls": 782,
+        "sampled_ns": 84176600
+      },
+      "heap": {
+        "calls": 0,
+        "sampled_calls": 0,
+        "sampled_ns": 0
+      }
+    }
+  ],
+  "stderr": "[minivectordb] ready data_dir=C:\\Users\\11946\\AppData\\Local\\Temp\\mvd-profile-9_eou8zq mode=exact\r\nMVD_PROFILE {\"execute\":{\"calls\":121,\"sampled_calls\":121,\"sampled_ns\":21918940100},\"parse\":{\"calls\":121,\"sampled_calls\":121,\"sampled_ns\":83375000},\"select\":{\"calls\":20,\"sampled_calls\":20,\"sampled_ns\":21685785800},\"distance\":{\"calls\":0,\"sampled_calls\":0,\"sampled_ns\":0},\"output\":{\"calls\":200000,\"sampled_calls\":782,\"sampled_ns\":84176600},\"heap\":{\"calls\":0,\"sampled_calls\":0,\"sampled_ns\":0}}\r\n",
+  "validation": {
+    "all_queries_checked": true,
+    "all_columns_checked": true
+  },
+  "limits": [
+    "diagnostic build only, instrumentation changes timing",
+    "nested sampled scopes are not exclusive CPU stack samples",
+    "parse/execute also include setup inserts, SELECT/output scopes do not",
+    "deterministic row sampling may be biased; no hotspot percentage claim",
+    "ordinary workload is supplemental, not official benchmark"
+  ]
+}

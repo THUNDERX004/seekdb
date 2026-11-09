@@ -1,0 +1,70 @@
+{
+  "results": [
+    {
+      "id": "main-write-before",
+      "value": "0.3031224",
+      "source": "bench\\results\\round3-summary.json",
+      "status": "verified",
+      "detail": "'0.3031224' found in bench\\results\\round3-summary.json"
+    },
+    {
+      "id": "main-write-final",
+      "value": "0.2947664",
+      "source": "bench\\results\\round3-summary.json",
+      "status": "verified",
+      "detail": "'0.2947664' found in bench\\results\\round3-summary.json"
+    },
+    {
+      "id": "main-query-before",
+      "value": "0.2040616",
+      "source": "bench\\results\\round3-summary.json",
+      "status": "verified",
+      "detail": "'0.2040616' found in bench\\results\\round3-summary.json"
+    },
+    {
+      "id": "main-query-final",
+      "value": "0.1955412",
+      "source": "bench\\results\\round3-summary.json",
+      "status": "verified",
+      "detail": "'0.1955412' found in bench\\results\\round3-summary.json"
+    },
+    {
+      "id": "disk-query-ratio",
+      "value": "2.0738027257904945",
+      "source": "bench\\results\\round3-summary.json",
+      "status": "verified",
+      "detail": "'2.0738027257904945' found in bench\\results\\round3-summary.json"
+    },
+    {
+      "id": "validation-command-count",
+      "value": "19",
+      "source": "bench\\results\\round3-summary.json",
+      "status": "verified",
+      "detail": "'19' found in bench\\results\\round3-summary.json"
+    },
+    {
+      "id": "candidate-hash",
+      "value": "88ecccd8adf6f53102ae446d3d65377427a18038a25bb28a6704d6db142dd424",
+      "source": "bench\\results\\round3-summary.json",
+      "status": "verified",
+      "detail": "'88ecccd8adf6f53102ae446d3d65377427a18038a25bb28a6704d6db142dd424' found in bench\\results\\round3-summary.json"
+    },
+    {
+      "id": "default-long-random-count",
+      "value": "27034",
+      "source": "refine-logs\\round3-validation-final.json",
+      "status": "verified",
+      "detail": "'27034' found in refine-logs\\round3-validation-final.json"
+    },
+    {
+      "id": "public-sql-count",
+      "value": "95",
+      "source": ".aris\\public-contract.json",
+      "status": "verified",
+      "detail": "'95' found in .aris\\public-contract.json"
+    }
+  ],
+  "summary": {
+    "verified": 9
+  }
+}

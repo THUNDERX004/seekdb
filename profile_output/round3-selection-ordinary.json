@@ -1,0 +1,57 @@
+{
+  "schema_version": "minivectordb-query-profile-v1",
+  "timestamp_utc": "2026-11-09T11:12:38.374913+00:00",
+  "status": "passed",
+  "binary": {
+    "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round3-selection\\minivectordb.exe",
+    "sha256": "87aa0ac1ce5c4bc865f4a64b93e6b811e35f31b8765baa15d479234f23cc5e8a",
+    "size_bytes": 3572542,
+    "mtime_ns": 1794222712058439500
+  },
+  "parameters": {
+    "kind": "ordinary",
+    "rows": 10000,
+    "dim": 128,
+    "queries": 20,
+    "batch": 100,
+    "k": 10,
+    "seed": 20261109
+  },
+  "MVD_CACHE_LIMIT_MB": null,
+  "timing_ns": [
+    1970100,
+    1319500,
+    1198300,
+    1157200,
+    1187700,
+    1157000,
+    1182800,
+    1130500,
+    1107700,
+    1187300,
+    1265600,
+    1147500,
+    1111400,
+    1119400,
+    1114700,
+    1165000,
+    1118700,
+    1116900,
+    1119200,
+    1090100
+  ],
+  "query_seconds": 0.0239666,
+  "profile": [],
+  "stderr": "[minivectordb] ready data_dir=C:\\Users\\11946\\AppData\\Local\\Temp\\mvd-profile-ep752zed mode=exact\r\n",
+  "validation": {
+    "all_queries_checked": true,
+    "all_columns_checked": true
+  },
+  "limits": [
+    "diagnostic build only, instrumentation changes timing",
+    "nested sampled scopes are not exclusive CPU stack samples",
+    "parse/execute also include setup inserts, SELECT/output scopes do not",
+    "deterministic row sampling may be biased; no hotspot percentage claim",
+    "ordinary workload is supplemental, not official benchmark"
+  ]
+}

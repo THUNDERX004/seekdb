@@ -1,0 +1,13 @@
+{
+  "kind": "deterministic_manifest_sum",
+  "source": "mysqltest/manifest.json",
+  "source_sha256": "549079acfed240abb41b8f62af03e94b6081659483d145ee739f7ecb9feb3949",
+  "manifest_case_count": 20,
+  "manifest_sql_statement_count": 95.0,
+  "validation_source": "refine-logs/round3-validation-final.json",
+  "passed_validation_labels": [
+    "normal/run_public.py",
+    "scalar/run_public.py"
+  ],
+  "limitation": "Counts published inputs and passed local adapter commands; no hidden-case or official-platform claim"
+}

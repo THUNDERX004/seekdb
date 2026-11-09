@@ -1,7 +1,7 @@
 {
   "schema_version": "agent-learning-evidence-input-v1",
   "synthetic": false,
-  "material_notice": "This file preserves real competition-planning prompts and the corresponding implementation and test results. Agent-generated architecture and summaries are not represented as the student's own technical explanation. Historical experiment entries x1-x5 refer to the initial implementation, not final optimized-binary validation. Agent analyses, tests and code remain agent contributions; no score is self-assigned.",
+  "material_notice": "This file preserves real competition-planning prompts and the corresponding implementation and test results. Agent-generated architecture and summaries are not represented as the student's own technical explanation. Historical experiment entries x1-x5 refer to the initial implementation, not final optimized-binary validation. Agent analyses, tests and code remain agent contributions; no score is self-assigned. Previous-round x6-x11 final labels are scoped to commit 666989f7d; third-round x12-x15 bind the current binary. No student understanding, technical judgment, self-score or fabricated prompt has been added.",
   "student_prompts": [
     {
       "id": "p1",
@@ -37,6 +37,16 @@
       "id": "p7",
       "text": "如果优化到达瓶颈 可以去github或者别的地方参考开源方法的实现 看能不能进一步优化 如果有的话",
       "context": "Authorized consulting open-source methods if measurement reaches a bottleneck; this does not authorize outsourcing core execution to prohibited libraries."
+    },
+    {
+      "id": "p8",
+      "text": "还有继续优化的空间吗",
+      "context": "Asked whether the measured implementation still has optimization opportunities."
+    },
+    {
+      "id": "p9",
+      "text": "那你设个目标模式继续做 进行性能优化还有你说的   可以使用subagent",
+      "context": "Requested another unbudgeted optimization goal and allowed subagent assistance; not permission to weaken correctness or claim unseen official tests passed."
     }
   ],
   "conversations": [
@@ -79,6 +89,21 @@
       "id": "turn-008",
       "role": "student",
       "content": "如果优化到达瓶颈 可以去github或者别的地方参考开源方法的实现 看能不能进一步优化 如果有的话"
+    },
+    {
+      "id": "turn-009",
+      "role": "student",
+      "content": "还有继续优化的空间吗"
+    },
+    {
+      "id": "turn-010",
+      "role": "student",
+      "content": "那你设个目标模式继续做 进行性能优化还有你说的   可以使用subagent"
+    },
+    {
+      "id": "turn-011",
+      "role": "agent",
+      "content": "Third-round engineering work used an unbudgeted goal and parallel agents for implementation/test coverage, not a formal cross-model jury. Merged official 9f6df2ba5acf871376e22b64a3d0724e4b575044 public mysqltest unchanged, rebuilt default/scalar/fault variants, and ran 19 final validation commands. Kept deferred projection, safe synchronous row borrowing, move-based bounded selection, ordered offset-block disk scans and fail-stop commit handling. Rejected four-row distance batching and a row-pointer directory after repeated paired measurements. Local results and environment limits are recorded below; these are agent contributions, not invented student explanations."
     }
   ],
   "student_evidence": [
@@ -153,31 +178,35 @@
     },
     {
       "id": "x6",
-      "name": "Final default and scalar correctness",
+      "name": "Previous-round final default and scalar correctness",
       "command": "tests/run_public.py; test_extended.py; test_semantics.py; test_disk_scan.py; test_hidden_edges.py; test_differential.py on both built executables",
       "output": "Both default and MVD_FORCE_SCALAR: PASS 5 public cases (32 SQL); PASS extended transaction, vector, persistence, and recovery tests; PASS SQL boundary, atomicity, and error semantics; PASS out-of-cache disk scan and filtered TopK; Ran 17 tests OK; PASS differential: 12/12 cases, 6070 SQL statements, 0 query mismatches.",
-      "conclusion": "Available tests pass on both CPU-dispatch paths; not a guarantee for inaccessible official hidden cases."
+      "conclusion": "Available tests pass on both CPU-dispatch paths; not a guarantee for inaccessible official hidden cases.",
+      "version_scope": "Historical previous-round final implementation commit 666989f7dde18ffdfb828d2f6795f8311468e68f; not validation of the current third-round binary."
     },
     {
       "id": "x7",
       "name": "Long random differential sequences",
       "command": "python -X utf8 -B tests/test_differential.py build/minivectordb.exe --case random --seed 13 --seed 2147483647 --seed 20261123 --steps 4000",
       "output": "PASS exact distance oracle: 1D large-probe order and Fraction boundaries\nPASS case=random seed=13 dim=8 statements=9027\nPASS case=random seed=2147483647 dim=8 statements=8995\nPASS case=random seed=20261123 dim=33 statements=8977\nPASS differential: 3/3 cases, 26999 SQL statements, 0 query mismatches",
-      "conclusion": "Deterministic state-machine operations, transactions and restarts agree with an independent reference."
+      "conclusion": "Deterministic state-machine operations, transactions and restarts agree with an independent reference.",
+      "version_scope": "Historical previous-round final implementation commit 666989f7dde18ffdfb828d2f6795f8311468e68f; not validation of the current third-round binary."
     },
     {
       "id": "x8",
       "name": "Adversarial exact float32 distance ordering",
       "command": "python -X utf8 -B tests/test_exact_distance.py build/minivectordb.exe --scalar-executable build/scalar/minivectordb.exe",
       "output": "2 independent oracle self-checks OK. PASS default: 6 database tests, 497 SQL statements, 416 exact-order SELECTs. PASS scalar: 6 database tests, 497 SQL statements, 416 exact-order SELECTs.",
-      "conclusion": "Independent as_integer_ratio/Python arbitrary-precision truth covers carry/borrow, exponent mixtures, subnormals, SIMD tails, secondary keys and mathematical ties."
+      "conclusion": "Independent as_integer_ratio/Python arbitrary-precision truth covers carry/borrow, exponent mixtures, subnormals, SIMD tails, secondary keys and mathematical ties.",
+      "version_scope": "Historical previous-round final implementation commit 666989f7dde18ffdfb828d2f6795f8311468e68f; not validation of the current third-round binary."
     },
     {
       "id": "x9",
       "name": "Reference-oracle correction and retest",
       "command": "Initial precise-engine differential followed by integer-oracle cross-check and retest",
       "output": "Initial run: FAIL differential: 4/12 cases, 6070 SQL statements, 16 query mismatches. The 16 mismatches were large-probe false ties in the double reference; for q=1e30 and points 2,1,0,-1 the old double subtraction produced the same distance. Independent Fraction cross-check confirms strictly ordered true distances. After replacing only the reference ORDER BY key with arbitrary-precision squared distances, both binaries passed all 6070 SQL without relaxing assertions or output tolerances.",
-      "conclusion": "Agent-identified oracle limitation, not student-authored explanation; failed log retained and not represented as a passing run."
+      "conclusion": "Agent-identified oracle limitation, not student-authored explanation; failed log retained and not represented as a passing run.",
+      "version_scope": "Historical previous-round final implementation commit 666989f7dde18ffdfb828d2f6795f8311468e68f; not validation of the current third-round binary."
     },
     {
       "id": "x10",
@@ -185,23 +214,78 @@
       "command": "python -X utf8 -B bench/evaluate.py --baseline build/prepared-before/minivectordb.exe --candidate build/minivectordb.exe --runs 3 --report bench/results/prepared-probe.json",
       "output": "Historical controlled ablation: paired query speedups 1.346386, 1.076294, 1.064665; median 1.076294x. Every 1000-query group and all 10000 persisted rows checked in each round.",
       "conclusion": "This isolates the earlier query-preparation change only; exact comparison and rejection-bound refinements came later. It is not the final binary measurement, and no prohibited index library was called.",
-      "candidate_sha256_at_that_time": "4c12b4059d6da21b058a6975a91a54a88f0b3e669b796e1558b94098579a9c97"
+      "candidate_sha256_at_that_time": "4c12b4059d6da21b058a6975a91a54a88f0b3e669b796e1558b94098579a9c97",
+      "version_scope": "Historical previous-round final implementation commit 666989f7dde18ffdfb828d2f6795f8311468e68f; not validation of the current third-round binary."
     },
     {
       "id": "x11",
-      "name": "Final paired local performance and persistence",
+      "name": "Previous-round final paired local performance and persistence",
       "command": "python -X utf8 -B bench/evaluate.py --baseline build/baseline/minivectordb.exe --candidate build/minivectordb.exe --runs 3 --report bench/results/comparison-submit.json; then MVD_CACHE_LIMIT_MB=1 with --rows 3000 --queries 40 --report bench/results/comparison-disk-submit.json",
       "output_kind": "Summary computed from actual stored JSON measurements, not verbatim evaluator stdout",
       "output": "Final candidate SHA256 020d7c11b4a0e56ac5c2f3ca88bfcc16de7c6311e653ae49233084d27717142d. Full rounds (baseline write/query -> candidate write/query seconds): 1.7751003/0.3621389 -> 0.3153489/0.194684; 1.769821/0.3671596 -> 0.3259947/0.1957555; 1.7578919/0.3573466 -> 0.3168253/0.1964675. Median write 1.769821 -> 0.3168253, query 0.3621389 -> 0.1957555. All 1000 queries checked each run, both Recall groups 1.0, all 10000 rows/all columns and float32 vectors checked after restart. 1MiB/3000-row/40-query median query 6.8366545 -> 0.3662347, all checks passed.",
-      "conclusion": "Local Windows comparison against initial implementation, not official performance baseline/E/rank. Includes the final exact-order fallback and cached safe rejection boundary."
+      "conclusion": "Local Windows comparison against initial implementation, not official performance baseline/E/rank. Includes the final exact-order fallback and cached safe rejection boundary.",
+      "version_scope": "Historical previous-round final implementation commit 666989f7dde18ffdfb828d2f6795f8311468e68f; not validation of the current third-round binary."
+    },
+    {
+      "id": "x12",
+      "name": "Third-round public contract and full local validation",
+      "command": "python -X utf8 -B tests/validate_all.py --normal build/minivectordb.exe --scalar build/scalar/minivectordb.exe --fault build/round3-fault/minivectordb.exe --prefix refine-logs/round3-validation-final",
+      "output_kind": "Summary of actual recorded validation outputs, not a formal platform verdict",
+      "output": "19 commands returned zero. Default and scalar each: 20 public groups / 95 SQL, extended/semantics/disk_scan, 17 hidden-edge tests, 12 differential cases / 6070 SQL / 0 mismatches, 6 exact-order database tests / 497 SQL / 416 SELECT plus 2 oracle self-checks, 550 selection queries / 616 SQL and 4 restarts. Public adapter: 24 mock tests. Commit-failure regressions: 6 scenarios / 19 child processes. Default long random seeds 13/2147483647/20261129: 9027 + 8995 + 9012 = 27034 SQL. Default total differential 33104; scalar did not run the additional 27034.",
+      "conclusion": "The recorded local tests passed without changing official mysqltest assertions. This does not guarantee withheld official cases, arbitrary memory limits or formal Linux compatibility.",
+      "evidence": [
+        "refine-logs/round3-validation-final.json",
+        "refine-logs/round3-validation-final.txt"
+      ],
+      "candidate_sha256": "88ecccd8adf6f53102ae446d3d65377427a18038a25bb28a6704d6db142dd424"
+    },
+    {
+      "id": "x13",
+      "name": "Third-round commit exception fault injection and retest",
+      "output_kind": "Recorded test facts, including initial failure",
+      "output": "Initial round3-validation.json was FAILED because the WAL fault env also triggered during single-table setup instead of the intended multi-table COMMIT. Restricted only the test-injection condition to writers.size()>1, rebuilt all variants and reran the entire contract. Final six scenarios passed: durable WAL plus interrupted publication recovers the whole commit; partial WAL commit tail rolls back the whole transaction; repeated restart is stable; rollback does not publish; production ignores fault env; no-op changes do not grow WAL.",
+      "conclusion": "Synthetic MVD_TEST_FAULTS injection is not an actual OS OOM test. Production default and scalar compile neither fault code nor MVD_PROFILE instrumentation. Existing extended forced-process recovery remains separate.",
+      "evidence": [
+        "tests/test_commit_publication.py",
+        "refine-logs/round3-validation.json",
+        "refine-logs/round3-validation-final.json"
+      ]
+    },
+    {
+      "id": "x14",
+      "name": "Third-round final paired performance",
+      "output_kind": "Computed from three actual paired local Windows runs, not verbatim evaluator output",
+      "output": "Compared with previous commit 666989f7d, main 10000-row/128D/1000-query/K10/100-row-commit medians: write 0.3031224 -> 0.2947664 seconds (-2.76%), query 0.2040616 -> 0.1955412 seconds (-4.18%). 1MiB row cache / 3000 rows / 40 queries median query 0.3603338 -> 0.1737551 seconds (2.0738x); write 0.0965576 -> 0.0974569 seconds (slightly slower). Main peak working set median 15372288 -> 15446016 bytes and commit charge 11452416 -> 11620352 bytes (slightly larger). All queries and all persisted row fields were independently checked; both Recall groups 1.0 in every paired run.",
+      "conclusion": "Only same-host local incremental measurements, with all rounds retained. Not official performance E/rank, physical I/O or cgroup memory. Auxiliary ordinary-sort gains must not be presented as the main benchmark speedup.",
+      "evidence": [
+        "bench/results/round3-final-main.json",
+        "bench/results/round3-final-disk.json",
+        "bench/results/round3-summary.json"
+      ],
+      "candidate_sha256": "88ecccd8adf6f53102ae446d3d65377427a18038a25bb28a6704d6db142dd424"
+    },
+    {
+      "id": "x15",
+      "name": "Third-round diagnostic and rejected experiments",
+      "output_kind": "Diagnostic path counts and repeated experiment facts",
+      "output": "For 20 auxiliary ordinary sorting queries, output formatting calls fell from 200000 to 200 after deferred projection. Independent profile build only: not exclusive CPU-stack sampling. Four-row double/FMA distances had median paired query ratio 0.9823; row-pointer directory had two slower rounds and one faster, median paired ratio 0.9360. Both added mechanisms were removed; negative reports retained.",
+      "conclusion": "Workflow changed implementation decisions by rejecting complexity without stable measured benefit. No speedup is attributed to removed methods. Same-model agents are test/coverage assistance, not a formal ARIS audit.",
+      "evidence": [
+        "profile_output/round3-before-ordinary.json",
+        "profile_output/round3-final-ordinary.json",
+        "bench/results/round3-batch.json",
+        "bench/results/round3-directory.json"
+      ]
     }
   ],
   "retrospective": {
     "authored_by": "agent",
     "not_counted_as_student_evidence": true,
-    "summary": "The implementation prioritizes the functional admission gate. Commit records are durable before success is returned, incomplete tails are truncated, and visible state is reconstructed only from committed transactions. Exact vector search avoids ANN recall risk. This round added measured parsing/serialization/scan/filter optimizations, query preparation, and exact near-tie comparisons. Independent review detected scalar/SIMD mixed-magnitude ordering differences, then arbitrary-precision checks exposed a float64 reference-oracle limitation. Test assertions were strengthened rather than skipped. Formal Linux resource and hidden-case evaluation remains outstanding.",
-    "final_candidate_sha256": "020d7c11b4a0e56ac5c2f3ca88bfcc16de7c6311e653ae49233084d27717142d",
-    "per_student_contribution_notice": "No technical explanations or judgments generated by agents are attributed to the student. The user has not yet supplied a technical interpretation of these new measurements."
+    "summary": "The implementation prioritizes the functional admission gate. Commit records are durable before success is returned, incomplete tails are truncated, and visible state is reconstructed only from committed transactions. Exact vector search avoids ANN recall risk. This round added measured parsing/serialization/scan/filter optimizations, query preparation, and exact near-tie comparisons. Independent review detected scalar/SIMD mixed-magnitude ordering differences, then arbitrary-precision checks exposed a float64 reference-oracle limitation. Test assertions were strengthened rather than skipped. Formal Linux resource and hidden-case evaluation remains outstanding. Third round: delayed formatting and explicit row ownership improved local selection; ordered offset-block scans improved out-of-cache requests. Multi-table commit exceptions after any write are fail-stop. Two tempting mechanisms were measured and discarded. Public cases expanded to 20 groups / 95 SQL; all 19 local validation commands passed, while formal reviewer and Linux/hidden-case gaps remain open.",
+    "final_candidate_sha256": "88ecccd8adf6f53102ae446d3d65377427a18038a25bb28a6704d6db142dd424",
+    "per_student_contribution_notice": "No technical explanations or judgments generated by agents are attributed to the student. The user has not yet supplied a technical interpretation of these new measurements.",
+    "previous_round_candidate_sha256": "020d7c11b4a0e56ac5c2f3ca88bfcc16de7c6311e653ae49233084d27717142d",
+    "current_source_sha256": "91f6f43f1aeeb74ec160784113f02a0a2951b592ba8c05ba0901220050a67b45"
   },
   "limitations": [
     "The official hidden MySQL cases and complete test driver were not public at the time of this record.",
@@ -210,6 +294,8 @@
     "The student author should add further original explanations, counterexamples, and experimental decisions as the work continues; this file does not invent such evidence.",
     "ARIS experiment-audit/result-to-claim reviewer MCP was unavailable (REVIEW_UNAVAILABLE); same-model subagents did not constitute formal cross-model audit.",
     "Performance reports are local serial request/response comparisons, not official E or rank. Windows process I/O includes pipes and is not physical disk I/O; row-cache size is not total memory.",
-    "No student-authored technical explanation, result interpretation or transfer claim has been invented. Listed agent results do not alone establish student learning."
+    "No student-authored technical explanation, result interpretation or transfer claim has been invented. Listed agent results do not alone establish student learning.",
+    "Current public package contains 20 of 29 formal groups; nine group inputs remain withheld. Local independent boundary tests do not establish all hidden cases pass.",
+    "Third-round deterministic evidence checks only establish cited files/numbers exist. Formal result-to-claim remains REVIEW_UNAVAILABLE because the required MCP reviewer is unregistered."
   ]
 }

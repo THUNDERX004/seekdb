@@ -6,10 +6,11 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import os
+import re
 import shutil
 import subprocess
 import tempfile
+import uuid
 from pathlib import Path
 
 
@@ -55,89 +56,150 @@ def rows_equal(actual: list[list[str]], expected: dict) -> bool:
     return all(matches(a, e) for a, e in zip(actual, expected_rows))
 
 
+def response_failures(sql: str, expectation: dict, output: list[str]) -> list[str]:
+    if "error" in expectation:
+        # Semantic-to-code mappings are not frozen in the public package yet.
+        # Require exactly one protocol error with a nonempty symbolic/numeric code.
+        if len(output) == 1 and re.fullmatch(r"ERROR ([^\s:]+):.*", output[0]):
+            return []
+        return [f"expected error {expectation['error']!r}, got {output!r}"]
+
+    if sql.split(None, 1)[0].lower() == "select":
+        if not output or not output[0].startswith("COLUMNS\t"):
+            return [f"missing column metadata or unsuccessful SELECT: {output!r}"]
+        columns = output[0].split("\t")[1:]
+        rows = [line.split("\t") for line in output[1:]]
+        failures = []
+        if "columns" in expectation and columns != expectation["columns"]:
+            failures.append(
+                f"column names mismatch: actual={columns!r}, "
+                f"expected={expectation['columns']!r}"
+            )
+        if any(len(row) != len(columns) for row in rows):
+            failures.append(f"row width differs from column metadata: {rows!r}")
+        if "rows" in expectation and not rows_equal(rows, expectation):
+            failures.append(
+                f"rows mismatch: actual={rows!r}, expected={expectation['rows']!r}"
+            )
+        if "affected_rows" in expectation:
+            failures.append("expected affected_rows status, got query rows")
+        return failures
+
+    if "columns" in expectation or "rows" in expectation:
+        return [f"expected query response, got {output!r}"]
+    if "affected_rows" in expectation:
+        wanted = f"OK {expectation['affected_rows']}"
+        return [] if output == [wanted] else [f"expected {wanted!r}, got {output!r}"]
+    if len(output) != 1 or not re.fullmatch(r"OK(?: [0-9]+)?", output[0]):
+        return [f"expected successful status, got {output!r}"]
+    return []
+
+
 def run_case(executable: Path, case: dict, case_dir: Path) -> list[str]:
-    sql_lines = [
-        line
-        for line in (case_dir / f"{case['id']}.test").read_text(
-            encoding="utf-8"
-        ).splitlines()
-        if line.strip()
-    ]
-    expected = json.loads(
-        (case_dir / f"{case['id']}.result").read_text(encoding="utf-8")
+    test_path = (
+        case_dir.parent / case["test"]
+        if "test" in case else case_dir / f"{case['id']}.test"
     )
-    if len(sql_lines) != len(expected):
-        raise AssertionError("test/result length mismatch")
+    result_path = (
+        case_dir.parent / case["result"]
+        if "result" in case else case_dir / f"{case['id']}.result"
+    )
+    expected = json.loads(result_path.read_text(encoding="utf-8"))
+    # Each segment is one process lifetime. run() sends EOF and waits before
+    # the next segment starts, including when a transaction is still open.
+    segments = []
+    requests = []
+    mode = initial_mode = "exact"
+    statement = 0
+    for line_number, line in enumerate(
+        test_path.read_text(encoding="utf-8").splitlines(), 1
+    ):
+        sql = line.strip()
+        if not sql:
+            continue
+        if sql == "--restart":
+            segments.append((initial_mode, requests))
+            initial_mode, requests = mode, []
+        elif sql.split() in (["--mode", "ann"], ["--mode", "exact"]):
+            mode = sql.split()[1]
+            requests.append((None, f"SET vector_mode={mode};"))
+        elif sql.startswith("--"):
+            raise AssertionError(
+                f"{case['id']} line {line_number}: unknown driver directive {sql!r}"
+            )
+        else:
+            statement += 1
+            requests.append((statement, sql))
+    segments.append((initial_mode, requests))
+    if statement != len(expected):
+        raise AssertionError(
+            f"test/result length mismatch: {statement} SQL, {len(expected)} assertions"
+        )
+    if "statements" in case and statement != case["statements"]:
+        raise AssertionError(
+            f"manifest statement count mismatch: {statement} SQL, "
+            f"expected {case['statements']}"
+        )
 
     data_dir = tempfile.mkdtemp(prefix="mvd-public-")
-    try:
-        process = subprocess.run(
-            [str(executable), f"--data-dir={data_dir}", "--column-header"],
-            input="\n".join(sql_lines) + "\n",
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=30,
-            check=False,
-        )
-    finally:
-        if os.name != "nt":
-            shutil.rmtree(data_dir, ignore_errors=True)
-    if process.returncode != 0:
-        raise AssertionError(
-            f"database exited {process.returncode}\nstderr:\n{process.stderr}"
-        )
-
+    marker = f"__MVD_PUBLIC_{uuid.uuid4().hex}__"
     failures: list[str] = []
-    output = process.stdout.splitlines()
-    cursor = 0
-    for index, (sql, expectation) in enumerate(zip(sql_lines, expected), 1):
-        keyword = sql.lstrip().split(None, 1)[0].lower()
-        if keyword == "select":
-            header = output[cursor].split("\t") if cursor < len(output) else []
-            cursor += 1
-            if not header or header[0] != "COLUMNS":
-                failures.append(f"{case['id']} statement {index}: missing column metadata")
-            elif "columns" in expectation and header[1:] != expectation["columns"]:
-                failures.append(
-                    f"{case['id']} statement {index}: column names mismatch\n"
-                    f"SQL: {sql}\nactual={header[1:]!r}\nexpected={expectation['columns']!r}"
+    try:
+        for generation, (initial_mode, requests) in enumerate(segments, 1):
+            process = subprocess.run(
+                [
+                    str(executable), f"--data-dir={data_dir}", "--column-header",
+                    f"--ready-marker={marker}", f"--vector-mode={initial_mode}",
+                ],
+                input="".join(
+                    (sql if sql.endswith(";") else sql + ";") + "\n"
+                    for _, sql in requests
+                ),
+                text=True,
+                encoding="utf-8",
+                errors="strict",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=30,
+                check=False,
+            )
+            if process.returncode != 0:
+                raise AssertionError(
+                    f"{case['id']} process {generation}: database exited "
+                    f"{process.returncode}\nstderr:\n{process.stderr}"
                 )
-            count = len(expectation.get("rows", []))
-            actual = [line.split("\t") for line in output[cursor : cursor + count]]
-            cursor += count
-            if not rows_equal(actual, expectation):
+            frames = []
+            pending = []
+            for line in process.stdout.splitlines():
+                if line == marker:
+                    frames.append(pending)
+                    pending = []
+                else:
+                    pending.append(line)
+            if pending:
                 failures.append(
-                    f"{case['id']} statement {index}: rows mismatch\n"
-                    f"SQL: {sql}\nactual={actual!r}\nexpected={expectation!r}"
+                    f"{case['id']} process {generation}: output without a ready marker: "
+                    f"{pending!r}"
                 )
-        else:
-            if cursor >= len(output):
+            if len(frames) != len(requests):
                 failures.append(
-                    f"{case['id']} statement {index}: missing status line"
+                    f"{case['id']} process {generation}: response count mismatch: "
+                    f"{len(frames)} framed responses for {len(requests)} requests"
                 )
-                continue
-            status = output[cursor]
-            cursor += 1
-            if "affected_rows" in expectation:
-                wanted = f"OK {expectation['affected_rows']}"
-                if status != wanted:
-                    failures.append(
-                        f"{case['id']} statement {index}: expected {wanted!r}, "
-                        f"got {status!r}; SQL: {sql}"
-                    )
-            else:
-                if status != "OK":
-                    failures.append(
-                        f"{case['id']} statement {index}: expected OK, got {status!r}"
-                    )
-    if cursor != len(output):
-        failures.append(
-            f"{case['id']}: {len(output) - cursor} extra output line(s): "
-            f"{output[cursor:]!r}"
-        )
+            for position, (index, sql) in enumerate(requests):
+                label = (
+                    f"statement {index}" if index is not None else f"directive {sql}"
+                )
+                if position >= len(frames):
+                    failures.append(f"{case['id']} {label}: missing response; SQL: {sql}")
+                    continue
+                expectation = expected[index - 1] if index is not None else {}
+                failures.extend(
+                    f"{case['id']} {label}: {failure}; SQL: {sql}"
+                    for failure in response_failures(sql, expectation, frames[position])
+                )
+    finally:
+        shutil.rmtree(data_dir, ignore_errors=True)
     return failures
 
 
@@ -156,7 +218,10 @@ def main() -> int:
     )
     failures: list[str] = []
     for case in manifest["cases"]:
-        case_failures = run_case(executable, case, args.case_dir)
+        try:
+            case_failures = run_case(executable, case, args.case_dir)
+        except (AssertionError, OSError, ValueError, subprocess.TimeoutExpired) as error:
+            case_failures = [f"{case['id']}: {error}"]
         if case_failures:
             failures.extend(case_failures)
             print(f"FAIL {case['id']}")

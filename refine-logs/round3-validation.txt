@@ -1,0 +1,260 @@
+=== normal/run_public.py exit=0 seconds=0.546549 ===
+PASS sql_crud
+PASS sql_comparisons
+PASS sql_ordering
+PASS sql_empty
+PASS sql_primary_key
+PASS sql_unicode
+PASS sql_bigint
+PASS sql_unsupported
+PASS storage_restart
+PASS vector_euclidean
+PASS transaction_commit
+PASS transaction_rollback
+PASS storage_mutations
+PASS storage_multiple_tables
+PASS vector_ties_and_filter
+PASS vector_float32
+PASS vector_index_maintenance
+PASS transaction_failed_insert
+PASS transaction_autocommit_atomic
+PASS transaction_shutdown_rollback
+PASS 20 public cases
+
+=== normal/test_extended.py exit=0 seconds=0.161411 ===
+PASS extended transaction, vector, persistence, and recovery tests
+
+=== normal/test_semantics.py exit=0 seconds=0.120005 ===
+PASS SQL boundary, atomicity, and error semantics
+
+=== normal/test_disk_scan.py exit=0 seconds=0.212958 ===
+PASS out-of-cache disk scan and filtered TopK
+
+=== normal/test_hidden_edges.py exit=0 seconds=0.792000 ===
+test_recovery_does_not_reuse_cross_table_txid (__main__.HiddenEdges.test_recovery_does_not_reuse_cross_table_txid)
+Simulated interrupted-commit storage fixture, not a real process crash. ... ok
+test_large_finite_distances (__main__.HiddenEdges.test_large_finite_distances) ... ok
+test_tiny_distances_preserve_exact_topk (__main__.HiddenEdges.test_tiny_distances_preserve_exact_topk) ... ok
+test_near_distances_are_not_false_ties (__main__.HiddenEdges.test_near_distances_are_not_false_ties) ... ok
+test_mixed_scale_16d_order_is_kernel_independent (__main__.HiddenEdges.test_mixed_scale_16d_order_is_kernel_independent) ... ok
+test_exact_order_when_double_and_fsum_tie (__main__.HiddenEdges.test_exact_order_when_double_and_fsum_tie) ... ok
+test_exact_key_maximum_subnormal_and_cancellation (__main__.HiddenEdges.test_exact_key_maximum_subnormal_and_cancellation) ... ok
+test_topk_respects_all_order_keys_and_offset (__main__.HiddenEdges.test_topk_respects_all_order_keys_and_offset) ... ok
+test_ordinary_aliases_keep_the_source_column (__main__.HiddenEdges.test_ordinary_aliases_keep_the_source_column) ... ok
+test_where_literals_can_exceed_varchar_length (__main__.HiddenEdges.test_where_literals_can_exceed_varchar_length) ... ok
+test_long_where_literals_in_update_and_delete (__main__.HiddenEdges.test_long_where_literals_in_update_and_delete) ... ok
+test_varchar_write_lengths_remain_enforced (__main__.HiddenEdges.test_varchar_write_lengths_remain_enforced) ... ok
+test_query_edges_invalid_create_is_atomic (__main__.HiddenEdges.test_query_edges_invalid_create_is_atomic) ... ok
+test_query_edges_null_writes_are_statement_atomic (__main__.HiddenEdges.test_query_edges_null_writes_are_statement_atomic) ... ok
+test_query_edges_unprojected_distance_orders (__main__.HiddenEdges.test_query_edges_unprojected_distance_orders) ... ok
+test_query_edges_maximum_limit_and_offset (__main__.HiddenEdges.test_query_edges_maximum_limit_and_offset) ... ok
+test_query_edges_vector_order_is_always_rejected (__main__.HiddenEdges.test_query_edges_vector_order_is_always_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.641s
+
+OK
+
+=== normal/test_differential.py exit=0 seconds=2.031129 ===
+PASS exact distance oracle: 1D large-probe order and Fraction boundaries
+PASS case=random seed=7 dim=4 statements=850
+PASS case=random seed=429 dim=8 statements=828
+PASS case=random seed=20261109 dim=33 statements=849
+PASS case=semantics seed=7 dim=4 statements=319
+PASS case=numeric seed=20261109 dim=1 statements=403
+PASS case=numeric seed=20261109 dim=3 statements=403
+PASS case=numeric seed=20261109 dim=4 statements=403
+PASS case=numeric seed=20261109 dim=8 statements=403
+PASS case=numeric seed=20261109 dim=31 statements=403
+PASS case=numeric seed=20261109 dim=32 statements=403
+PASS case=numeric seed=20261109 dim=33 statements=403
+PASS case=numeric seed=20261109 dim=128 statements=403
+PASS differential: 12/12 cases, 6070 SQL statements, 0 query mismatches
+
+=== normal/test_exact_distance.py exit=0 seconds=0.351941 ===
+test_exact_identities_and_double_collision (__main__.OracleTests.test_exact_identities_and_double_collision) ... ok
+test_float32_roundtrip_and_lattice (__main__.OracleTests.test_float32_roundtrip_and_lattice) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+OK
+Running default: D:\Projects\OceanBase\seekdb-minivectordb\build\minivectordb.exe
+test_carry_borrow_and_extreme_exponent_mixture (__main__.ExactDistanceTests.test_carry_borrow_and_extreme_exponent_mixture) ... ok
+test_common_large_component_has_distinct_exact_topk (__main__.ExactDistanceTests.test_common_large_component_has_distinct_exact_topk) ... ok
+test_opposite_signs_and_nonzero_tiny_probes (__main__.ExactDistanceTests.test_opposite_signs_and_nonzero_tiny_probes) ... ok
+test_seeded_bit_patterns_cover_simd_blocks_and_tails (__main__.ExactDistanceTests.test_seeded_bit_patterns_cover_simd_blocks_and_tails) ... ok
+test_subnormal_boundaries_and_signed_zero (__main__.ExactDistanceTests.test_subnormal_boundaries_and_signed_zero) ... ok
+test_true_distance_ties_use_secondary_keys_then_pk (__main__.ExactDistanceTests.test_true_distance_ties_use_secondary_keys_then_pk) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.220s
+
+OK
+PASS default: 6 database tests, 497 SQL statements, 416 exact-order SELECTs
+
+=== normal/test_selection_paths.py exit=0 seconds=2.379527 ===
+PASS selection cache=64MiB: 275 exact queries, 308 SQL statements, 2 restarts, 0.610s
+PASS selection cache=1MiB: 275 exact queries, 308 SQL statements, 2 restarts, 1.549s
+PASS selection paths: 550 exact queries, 616 SQL statements, 2.161s total
+
+=== scalar/run_public.py exit=0 seconds=0.590568 ===
+PASS sql_crud
+PASS sql_comparisons
+PASS sql_ordering
+PASS sql_empty
+PASS sql_primary_key
+PASS sql_unicode
+PASS sql_bigint
+PASS sql_unsupported
+PASS storage_restart
+PASS vector_euclidean
+PASS transaction_commit
+PASS transaction_rollback
+PASS storage_mutations
+PASS storage_multiple_tables
+PASS vector_ties_and_filter
+PASS vector_float32
+PASS vector_index_maintenance
+PASS transaction_failed_insert
+PASS transaction_autocommit_atomic
+PASS transaction_shutdown_rollback
+PASS 20 public cases
+
+=== scalar/test_extended.py exit=0 seconds=0.160621 ===
+PASS extended transaction, vector, persistence, and recovery tests
+
+=== scalar/test_semantics.py exit=0 seconds=0.124973 ===
+PASS SQL boundary, atomicity, and error semantics
+
+=== scalar/test_disk_scan.py exit=0 seconds=0.202174 ===
+PASS out-of-cache disk scan and filtered TopK
+
+=== scalar/test_hidden_edges.py exit=0 seconds=0.802401 ===
+test_recovery_does_not_reuse_cross_table_txid (__main__.HiddenEdges.test_recovery_does_not_reuse_cross_table_txid)
+Simulated interrupted-commit storage fixture, not a real process crash. ... ok
+test_large_finite_distances (__main__.HiddenEdges.test_large_finite_distances) ... ok
+test_tiny_distances_preserve_exact_topk (__main__.HiddenEdges.test_tiny_distances_preserve_exact_topk) ... ok
+test_near_distances_are_not_false_ties (__main__.HiddenEdges.test_near_distances_are_not_false_ties) ... ok
+test_mixed_scale_16d_order_is_kernel_independent (__main__.HiddenEdges.test_mixed_scale_16d_order_is_kernel_independent) ... ok
+test_exact_order_when_double_and_fsum_tie (__main__.HiddenEdges.test_exact_order_when_double_and_fsum_tie) ... ok
+test_exact_key_maximum_subnormal_and_cancellation (__main__.HiddenEdges.test_exact_key_maximum_subnormal_and_cancellation) ... ok
+test_topk_respects_all_order_keys_and_offset (__main__.HiddenEdges.test_topk_respects_all_order_keys_and_offset) ... ok
+test_ordinary_aliases_keep_the_source_column (__main__.HiddenEdges.test_ordinary_aliases_keep_the_source_column) ... ok
+test_where_literals_can_exceed_varchar_length (__main__.HiddenEdges.test_where_literals_can_exceed_varchar_length) ... ok
+test_long_where_literals_in_update_and_delete (__main__.HiddenEdges.test_long_where_literals_in_update_and_delete) ... ok
+test_varchar_write_lengths_remain_enforced (__main__.HiddenEdges.test_varchar_write_lengths_remain_enforced) ... ok
+test_query_edges_invalid_create_is_atomic (__main__.HiddenEdges.test_query_edges_invalid_create_is_atomic) ... ok
+test_query_edges_null_writes_are_statement_atomic (__main__.HiddenEdges.test_query_edges_null_writes_are_statement_atomic) ... ok
+test_query_edges_unprojected_distance_orders (__main__.HiddenEdges.test_query_edges_unprojected_distance_orders) ... ok
+test_query_edges_maximum_limit_and_offset (__main__.HiddenEdges.test_query_edges_maximum_limit_and_offset) ... ok
+test_query_edges_vector_order_is_always_rejected (__main__.HiddenEdges.test_query_edges_vector_order_is_always_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.662s
+
+OK
+
+=== scalar/test_differential.py exit=0 seconds=2.048955 ===
+PASS exact distance oracle: 1D large-probe order and Fraction boundaries
+PASS case=random seed=7 dim=4 statements=850
+PASS case=random seed=429 dim=8 statements=828
+PASS case=random seed=20261109 dim=33 statements=849
+PASS case=semantics seed=7 dim=4 statements=319
+PASS case=numeric seed=20261109 dim=1 statements=403
+PASS case=numeric seed=20261109 dim=3 statements=403
+PASS case=numeric seed=20261109 dim=4 statements=403
+PASS case=numeric seed=20261109 dim=8 statements=403
+PASS case=numeric seed=20261109 dim=31 statements=403
+PASS case=numeric seed=20261109 dim=32 statements=403
+PASS case=numeric seed=20261109 dim=33 statements=403
+PASS case=numeric seed=20261109 dim=128 statements=403
+PASS differential: 12/12 cases, 6070 SQL statements, 0 query mismatches
+
+=== scalar/test_exact_distance.py exit=0 seconds=0.328151 ===
+test_exact_identities_and_double_collision (__main__.OracleTests.test_exact_identities_and_double_collision) ... ok
+test_float32_roundtrip_and_lattice (__main__.OracleTests.test_float32_roundtrip_and_lattice) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+OK
+Running default: D:\Projects\OceanBase\seekdb-minivectordb\build\scalar\minivectordb.exe
+test_carry_borrow_and_extreme_exponent_mixture (__main__.ExactDistanceTests.test_carry_borrow_and_extreme_exponent_mixture) ... ok
+test_common_large_component_has_distinct_exact_topk (__main__.ExactDistanceTests.test_common_large_component_has_distinct_exact_topk) ... ok
+test_opposite_signs_and_nonzero_tiny_probes (__main__.ExactDistanceTests.test_opposite_signs_and_nonzero_tiny_probes) ... ok
+test_seeded_bit_patterns_cover_simd_blocks_and_tails (__main__.ExactDistanceTests.test_seeded_bit_patterns_cover_simd_blocks_and_tails) ... ok
+test_subnormal_boundaries_and_signed_zero (__main__.ExactDistanceTests.test_subnormal_boundaries_and_signed_zero) ... ok
+test_true_distance_ties_use_secondary_keys_then_pk (__main__.ExactDistanceTests.test_true_distance_ties_use_secondary_keys_then_pk) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.200s
+
+OK
+PASS default: 6 database tests, 497 SQL statements, 416 exact-order SELECTs
+
+=== scalar/test_selection_paths.py exit=0 seconds=2.349851 ===
+PASS selection cache=64MiB: 275 exact queries, 308 SQL statements, 2 restarts, 0.621s
+PASS selection cache=1MiB: 275 exact queries, 308 SQL statements, 2 restarts, 1.520s
+PASS selection paths: 550 exact queries, 616 SQL statements, 2.143s total
+
+=== public-adapter-regressions exit=0 seconds=0.409900 ===
+test_affected_rows_and_rows_are_not_ignored (__main__.PublicHarnessTests.test_affected_rows_and_rows_are_not_ignored) ... ok
+test_bigint_unicode_and_float_tolerance_are_preserved (__main__.PublicHarnessTests.test_bigint_unicode_and_float_tolerance_are_preserved) ... ok
+test_column_names_are_compared_even_for_empty_results (__main__.PublicHarnessTests.test_column_names_are_compared_even_for_empty_results) ... ok
+test_column_order_and_actual_row_width_are_checked (__main__.PublicHarnessTests.test_column_order_and_actual_row_width_are_checked) ... ok
+test_empty_expectation_does_not_hide_control_error (__main__.PublicHarnessTests.test_empty_expectation_does_not_hide_control_error) ... ok
+test_empty_expectation_requires_success_for_queries_and_dml (__main__.PublicHarnessTests.test_empty_expectation_requires_success_for_queries_and_dml) ... ok
+test_empty_query_is_framed_separately_from_following_status_and_rows (__main__.PublicHarnessTests.test_empty_query_is_framed_separately_from_following_status_and_rows) ... ok
+test_empty_string_cell_is_not_confused_with_empty_result (__main__.PublicHarnessTests.test_empty_string_cell_is_not_confused_with_empty_result) ... ok
+test_expected_error_does_not_stop_following_sql (__main__.PublicHarnessTests.test_expected_error_does_not_stop_following_sql) ... ok
+test_expected_errors_accept_nonempty_unfrozen_codes (__main__.PublicHarnessTests.test_expected_errors_accept_nonempty_unfrozen_codes) ... ok
+test_expected_errors_reject_success_empty_code_and_malformed_records (__main__.PublicHarnessTests.test_expected_errors_reject_success_empty_code_and_malformed_records) ... ok
+test_extra_missing_and_empty_frames_are_failures (__main__.PublicHarnessTests.test_extra_missing_and_empty_frames_are_failures) ... ok
+test_extra_or_missing_rows_do_not_shift_following_assertion (__main__.PublicHarnessTests.test_extra_or_missing_rows_do_not_shift_following_assertion) ... ok
+test_leading_consecutive_and_trailing_restarts (__main__.PublicHarnessTests.test_leading_consecutive_and_trailing_restarts) ... ok
+test_main_runs_remaining_cases_after_crash_or_timeout (__main__.PublicHarnessTests.test_main_runs_remaining_cases_after_crash_or_timeout) ... ok
+test_missing_marker_and_unframed_output_are_failures (__main__.PublicHarnessTests.test_missing_marker_and_unframed_output_are_failures) ... ok
+test_mode_directives_do_not_consume_assertions_and_survive_restart (__main__.PublicHarnessTests.test_mode_directives_do_not_consume_assertions_and_survive_restart) ... ok
+test_mode_failure_is_checked_without_consuming_sql_assertion (__main__.PublicHarnessTests.test_mode_failure_is_checked_without_consuming_sql_assertion) ... ok
+test_restart_does_not_ignore_failed_shutdown (__main__.PublicHarnessTests.test_restart_does_not_ignore_failed_shutdown) ... ok
+test_restart_sends_eof_and_reuses_one_directory (__main__.PublicHarnessTests.test_restart_sends_eof_and_reuses_one_directory) ... ok
+test_sql_and_manifest_assertion_counts_are_checked (__main__.PublicHarnessTests.test_sql_and_manifest_assertion_counts_are_checked) ... ok
+test_unexpected_error_is_reported_without_desynchronizing_next_sql (__main__.PublicHarnessTests.test_unexpected_error_is_reported_without_desynchronizing_next_sql) ... ok
+test_unknown_directive_is_rejected (__main__.PublicHarnessTests.test_unknown_directive_is_rejected) ... ok
+test_unordered_comparison_preserves_duplicate_rows (__main__.PublicHarnessTests.test_unordered_comparison_preserves_duplicate_rows) ... ok
+
+----------------------------------------------------------------------
+Ran 24 tests in 0.214s
+
+OK
+
+=== commit-failure-regressions exit=1 seconds=0.379528 ===
+PASS injected-publication-failure: writer exit=1; both tables' complete fields verified through two normal-binary restarts
+PASS fault-build-without-env: writer exit=0; both tables' complete fields verified through two normal-binary restarts
+PASS rollback-with-fault-env: writer exit=0; both tables' complete fields verified through two normal-binary restarts
+PASS normal-build-ignores-fault-env: writer exit=0; both tables' complete fields verified through two normal-binary restarts
+Traceback (most recent call last):
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_commit_publication.py", line 270, in <module>
+    main()
+    ~~~~^^
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_commit_publication.py", line 248, in main
+    run_case(root, normal, fault, "torn-wal-failure", "torn-wal", False)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_commit_publication.py", line 214, in run_case
+    code = run_process(writer, data_dir, steps, label, inject=outcome == "fatal",
+                       expected_steps=prefix, wal_fault=outcome == "torn-wal")
+  File "D:\Projects\OceanBase\seekdb-minivectordb\tests\test_commit_publication.py", line 202, in run_process
+    raise AssertionError(f"{error}\nstderr={result.stderr[-1200:]!r}") from None
+AssertionError: torn-wal-failure: stdout differs at character 89; length 89 != 62381
+actual:   'PUBLICATION_READY__\nOK\n__COMMIT_PUBLICATION_END__\nOK\n__COMMIT_PUBLICATION_END__\n'
+expected: "PUBLICATION_READY__\nOK\n__COMMIT_PUBLICATION_END__\nOK\n__COMMIT_PUBLICATION_END__\nOK 3\n__COMMIT_PUBLICATION_END__\nOK 3\n__COMMIT_PUBLICATION_END__\n-5\t-9223372036854775808\tstable-0\tleft_rows:-5:stable|'quoted'\\payload;xxxxxxxxxxxxxxxxxxxxxxxxxx"
+stderr='[minivectordb] ready data_dir=C:\\Users\\11946\\AppData\\Local\\Temp\\mvd-commit-publication-x67zi5of\\torn-wal-failure mode=exact\nERROR INTERNAL_ERROR: commit interrupted by an internal failure; restart required\n'
+
+=== normal/long-random exit=0 seconds=9.856191 ===
+PASS exact distance oracle: 1D large-probe order and Fraction boundaries
+PASS case=random seed=13 dim=8 statements=9027
+PASS case=random seed=2147483647 dim=8 statements=8995
+PASS case=random seed=20261129 dim=33 statements=9012
+PASS differential: 3/3 cases, 27034 SQL statements, 0 query mismatches
+

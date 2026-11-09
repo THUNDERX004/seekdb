@@ -92,7 +92,9 @@ python -X utf8 -B tests/test_disk_scan.py ./build/minivectordb
 python -X utf8 -B bench/bench.py ./build/minivectordb
 ```
 
-The public suite covers the currently published 32 SQL assertions. The extended
+The public suite covers 20 published groups / 95 SQL statements from official
+round2 commit 9f6df2ba5acf871376e22b64a3d0724e4b575044, including restart, mode
+and expected-error directives. Nine formal groups have withheld inputs. The extended
 suite covers transaction visibility, rollback, statement atomicity, clean
 restart, forced-process recovery, filtered TopK, vector-index update behavior,
 mid-COMMIT all-or-none recovery, SQL boundary/error behavior, and a forced
@@ -115,10 +117,10 @@ and unfiltered queries. These are not official Linux cgroup measurements.
 - The official hidden cases, complete driver, and official baseline are not yet
   public, so formal evaluation cannot be reproduced locally.
 
-## 2026-11-09 optimization and robustness update
+## Historical 2026-11-09 optimization (commit 666989f7d)
 
-See [the experiment report](refine-logs/EXPERIMENT_RESULTS.md) for all paired
-rounds, hashes, retained historical results, and validation limits. The local
+See [the historical experiment report](refine-logs/EXPERIMENT_RESULTS_20261109_182245.md)
+for that version; the latest report includes the incremental third round. The local
 comparison baseline is commit 3659b39d6de0537fb81bd08a70b6f580c4e26f37, not
 the unpublished official performance baseline.
 
@@ -199,3 +201,49 @@ ROLLBACK;
 
 After restarting, SELECT id,tag FROM docs ORDER BY id returns both committed
 rows; the rolled-back DELETE has no effect. Use a fresh directory for CREATE.
+
+## Current third-round optimization and validation
+
+The public mysqltest package is merged unchanged from official round2 commit
+9f6df2ba5acf871376e22b64a3d0724e4b575044. Compared locally against the previous
+implementation commit 666989f7d, three paired Windows runs reduced median main
+query time by 4.18% and write time by 2.76%. Out-of-row-cache query time improved
+2.0738x with MVD_CACHE_LIMIT_MB=1; that is not an OS cold-cache or physical-I/O
+claim. Main-workload memory peaks slightly increased and out-of-cache write
+median slightly regressed. These are not official E, rankings or Linux results.
+
+Changes defer projection until final selection, safely borrow synchronous
+cache/overlay rows, move bounded heap candidates, scan ordered disk queries in
+fixed offset-sorted metadata blocks, and reduce commit-time row duplication.
+Post-write commit exceptions are fail-stop so recovery, not partial in-memory
+publication, decides atomic visibility. Empty changes do not grow the WAL.
+
+All 19 final validation commands passed: default and scalar published cases and
+regressions, independent exact-order/selection tests, 24 public-adapter mocks,
+and six commit-failure scenarios. Default differential coverage totals 33,104
+SQL statements with zero mismatches; scalar ran the regular 6,070 statements,
+not the additional 27,034-statement long sequence. Hidden official cases and
+Docker/Linux/cgroup validation remain outstanding.
+
+Run the additional suites or the whole local validation contract:
+
+```bash
+python -X utf8 -B tests/test_selection_paths.py ./build/minivectordb
+cmake -S . -B build/fault -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-DMVD_TEST_FAULTS
+cmake --build build/fault --parallel
+python -X utf8 -B tests/test_commit_publication.py ./build/minivectordb ./build/fault/minivectordb
+python -X utf8 -B tests/validate_all.py --normal ./build/minivectordb --scalar ./build/scalar/minivectordb --fault ./build/fault/minivectordb --prefix refine-logs/local-validation-new
+```
+
+MVD_TEST_FAULTS and MVD_PROFILE are separate test/diagnostic-only compiler
+definitions; neither is enabled in the default or scalar delivery build.
+Fault environment variables do nothing in production. Profile clocks/counters
+are not exclusive CPU stack samples and are excluded from main timing.
+Four-row batch distances and a cached row-pointer directory were rejected
+after paired measurements; neither is in the final implementation.
+
+See [the current report](refine-logs/EXPERIMENT_RESULTS.md),
+[raw validation transcript](refine-logs/round3-validation-final.txt), and
+[profiling report](profile_output/PROFILE_REPORT.md). ARIS cross-model audit
+remains REVIEW_UNAVAILABLE because its reviewer MCP is not registered. Local
+engineering checks do not substitute for that verdict or formal evaluation.

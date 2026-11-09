@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "strict_json_files": 25,
+  "validation_commands": 19,
+  "version_fingerprints_unchanged": true,
+  "public_groups": 20,
+  "public_sql": 95,
+  "default_differential_sql": 33104,
+  "scalar_regular_differential_sql": 6070,
+  "material_bytes": 24168,
+  "source_sha256": "91f6f43f1aeeb74ec160784113f02a0a2951b592ba8c05ba0901220050a67b45",
+  "binary_sha256": "88ecccd8adf6f53102ae446d3d65377427a18038a25bb28a6704d6db142dd424",
+  "official_score": null,
+  "review_verdict": "REVIEW_UNAVAILABLE"
+}

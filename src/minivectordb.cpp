@@ -33,6 +33,10 @@
 #include <variant>
 #include <vector>
 
+#ifdef MVD_PROFILE
+#include <chrono>
+#endif
+
 #ifdef _WIN32
 #include <io.h>
 #else
@@ -47,6 +51,64 @@
 namespace mvd {
 
 namespace fs = std::filesystem;
+
+// Diagnostic-only instrumentation. Release builds do not compile these counters
+// or clocks; nested sampled durations are not additive/exclusive CPU samples.
+#ifdef MVD_PROFILE
+enum class ProfileMetric { Execute, Parse, Select, Distance, Output, Heap, Count };
+struct ProfileCounter {
+  uint64_t calls = 0;
+  uint64_t sampled_calls = 0;
+  uint64_t sampled_ns = 0;
+};
+inline std::array<ProfileCounter, static_cast<size_t>(ProfileMetric::Count)>
+    profile_counters{};
+class ProfileScope {
+ public:
+  ProfileScope(ProfileMetric metric, uint64_t mask)
+      : counter_(profile_counters[static_cast<size_t>(metric)]) {
+    sampled_ = ((counter_.calls++ & mask) == 0);
+    if (sampled_) {
+      started_ = std::chrono::steady_clock::now();
+    }
+  }
+  ~ProfileScope() { finish(); }
+  void finish() {
+    if (sampled_) {
+      counter_.sampled_ns += static_cast<uint64_t>(
+          std::chrono::duration_cast<std::chrono::nanoseconds>(
+              std::chrono::steady_clock::now() - started_).count());
+      ++counter_.sampled_calls;
+      sampled_ = false;
+    }
+  }
+ private:
+  ProfileCounter &counter_;
+  bool sampled_ = false;
+  std::chrono::steady_clock::time_point started_;
+};
+struct ProfileReport {
+  ~ProfileReport() {
+    constexpr std::array<const char *, 6> names{
+        "execute", "parse", "select", "distance", "output", "heap"};
+    std::cerr << "MVD_PROFILE {";
+    for (size_t i = 0; i < names.size(); ++i) {
+      const auto &value = profile_counters[i];
+      std::cerr << (i == 0 ? "" : ",") << '"' << names[i]
+                << "\":{\"calls\":" << value.calls
+                << ",\"sampled_calls\":" << value.sampled_calls
+                << ",\"sampled_ns\":" << value.sampled_ns << '}';
+    }
+    std::cerr << "}\n";
+  }
+};
+#define MVD_PROFILE_SCOPE(name, metric, mask) \
+  ProfileScope name(ProfileMetric::metric, mask)
+#define MVD_PROFILE_END(name) name.finish()
+#else
+#define MVD_PROFILE_SCOPE(name, metric, mask) ((void)0)
+#define MVD_PROFILE_END(name) ((void)0)
+#endif
 
 constexpr uint32_t kRowMagic = 0x5256444dU;
 constexpr uint32_t kCommitMagic = 0x434d564dU;
@@ -80,6 +142,15 @@ class DBError : public std::runtime_error {
 
  private:
   std::string code_;
+};
+
+// Once a commit has started writing, an exceptional partial in-memory publish
+// must never be followed by another request. Restart replays the atomic WAL.
+class RecoveryRequired : public std::exception {
+ public:
+  const char *what() const noexcept override {
+    return "commit interrupted by an internal failure; restart required";
+  }
 };
 
 [[noreturn]] void fail(const char *code, const std::string &message) {
@@ -1481,7 +1552,7 @@ struct PendingRecord {
   uint32_t oid = 0;
   int64_t primary = 0;
   uint16_t op = 0;
-  Row row;
+  const Row *row = nullptr;
   uint64_t offset = 0;
 };
 
@@ -1492,6 +1563,7 @@ class Table {
 
   void load(const std::unordered_set<uint64_t> &committed,
             uint64_t &max_seen_txid) {
+    const uint64_t file_bytes = fs::exists(data_path_) ? fs::file_size(data_path_) : 0;
     std::ifstream input(data_path_, std::ios::binary);
     uint64_t offset = 0;
     uint64_t valid_bytes = 0;
@@ -1505,7 +1577,8 @@ class Table {
         DecodedRecord record;
         uint64_t payload_size = 0;
         if (!decodeRowHeader(header, record, payload_size) ||
-            payload_size > (1ULL << 31ULL)) {
+            payload_size > (1ULL << 31ULL) ||
+            payload_size > file_bytes - record_offset - header.size()) {
           break;
         }
         std::vector<uint8_t> payload(static_cast<size_t>(payload_size));
@@ -1609,21 +1682,63 @@ class Table {
   }
 
   template <typename Callback>
-  void forEachBase(Callback &&callback) const {
-    // Reuse one stream for an entire out-of-cache scan, rather than opening
-    // and closing the same data file for every row.
+  bool forEachBase(Callback &&callback,
+                   const std::map<int64_t, std::optional<Row>> *overlay,
+                   bool ordered = false) const {
     std::ifstream input;
-    for (const auto &[primary, version] : versions_) {
-      if (version.cached) {
-        callback(primary, version.row);
-      } else {
-        if (!input.is_open()) {
-          input.open(data_path_, std::ios::binary);
+    uint64_t input_position = std::numeric_limits<uint64_t>::max();
+    const auto visit = [&](int64_t primary, const Version &version) {
+      // An overlay replacement/deletion makes the disk payload unnecessary.
+      if (overlay != nullptr) {
+        const auto changed = overlay->find(primary);
+        if (changed != overlay->end()) {
+          return !changed->second.has_value() ||
+                 callback(primary, *changed->second, true);
         }
-        Row row = readRow(version.offset, input);
-        callback(primary, row);
+      }
+      if (version.cached) {
+        return callback(primary, version.row, true);
+      }
+      if (!input.is_open()) {
+        input.open(data_path_, std::ios::binary);
+      }
+      Row row = readRow(version.offset, input, &input_position);
+      return callback(primary, row, false);
+    };
+    if (!cache_enabled_ && ordered) {
+      // Reorder only where SQL has an explicit final ordering. Bound scratch
+      // metadata independently of N, and read current versions, never stale
+      // historical log records. Plain SELECT/LIMIT keeps its traversal order.
+      using Entry = std::pair<int64_t, const Version *>;
+      std::array<Entry, 256> block{};
+      size_t count = 0;
+      const auto flush = [&] {
+        std::sort(block.begin(), block.begin() + count,
+                  [](const Entry &a, const Entry &b) {
+                    return a.second->offset < b.second->offset;
+                  });
+        for (size_t i = 0; i < count; ++i) {
+          if (!visit(block[i].first, *block[i].second)) {
+            return false;
+          }
+        }
+        count = 0;
+        return true;
+      };
+      for (const auto &[primary, version] : versions_) {
+        block[count++] = {primary, &version};
+        if (count == block.size() && !flush()) {
+          return false;
+        }
+      }
+      return flush();
+    }
+    for (const auto &[primary, version] : versions_) {
+      if (!visit(primary, version)) {
+        return false;
       }
     }
+    return true;
   }
 
   std::vector<PendingRecord> appendChanges(uint64_t txid,
@@ -1645,8 +1760,10 @@ class Table {
       }
       std::vector<uint8_t> record = encodeRowRecord(txid, op, payload);
       const uint64_t offset = writer.append(record);
+      // The transaction overlay remains alive until every table is published.
+      // Pending metadata does not need a second full copy of each vector row.
       pending.push_back({definition_.oid, primary, op,
-                         row.has_value() ? *row : Row{}, offset});
+                         row.has_value() ? &*row : nullptr, offset});
       next_offset_ = writer.offset();
     }
     return pending;
@@ -1678,7 +1795,7 @@ class Table {
       value.offset = record.offset;
       value.cached = cache_enabled_;
       if (value.cached) {
-        value.row = record.row;
+        value.row = *record.row;
         cache_bytes_ += cachedRowBytes(value.row);
       }
       versions_[record.primary] = std::move(value);
@@ -1732,9 +1849,15 @@ class Table {
     return readRow(offset, input);
   }
 
-  Row readRow(uint64_t offset, std::ifstream &input) const {
-    input.clear();
-    input.seekg(static_cast<std::streamoff>(offset));
+  Row readRow(uint64_t offset, std::ifstream &input,
+              uint64_t *input_position = nullptr) const {
+    if (offset > next_offset_ || next_offset_ - offset < 32) {
+      fail("CORRUPT_DATA", "row offset exceeds committed file bounds");
+    }
+    if (input_position == nullptr || *input_position != offset) {
+      input.clear();
+      input.seekg(static_cast<std::streamoff>(offset));
+    }
     std::array<uint8_t, 32> header{};
     if (!readExact(input, header.data(), header.size())) {
       fail("CORRUPT_DATA", "row record is missing");
@@ -1742,7 +1865,8 @@ class Table {
     DecodedRecord record;
     uint64_t payload_size = 0;
     if (!decodeRowHeader(header, record, payload_size) ||
-        payload_size > (1ULL << 31ULL)) {
+        payload_size > (1ULL << 31ULL) ||
+        payload_size > next_offset_ - offset - header.size()) {
       fail("CORRUPT_DATA", "invalid row record");
     }
     std::vector<uint8_t> payload(static_cast<size_t>(payload_size));
@@ -1751,6 +1875,9 @@ class Table {
     }
     if (crc32(payload) != rowPayloadChecksum(header) || record.op == 3) {
       fail("CORRUPT_DATA", "invalid row payload");
+    }
+    if (input_position != nullptr) {
+      *input_position = offset + header.size() + payload_size;
     }
     return deserializeRow(payload);
   }
@@ -1826,11 +1953,10 @@ class Database {
     loadCatalog();
     rebalanceRowCaches();
     ScanStats wal = scanCommitLog(data_dir_ / "mvd.wal");
-    committed_txids_ = wal.committed;
     next_txid_ = wal.max_txid + 1;
     for (auto &[name, table] : tables_) {
       (void)name;
-      table->load(committed_txids_, next_txid_);
+      table->load(wal.committed, next_txid_);
     }
     if (fs::exists(data_dir_ / "mvd.wal") &&
         fs::file_size(data_dir_ / "mvd.wal") != wal.valid_bytes) {
@@ -1842,10 +1968,13 @@ class Database {
   ~Database() { rollbackSilently(); }
 
   ExecResult execute(std::string_view sql) {
+    MVD_PROFILE_SCOPE(execute_profile, Execute, 0);
+    MVD_PROFILE_SCOPE(parse_profile, Parse, 0);
     auto definitions = tableDefinitions();
     Parser parser(sql, definitions);
     const std::string first = parser.firstKeyword();
     Statement statement = parser.parse();
+    MVD_PROFILE_END(parse_profile);
     if (std::holds_alternative<EmptyStatement>(statement)) {
       if (first == "begin" || first == "start") {
         if (explicit_transaction_) {
@@ -1914,9 +2043,18 @@ class Database {
     std::string name;
   };
 
+  struct RetainedRow {
+    const Row *borrowed = nullptr;
+    Row owned;
+
+    const Row &get() const { return borrowed != nullptr ? *borrowed : owned; }
+    static RetainedRow keep(const Row &row, bool stable) {
+      return stable ? RetainedRow{&row, {}} : RetainedRow{nullptr, row};
+    }
+  };
+
   struct SelectedRow {
-    Row source;
-    std::vector<std::string> output;
+    RetainedRow source;
     std::vector<double> distances;
   };
 
@@ -2044,6 +2182,7 @@ class Database {
     const uint64_t txid = next_txid_++;
     std::vector<PendingRecord> pending;
     std::unordered_map<uint32_t, std::unique_ptr<FileWriter>> writers;
+    bool write_started = false;
     try {
       for (const auto &[oid, changes] : overlay_) {
         if (changes.empty()) {
@@ -2054,22 +2193,48 @@ class Database {
           fail("CORRUPT_DATA", "transaction references an unknown table");
         }
         auto writer = std::make_unique<FileWriter>(table->dataPath());
+        write_started = true;
         std::vector<PendingRecord> records =
             table->appendChanges(txid, *writer, changes);
         pending.insert(pending.end(), records.begin(), records.end());
         writer->sync();
         writers.emplace(oid, std::move(writer));
       }
+      if (pending.empty()) {
+        overlay_.clear();
+        return;
+      }
+      write_started = true;
+#ifdef MVD_TEST_FAULTS
+      if (writers.size() > 1 &&
+          std::getenv("MVD_TEST_FAIL_WAL_APPEND") != nullptr) {
+        auto torn = encodeCommitRecord(txid, pending.size());
+        torn.resize(torn.size() / 2);
+        wal_writer_->append(torn);
+        wal_writer_->sync();
+        throw std::bad_alloc();
+      }
+#endif
       wal_writer_->append(encodeCommitRecord(txid, pending.size()));
       wal_writer_->sync();
-      committed_txids_.insert(txid);
       for (auto &[name, table] : tables_) {
         (void)name;
-        table->applyPending(pending);
+        if (writers.contains(table->definition().oid)) {
+          table->applyPending(pending);
+#ifdef MVD_TEST_FAULTS
+          if (writers.size() > 1 &&
+              std::getenv("MVD_TEST_FAIL_COMMIT_PUBLICATION") != nullptr) {
+            throw std::bad_alloc();
+          }
+#endif
+        }
       }
       overlay_.clear();
     } catch (...) {
       overlay_.clear();
+      if (write_started) {
+        throw RecoveryRequired();
+      }
       throw;
     }
   }
@@ -2116,30 +2281,24 @@ class Database {
   }
 
   template <typename Callback>
-  void forEachVisible(Table &table, Callback &&callback) {
+  bool forEachVisibleView(Table &table, Callback &&callback, bool ordered = false) {
     const uint32_t oid = table.definition().oid;
     const auto overlay_found = overlay_.find(oid);
     const std::map<int64_t, std::optional<Row>> *overlay =
         overlay_found == overlay_.end() ? nullptr : &overlay_found->second;
-    table.forEachBase([&](int64_t primary, const Row &row) {
-      if (overlay != nullptr) {
-        auto changed = overlay->find(primary);
-        if (changed != overlay->end()) {
-          if (changed->second.has_value()) {
-            callback(primary, *changed->second);
-          }
-          return;
-        }
-      }
-      callback(primary, row);
-    });
+    if (!table.forEachBase(callback, overlay, ordered)) {
+      return false;
+    }
     if (overlay != nullptr) {
       for (const auto &[primary, row] : *overlay) {
         if (!table.containsBase(primary) && row.has_value()) {
-          callback(primary, *row);
+          if (!callback(primary, *row, true)) {
+            return false;
+          }
         }
       }
     }
+    return true;
   }
 
   ExecResult executeInsert(const InsertStatement &statement) {
@@ -2167,16 +2326,16 @@ class Database {
   }
 
   template <typename Callback>
-  void forEachCandidate(Table &table, const std::vector<Condition> &conditions,
-                        Callback &&callback) {
+  bool forEachCandidateView(Table &table, const std::vector<Condition> &conditions,
+                            Callback &&callback, bool ordered = false) {
     for (const Condition &condition : conditions) {
       if (condition.column == table.definition().primary_key &&
           condition.op == CompareOp::Eq) {
         Row row;
         if (currentRow(table, condition.value.integer, row)) {
-          callback(condition.value.integer, row);
+          return callback(condition.value.integer, row, false);
         }
-        return;
+        return true;
       }
     }
     for (const Condition &condition : conditions) {
@@ -2191,7 +2350,9 @@ class Database {
       for (const auto &[primary, row] : *indexed) {
         if (changed_table == overlay_.end() ||
             !changed_table->second.contains(primary)) {
-          callback(primary, *row);
+          if (!callback(primary, *row, true)) {
+            return false;
+          }
         }
       }
       if (changed_table != overlay_.end()) {
@@ -2200,13 +2361,25 @@ class Database {
               valuesCompare((*row)[condition.column], condition.value,
                             CompareOp::Eq,
                             table.definition().columns[condition.column].type)) {
-            callback(primary, *row);
+            if (!callback(primary, *row, true)) {
+              return false;
+            }
           }
         }
       }
-      return;
+      return true;
     }
-    forEachVisible(table, std::forward<Callback>(callback));
+    return forEachVisibleView(table, std::forward<Callback>(callback), ordered);
+  }
+
+  template <typename Callback>
+  void forEachCandidate(Table &table, const std::vector<Condition> &conditions,
+                        Callback &&callback) {
+    forEachCandidateView(table, conditions,
+        [&](int64_t primary, const Row &row, bool) {
+          callback(primary, row);
+          return true;
+        });
   }
 
   ExecResult executeUpdate(const UpdateStatement &statement) {
@@ -2253,6 +2426,7 @@ class Database {
   }
 
   ExecResult executeSelect(const SelectStatement &statement) {
+    MVD_PROFILE_SCOPE(select_profile, Select, 0);
     Table &table = requireTable(statement.table);
     const TableDef &definition = table.definition();
     std::vector<Projection> projections;
@@ -2321,48 +2495,67 @@ class Database {
       }
       resolved_order.push_back(resolved);
     }
-    if (statement.limit == 0) {
+    size_t visible_upper = table.rowCount();
+    const auto changed = overlay_.find(definition.oid);
+    if (changed != overlay_.end()) {
+      const size_t extra = changed->second.size();
+      visible_upper = extra > std::numeric_limits<size_t>::max() - visible_upper
+                          ? std::numeric_limits<size_t>::max()
+                          : visible_upper + extra;
+    }
+    // An upper bound is sufficient: avoid retaining an entire table just to
+    // discover that a huge OFFSET cannot return a row. SQL is validated above.
+    if (statement.limit == 0 ||
+        static_cast<uint64_t>(statement.offset) >= visible_upper) {
       return ExecResult{true, std::nullopt, {}};
     }
     auto makeOutput = [&](const Row &row) {
-      SelectedRow output;
-      output.source = row;
-      output.output.resize(projections.size());
-      output.distances.assign(statement.items.size(),
-                              std::numeric_limits<double>::quiet_NaN());
-      for (size_t item_index = 0; item_index < statement.items.size();
-           ++item_index) {
-        const SelectItem &item = statement.items[item_index];
-        if (item.distance) {
-          output.distances[item_index] =
-              l2Distance(row[item.column].vector, item.probe);
-        }
-      }
-      size_t output_index = 0;
-      for (size_t item_index = 0; item_index < statement.items.size();
-           ++item_index) {
-        const SelectItem &item = statement.items[item_index];
+      MVD_PROFILE_SCOPE(output_profile, Output, 255);
+      std::vector<std::string> output;
+      output.reserve(projections.size());
+      for (const SelectItem &item : statement.items) {
         if (item.hidden) {
           continue;
         }
         if (item.star) {
           for (size_t column = 0; column < definition.columns.size(); ++column) {
-            output.output[output_index++] = valueToString(
-                row[column], definition.columns[column].type);
+            output.push_back(valueToString(row[column], definition.columns[column].type));
           }
         } else if (item.distance) {
           std::ostringstream distance;
           distance.imbue(std::locale::classic());
           distance << std::fixed << std::setprecision(6)
-                   << output.distances[item_index];
-          output.output[output_index++] = distance.str();
+                   << l2Distance(row[item.column].vector, item.probe);
+          output.push_back(distance.str());
         } else {
-          output.output[output_index++] =
-              valueToString(row[item.column], definition.columns[item.column].type);
+          output.push_back(valueToString(row[item.column],
+                                        definition.columns[item.column].type));
         }
       }
       return output;
     };
+
+    // Without ordering, output can be produced directly. Do not keep copies of
+    // unprojected vector columns, or scan the remaining disk rows after LIMIT.
+    if (resolved_order.empty()) {
+      ExecResult result;
+      result.select = true;
+      uint64_t skipped = 0;
+      forEachCandidateView(table, statement.conditions,
+          [&](int64_t, const Row &row, bool) {
+            if (!matches(definition, row, statement.conditions)) {
+              return true;
+            }
+            if (skipped < static_cast<uint64_t>(statement.offset)) {
+              ++skipped;
+              return true;
+            }
+            result.rows.push_back(makeOutput(row));
+            return statement.limit < 0 ||
+                   result.rows.size() < static_cast<uint64_t>(statement.limit);
+          });
+      return result;
+    }
 
     int distance_item = -1;
     for (size_t i = 0; i < statement.items.size(); ++i) {
@@ -2383,24 +2576,19 @@ class Database {
       struct Candidate {
         double squared_distance = 0;
         int64_t primary = 0;
-        Row row;
+        RetainedRow row;
       };
       struct WorseFirst {
         size_t column;
         const std::vector<float> *probe;
         bool operator()(const Candidate &left, const Candidate &right) const {
           const int comparison = compareDistances(
-              left.squared_distance, left.row[column].vector,
-              right.squared_distance, right.row[column].vector, *probe);
-          if (comparison != 0) {
-            return comparison < 0;
-          }
-          return left.primary < right.primary;
+              left.squared_distance, left.row.get()[column].vector,
+              right.squared_distance, right.row.get()[column].vector, *probe);
+          return comparison != 0 ? comparison < 0 : left.primary < right.primary;
         }
       };
       const SelectItem &distance_spec = statement.items[distance_item];
-      // The probe is constant for the scan. Widen it and resolve the CPU kernel
-      // once, retaining float32 storage and double-precision distance semantics.
       const std::vector<double> prepared_probe(distance_spec.probe.begin(),
                                                 distance_spec.probe.end());
       using DistanceKernel = double (*)(const float *, const double *, size_t);
@@ -2411,148 +2599,151 @@ class Database {
         distance_kernel = &squaredDistanceAvx2<double>;
       }
 #endif
-      const int64_t wanted =
-          statement.offset >
+      const int64_t wanted = statement.offset >
                   std::numeric_limits<int64_t>::max() - statement.limit
               ? std::numeric_limits<int64_t>::max()
               : statement.offset + statement.limit;
-      const size_t capacity = static_cast<size_t>(
-          wanted);
+      const size_t capacity = std::min(static_cast<size_t>(wanted), visible_upper);
       const WorseFirst candidateLess{distance_spec.column, &distance_spec.probe};
-      std::priority_queue<Candidate, std::vector<Candidate>, WorseFirst> heap(candidateLess);
-      // Most scanned rows are well outside the current TopK. Cache an outward
-      // rounded rejection boundary after heap changes instead of rebuilding
-      // the precision check (and calling its cold exact path) for every row.
+      std::vector<Candidate> heap;
+      heap.reserve(std::min<size_t>(capacity, 64));
       const double rejection_multiplier =
           1 + (static_cast<double>(prepared_probe.size()) + 16) * 16 *
                   std::numeric_limits<double>::epsilon();
       double reject_above = std::numeric_limits<double>::infinity();
       const auto updateRejectionBoundary = [&] {
         reject_above = std::nextafter(
-            heap.top().squared_distance * rejection_multiplier,
+            heap.front().squared_distance * rejection_multiplier,
             std::numeric_limits<double>::infinity());
       };
-      forEachCandidate(table, statement.conditions, [&](int64_t primary, const Row &row) {
+      forEachCandidateView(table, statement.conditions,
+          [&](int64_t primary, const Row &row, bool stable) {
         if (!matches(definition, row, statement.conditions)) {
-          return;
+          return true;
         }
         const auto &vector = row[distance_spec.column].vector;
         if (vector.size() != prepared_probe.size()) {
           fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
         }
-        double squared = distance_kernel(vector.data(), prepared_probe.data(),
-                                         prepared_probe.size());
+        MVD_PROFILE_SCOPE(distance_profile, Distance, 255);
+        const double squared = distance_kernel(vector.data(), prepared_probe.data(),
+                                                prepared_probe.size());
+        MVD_PROFILE_END(distance_profile);
         if (heap.size() < capacity) {
-          heap.push(Candidate{squared, primary, row});
+          MVD_PROFILE_SCOPE(heap_profile, Heap, 31);
+          heap.push_back(Candidate{squared, primary, RetainedRow::keep(row, stable)});
+          std::push_heap(heap.begin(), heap.end(), candidateLess);
           updateRejectionBoundary();
-        } else if (capacity == 0) {
-          return;
-        } else if (squared > reject_above) {
-          return;
-        } else {
-          const Candidate &worst = heap.top();
+        } else if (squared <= reject_above) {
+          const Candidate &worst = heap.front();
           const int comparison = compareDistances(
               squared, vector, worst.squared_distance,
-              worst.row[distance_spec.column].vector, distance_spec.probe);
+              worst.row.get()[distance_spec.column].vector, distance_spec.probe);
           if (comparison < 0 || (comparison == 0 && primary < worst.primary)) {
-            heap.pop();
-            heap.push(Candidate{squared, primary, row});
+            MVD_PROFILE_SCOPE(heap_profile, Heap, 31);
+            std::pop_heap(heap.begin(), heap.end(), candidateLess);
+            heap.back() = Candidate{squared, primary, RetainedRow::keep(row, stable)};
+            std::push_heap(heap.begin(), heap.end(), candidateLess);
             updateRejectionBoundary();
           }
         }
-      });
-      std::vector<Candidate> candidates;
-      candidates.reserve(heap.size());
-      while (!heap.empty()) {
-        candidates.push_back(heap.top());
-        heap.pop();
-      }
-      std::sort(candidates.begin(), candidates.end(), candidateLess);
+        return true;
+      }, true);
+      std::sort_heap(heap.begin(), heap.end(), candidateLess);
       ExecResult result;
       result.select = true;
-      if (statement.offset < static_cast<int64_t>(candidates.size())) {
+      if (static_cast<uint64_t>(statement.offset) < heap.size()) {
         const size_t begin = static_cast<size_t>(statement.offset);
-        const size_t end = std::min(
-            candidates.size(),
-            begin + static_cast<size_t>(statement.limit));
+        const size_t end = begin + std::min(
+            heap.size() - begin, static_cast<size_t>(statement.limit));
         result.rows.reserve(end - begin);
         for (size_t i = begin; i < end; ++i) {
-          result.rows.push_back(makeOutput(candidates[i].row).output);
+          result.rows.push_back(makeOutput(heap[i].row.get()));
         }
       }
       return result;
     }
 
     const auto selectedLess = [&](const SelectedRow &left, const SelectedRow &right) {
+      const Row &a = left.source.get();
+      const Row &b = right.source.get();
       for (const ResolvedOrder &key : resolved_order) {
         int comparison = 0;
         if (key.distance) {
-          const double a = left.distances[key.distance_index];
-          const double b = right.distances[key.distance_index];
           const SelectItem &item = statement.items[key.distance_index];
-          comparison = compareDistances(a, left.source[item.column].vector,
-                                        b, right.source[item.column].vector,
-                                        item.probe);
+          comparison = compareDistances(left.distances[key.distance_index],
+                                        a[item.column].vector,
+                                        right.distances[key.distance_index],
+                                        b[item.column].vector, item.probe);
         } else {
-          comparison = compareValues(left.source[key.column], right.source[key.column],
-                                     key.column_type);
+          comparison = compareValues(a[key.column], b[key.column], key.column_type);
         }
         if (comparison != 0) {
           return key.descending ? comparison > 0 : comparison < 0;
         }
       }
-      return left.source[definition.primary_key].integer <
-             right.source[definition.primary_key].integer;
+      return a[definition.primary_key].integer < b[definition.primary_key].integer;
+    };
+    const auto makeSelected = [&](const Row &row) {
+      SelectedRow candidate;
+      // A temporary view is valid while comparing; copy ephemeral disk/point
+      // rows only if this candidate actually survives selection.
+      candidate.source.borrowed = &row;
+      for (const ResolvedOrder &key : resolved_order) {
+        if (key.distance) {
+          if (candidate.distances.empty()) {
+            candidate.distances.assign(statement.items.size(),
+                                      std::numeric_limits<double>::quiet_NaN());
+          }
+          double &value = candidate.distances[key.distance_index];
+          if (std::isnan(value)) {
+            const SelectItem &item = statement.items[key.distance_index];
+            value = squaredDistance(row[item.column].vector, item.probe);
+          }
+        }
+      }
+      return candidate;
     };
     const bool unlimited = statement.limit < 0 ||
         statement.offset > std::numeric_limits<int64_t>::max() - statement.limit;
     const int64_t wanted = unlimited ? std::numeric_limits<int64_t>::max()
                                     : statement.offset + statement.limit;
-    const size_t capacity = static_cast<size_t>(wanted);
+    const size_t capacity = std::min(static_cast<size_t>(wanted), visible_upper);
     std::vector<SelectedRow> selected;
-    if (!resolved_order.empty() && statement.limit >= 0) {
-      // Bounded selection applies the complete ordering, including secondary
-      // keys, without retaining every vector row when only a small LIMIT is needed.
-      std::priority_queue<SelectedRow, std::vector<SelectedRow>, decltype(selectedLess)>
-          heap(selectedLess);
-      forEachCandidate(table, statement.conditions, [&](int64_t, const Row &row) {
-        if (!matches(definition, row, statement.conditions)) {
-          return;
-        }
-        SelectedRow candidate = makeOutput(row);
-        if (heap.size() < capacity) {
-          heap.push(std::move(candidate));
-        } else if (selectedLess(candidate, heap.top())) {
-          heap.pop();
-          heap.push(std::move(candidate));
-        }
-      });
-      selected.reserve(heap.size());
-      while (!heap.empty()) {
-        selected.push_back(heap.top());
-        heap.pop();
+    selected.reserve(std::min<size_t>(capacity, 64));
+    forEachCandidateView(table, statement.conditions,
+        [&](int64_t, const Row &row, bool stable) {
+      if (!matches(definition, row, statement.conditions)) {
+        return true;
       }
-    } else {
-      forEachCandidate(table, statement.conditions, [&](int64_t, const Row &row) {
-        if (selected.size() < capacity && matches(definition, row, statement.conditions)) {
-          selected.push_back(makeOutput(row));
+      SelectedRow candidate = makeSelected(row);
+      if (statement.limit < 0 || selected.size() < capacity) {
+        candidate.source = RetainedRow::keep(row, stable);
+        selected.push_back(std::move(candidate));
+        if (statement.limit >= 0) {
+          std::push_heap(selected.begin(), selected.end(), selectedLess);
         }
-      });
-    }
-    if (!resolved_order.empty()) {
+      } else if (selectedLess(candidate, selected.front())) {
+        candidate.source = RetainedRow::keep(row, stable);
+        std::pop_heap(selected.begin(), selected.end(), selectedLess);
+        selected.back() = std::move(candidate);
+        std::push_heap(selected.begin(), selected.end(), selectedLess);
+      }
+      return true;
+    }, true);
+    if (statement.limit >= 0) {
+      std::sort_heap(selected.begin(), selected.end(), selectedLess);
+    } else {
       std::sort(selected.begin(), selected.end(), selectedLess);
     }
-
-    int64_t begin = std::min<int64_t>(statement.offset, selected.size());
-    int64_t end = selected.size();
-    if (statement.limit >= 0) {
-      end = begin + std::min<int64_t>(statement.limit, end - begin);
-    }
+    const size_t begin = std::min(static_cast<size_t>(statement.offset), selected.size());
+    const size_t end = statement.limit < 0 ? selected.size() : begin + std::min(
+        selected.size() - begin, static_cast<size_t>(statement.limit));
     ExecResult result;
     result.select = true;
-    result.rows.reserve(static_cast<size_t>(std::max<int64_t>(0, end - begin)));
-    for (int64_t i = begin; i < end; ++i) {
-      result.rows.push_back(std::move(selected[static_cast<size_t>(i)].output));
+    result.rows.reserve(end - begin);
+    for (size_t i = begin; i < end; ++i) {
+      result.rows.push_back(makeOutput(selected[i].source.get()));
     }
     return result;
   }
@@ -2753,7 +2944,6 @@ class Database {
   uint32_t next_oid_ = 1;
   uint64_t next_txid_ = 1;
   std::unordered_map<std::string, std::unique_ptr<Table>> tables_;
-  std::unordered_set<uint64_t> committed_txids_;
   std::unordered_map<uint32_t, std::map<int64_t, std::optional<Row>>> overlay_;
   std::unique_ptr<FileWriter> wal_writer_;
 };
@@ -3010,6 +3200,8 @@ int run(int argc, char **argv) {
     }
     try {
       printResult(database.execute(sql), options.marker, options.column_header);
+    } catch (const RecoveryRequired &) {
+      throw;
     } catch (const DBError &error) {
       printError(error, options.numeric_errors, options.marker);
     } catch (const std::exception &error) {
@@ -3092,6 +3284,9 @@ int run(int argc, char **argv) {
 }  // namespace mvd
 
 int main(int argc, char **argv) {
+#ifdef MVD_PROFILE
+  mvd::ProfileReport profile_report;
+#endif
   // Responses explicitly flush stdout. Avoid flushing it, and synchronizing
   // with C stdio, for every get()/peek() while reading a SQL request.
   std::ios::sync_with_stdio(false);
