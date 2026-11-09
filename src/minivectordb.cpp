@@ -499,14 +499,32 @@ class Lexer {
            std::isdigit(static_cast<unsigned char>(input_[pos_ + 1]))) ||
           (c == '-' && pos_ + 1 < input_.size() &&
            std::isdigit(static_cast<unsigned char>(input_[pos_ + 1])))) {
-        ++pos_;
-        while (pos_ < input_.size()) {
-          unsigned char n = static_cast<unsigned char>(input_[pos_]);
-          if (!(std::isdigit(n) || n == '.' || n == 'e' || n == 'E' ||
-                n == '+' || n == '-')) {
-            break;
+        const auto digits = [&] {
+          while (pos_ < input_.size() &&
+                 std::isdigit(static_cast<unsigned char>(input_[pos_]))) {
+            ++pos_;
           }
+        };
+        if (c == '+' || c == '-') {
           ++pos_;
+        }
+        digits();
+        if (pos_ < input_.size() && input_[pos_] == '.') {
+          ++pos_;
+          digits();
+        }
+        if (pos_ < input_.size() &&
+            (input_[pos_] == 'e' || input_[pos_] == 'E')) {
+          ++pos_;
+          if (pos_ < input_.size() &&
+              (input_[pos_] == '+' || input_[pos_] == '-')) {
+            ++pos_;
+          }
+          const size_t exponent_start = pos_;
+          digits();
+          if (pos_ == exponent_start) {
+            fail("SQL_SYNTAX", "numeric exponent requires digits");
+          }
         }
         tokens.push_back({TokenKind::Number,
                           std::string(input_.substr(start, pos_ - start)), start});
@@ -3239,6 +3257,8 @@ int run(int argc, char **argv) {
         } else if (c == '/' && std::cin.peek() == '*') {
           state = SplitState::BlockComment;
           current.push_back(c);
+          // The opening star cannot also begin the closing delimiter.
+          current.push_back(static_cast<char>(std::cin.get()));
         } else if (c == ';') {
           executeOne(std::move(current));
           current.clear();

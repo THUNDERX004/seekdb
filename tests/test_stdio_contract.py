@@ -178,6 +178,34 @@ class StdioContract(unittest.TestCase):
             ["OK", "OK"],
         )
 
+    def test_block_comment_delimiters_cannot_overlap(self):
+        for text in ("/*/*/", "/*/;BEGIN;ROLLBACK;*/",
+                     "/*/ ' \" ; BEGIN; ROLLBACK; */"):
+            with self.subTest(text=text):
+                self.assertEqual(self.batch(text), [])
+
+    def test_block_comment_cannot_execute_embedded_mutations(self):
+        self.assertEqual(
+            self.batch("CREATE TABLE t(id BIGINT PRIMARY KEY);"
+                       "INSERT INTO t VALUES(1);"),
+            ["OK", "OK 1"],
+        )
+        self.assertEqual(
+            self.batch("/*/;DELETE FROM t;*/SELECT id FROM t;"), ["1"],
+        )
+        self.assertEqual(self.batch("SELECT id FROM t;"), ["1"])
+
+    def test_block_comment_is_preserved_across_pipe_chunks(self):
+        session = self.pipe()
+        session.send("CREATE TABLE t(id BIGINT PRIMARY KEY);")
+        self.assertEqual(session.response(), ["OK"])
+        session.send("INSERT INTO t VALUES(1);")
+        self.assertEqual(session.response(), ["OK 1"])
+        session.send("/", "*", "/;DELETE FROM t;*", "/SELECT id FROM t;")
+        self.assertEqual(session.response(), ["1"])
+        session.send("SELECT id FROM t;")
+        self.assertEqual(session.response(), ["1"])
+
     def test_malformed_comment_or_string_still_returns_error(self):
         for text in ("/* unterminated", "BEGIN;/* unterminated",
                      "SELECT 'unterminated", "SELECT \"unterminated"):

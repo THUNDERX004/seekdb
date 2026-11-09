@@ -115,6 +115,30 @@ class FormalSqlEdges(unittest.TestCase):
             ("SELECT id,s FROM t ORDER BY id", prior),
         )
 
+    def test_malformed_numbers_cannot_become_varchar_literals(self):
+        prior = ["COLUMNS\tid\ts", "1\tprior", "2\t1e+"]
+        steps = []
+        restart = []
+        for index, token in enumerate(("1e+", "1e-", "1E", "1.2.3",
+                                       "1+2", "1-2", "1e2e3")):
+            table = f"t{index}"
+            steps.extend([
+                (f"CREATE TABLE {table}(id BIGINT PRIMARY KEY,s VARCHAR(16))", ["OK"]),
+                (f"INSERT INTO {table} VALUES (1,'base'),(2,'1e+')", ["OK 2"]),
+                ("BEGIN", ["OK"]),
+                (f"UPDATE {table} SET s='prior' WHERE id=1", ["OK 1"]),
+                (f"INSERT INTO {table} VALUES (3,'valid'),(4,{token})", ERROR),
+                (f"UPDATE {table} SET s={token} WHERE id=2", ERROR),
+                (f"SELECT id FROM {table} WHERE s={token}", ERROR),
+                (f"DELETE FROM {table} WHERE s={token}", ERROR),
+                (f"SELECT id,s FROM {table} ORDER BY id", prior),
+                ("COMMIT", ["OK"]),
+                (f"SELECT id,s FROM {table} ORDER BY id", prior),
+            ])
+            restart.append((f"SELECT id,s FROM {table} ORDER BY id", prior))
+        self.check_sql(*steps)
+        self.check_sql(*restart)
+
     def test_unicode_length_counts_codepoints_and_failed_batch_leaves_no_rows(self):
         expected = ["COLUMNS\tid\ts", "1\t\U0001f600", "2\te", "3\t\u00e9"]
         self.check_sql(

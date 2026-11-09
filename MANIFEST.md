@@ -67,9 +67,10 @@
 | 2026-11-09 18:22:45 | /run-experiment | tests/test_exact_distance.py | implementation | 独立语义/数值边界或驱动回归 |
 | 2026-11-09 18:22:45 | /run-experiment | tests/test_public_harness.py | implementation | 独立语义/数值边界或驱动回归 |
 | 2026-11-09 18:22:45 | /run-experiment | bench/evaluate.py | implementation | 公平对照与全内容验证工具 |
-| 2026-11-09 18:22:45 | /run-experiment | agent/conversation.json | implementation | 真实prompt及分版本实际结果，不自评分或伪造学生解释 |
 
 ## 提交检查说明
+
+按用户要求，当前提交不包含 Agent prompt 材料；此前版本的历史产物不代表当前交付。
 
 原始 gprof-sampling.txt 的两行工具表头自带行尾空格，为保留原始输出未作改写。源码、测试与其他产物通过 git diff --cached --check -- . ':(exclude)profile_output/gprof-sampling.txt'；官方基线祖先及 mysqltest 不变检查、全部记录的 SHA256 和最终两份三轮报告的版本/正确性检查均通过。
 
