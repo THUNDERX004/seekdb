@@ -1,0 +1,218 @@
+{
+  "schema_version": "agent-learning-evidence-v3-unbounded",
+  "task_context": {
+    "title": "实现 MiniVectorDB",
+    "repository_scope": "seekdb-minivectordb",
+    "candidate_commit": "c7011357bd616101da56c5f02f6cd8f478d73f2a",
+    "candidate_source_sha256": "8bff3ce5e850415afbecbdba1a60ba2a7df876ad1c8993973385e1aa09bb8a85",
+    "normal_binary_sha256": "dbcdcdad97a57c14225cde8016e577c1095fdaf0a552664f26f10f5299597102",
+    "scope": "Round 9-14 implementation, local tests and Linux Docker CI."
+  },
+  "conversations": [
+    {
+      "id": "turn-001",
+      "role": "student",
+      "content": "我先把这个题拆成四条验收线：SQL 与事务语义，尤其是多行语句失败后的原子性；单进程持久化，提交成功返回前行版本和提交记录要真正落盘，重启只发布已提交事务；过滤后的精确 TopK，先保证 distance 和主键 tie-break 的确定性，ANN 等协议明确后再评估；stdin/stdout 进程协议，ready、错误后继续服务和 shutdown 回滚都算可观察行为。性能优化在正确性、内存和协议通过后进入。工作流采用 ARIS 的 Plan→Execute→Analyze→Claim，先锁定问题、版本和证据，最后 Claim 只写日志里看得到的结论。subagent 按角色分工：只读探索、实现、独立反例、协议审计和最终评审；测试由独立线维护，评审只读冻结材料。每条结论对应命令、失败日志或 CI run。"
+    },
+    {
+      "id": "turn-002",
+      "role": "agent",
+      "content": "按这个准入框架盘点后，存储侧采用 append-only 行版本和 WAL，恢复只发布已提交事务；查询先过滤再做 exact heap TopK；默认进程入口使用预输入 ready。第一轮证据不是只看功能 happy path，而是检查故障分类：committed-publication 6 个案例 / 19 个子进程，catalog-publication 12 个案例 / 48 个子进程；注入 publication failure 或 torn WAL 时 writer 退出码为 1，正常构建忽略测试 hook，随后用 normal binary 连续两次重启核对两表完整字段。statement allocation 还分别注入 INSERT 28 次、UPDATE 22 次、DELETE 11 次失败，并验证 COMMIT/ROLLBACK、重启和最终成功。这个分解把“不丢已提交数据”和“失败语句不留下部分状态”变成了可执行检查，而不是只靠实现者口头保证。"
+    },
+    {
+      "id": "turn-003",
+      "role": "student",
+      "content": "这组结果把故障路径走通了：writer 在 publication failure 或 torn WAL 后 fail-stop，恢复由 normal binary 重放并核对完整字段。接下来先不继续堆功能，我要找“表面满足、语义上错误”的反例。第一个假设是 INSERT 的显式列列表：解析器如果只检查 schema 每列都有值，却忘了比较每一行的值个数与显式列表长度，那么 INSERT INTO t(id,id) VALUES(2) 可能被接受。它应该在执行任何写入前报错。先用归档父版本复现，再检查同一个非法 INSERT 在语句后、COMMIT 后和真实子进程重启后是否都不可见。再加一个多行 INSERT，让错误发生在后面一行，确认前面已成功的语句和显式事务保持有效。合法重排列作为对照，确保拒绝的是短行，而不是整类语法。实现和反例分给两条线，测试断言由反例线维护。"
+    },
+    {
+      "id": "turn-004",
+      "role": "agent",
+      "content": "归档父版本实测确认了该缺陷。round9-insert-before.txt 中 INSERT INTO t(id,id) VALUES(2) 返回 OK 1，查询从预期的 ['1'] 变成 ['1','2']；多列用例 INSERT INTO t(n,id,n) VALUES(20,2) 也返回 OK 1。同样的错误出现在执行后、COMMIT 后和真实子进程重启后；5 个测试方法合计 8 个失败断言。修复在每行闭合括号后比较 value_index 与显式列数，不符时在执行前抛错。修复后 round9-insert-after.txt 显示 5 个测试方法全部通过，同时保留完整重复列、值过多、合法重排列以及多行后续失败的控制组。"
+    },
+    {
+      "id": "turn-005",
+      "role": "student",
+      "content": "刚才的 8 个失败把问题落在解析阶段：一条非法历史被接受，随后被原子性和恢复机制原样持久化。修复点放在“解析完成但尚未执行”的边界，复测跨 COMMIT 和重启。下一步换一个数值反例。我怀疑 decimal→double→float32 会二次舍入：1.0000000596046448 严格大于 float32 1 与后继 1+2^-23 的中点，正确最近值应是后继；如果先落到 double 中点再转 float，可能错误选回 1。用两张只有 ID 和 VECTOR(1) 的表复现，预期 INSERT 后的位模式是 0x3F800001，SELECT id ORDER BY L2_DISTANCE(v,'[1]') LIMIT 1 返回 ID 2，父版本应返回 ID 1。oracle 使用 Fraction 和 float32 有限格点二分，并自检 midpoint/tie 方向。修复后把同样的十进制解析迁移到 INSERT、UPDATE、显式距离投影和隐藏 ORDER BY，再覆盖 subnormal、极小数、溢出中点和非有限值原子拒绝。通过标准是位模式和返回行，distance 输出容差单独处理。"
+    },
+    {
+      "id": "turn-006",
+      "role": "agent",
+      "content": "父版本复现成立。round10-float32-before-final.txt 记录 7 个测试方法、31 个失败断言；1.0000000596046448 得到位模式 1065353216，而正确值是 1065353217，对应 TopK 实际返回 ['1']、预期 ['2']。1e-999 等下溢输入被错误拒绝为 VALUE_OUT_OF_RANGE，溢出中点附近也出现错误拒绝。修复改为 parseFloat32Token 使用一次 from_chars 直接写入 float32，INSERT、UPDATE、已投影距离和隐藏 ORDER BY 共用该入口；极小但完整的十进制按符号归零，真正溢出仍报错。round10-float32-after.txt 显示 7 个测试全部 OK，最终套件覆盖 52 个普通/subnormal/大数边界字面量、9 个极端下溢/零字面量、stored TopK、UPDATE 和语句原子性。"
+    },
+    {
+      "id": "turn-007",
+      "role": "student",
+      "content": "位模式 1065353216 与 1065353217 的差异，加上返回行从 ID 2 变成 ID 1，把问题锁定在输入表示阶段，而不是 L2 输出格式或排序容差。下一次回归固定两条原则：存储值、查询 probe 和 UPDATE 共用十进制到 float32 入口；每条路径先构造精确的中点反例，再做性能优化。迁移场景包括 subnormal、接近最大有限值、Signed zero 和巨大指数；负零按数值 0 处理，这个数值问题与历史平台失败没有直接对应关系。接下来验证进程合同。协议以真实子进程为准：发送任何 stdin 前读取 stdout，第一条严格等于 {\"type\":\"ready\"} 并已 flush。再测 typed ID、BIGINT 整数、Unicode 转义、错误后继续会话、shutdown 回滚、EOF 回滚和超过 1 MiB 的单行 JSON。旧文本模式保留为显式选项。"
+    },
+    {
+      "id": "turn-008",
+      "role": "agent",
+      "content": "当前默认入口已按这个合同验证。test_json_protocol.py 在写任何请求前等待 ready，并逐项检查 typed ID、BIGINT、列顺序、空结果、字符串、向量、错误后继续服务、shutdown/restart 和大结果；14 个 mandatory protocol/text tests 全部通过。round14 的 51 条验证命令也全部通过。Linux Docker CI run 42761191623 的实际 handshake 为 PASS，默认和 scalar 的公开断言各为 20/20 组、95/95 SQL。Windows 的公开适配使用线程管道，Linux CI 运行未修改的原生 transport。"
+    },
+    {
+      "id": "turn-009",
+      "role": "student",
+      "content": "ready 在业务输入前出现、每帧只占一个物理行、错误后还能继续服务，这些结果说明协议是 liveness 和 typed transport 合同。下一轮性能优化先看内存所有权，而不是平均耗时。我的假设是：SELECT id,tag FROM t ORDER BY id 只需要 id、tag 和排序/PK 所需字段，但通用排序路径也复制了未投影的 VECTOR(1024)，导致 row cache 的 8 MiB 上限没有控制住查询峰值。用 20,000 行、VECTOR(1024)、8 MiB row cache 做同机父/候选对照，测写后和查询后的 Windows peak working set，并检查全部 20,000 个 ID/tag。SELECT *、未投影排序键、隐藏距离和普通 DISTINCT 语义同步回归。subagent 一条线做内存测量，另一条线验证投影和排序字段是否完整，最后由独立评审 agent 质疑结论。"
+    },
+    {
+      "id": "turn-010",
+      "role": "agent",
+      "content": "round12-projection-memory.json 的实测支持这个所有权假设：20,000 行、VECTOR(1024) 的 vector payload 为 81,920,000 bytes；父版本写后 peak working set 为 15,917,056 bytes，执行 SELECT id,tag FROM t ORDER BY id 后升到 99,385,344 bytes。最终候选写后和查询后都为 15,900,672 bytes，20,000 个 ID/tag 全部精确检查通过。修复让临时排序副本只保留输出源列、排序源列和 PK，稳定 cache/overlay 行仍借用；34 个 exact-field 查询覆盖投影向量、隐藏距离、别名、OFFSET、SELECT *、事务 overlay、回滚和重启。两个更宽的 eager/shared-lazy 变体因标准查询 paired ratio 0.9523963 和 0.9611816 被拒绝，负结果仍保留。"
+    },
+    {
+      "id": "turn-011",
+      "role": "student",
+      "content": "父版本查询峰值接近 81.9 MB 的向量负载，写后只有 15.9 MB，基本锁定“未投影字段被复制”；最终回到 15.9 MB 且 20,000 行字段完全一致，才接受改动。这组结果对应有序标量投影，其他查询形态单独测。下一层内存问题不同：即使行 cache 有上限，ExecResult 仍可能把所有格式化结果行留在内存。构造 7,500 行 VARCHAR(8192)、响应总量 61,483,893 bytes、8 MiB row cache 的查询，让大结果落到数据文件系统的临时 spool，小 TopK 留在内存，落盘后 LIMIT/OFFSET 和行数保持不变。spool 读取在输出 0 字节和 65,536 字节后失败时，进程非零退出，保留准确的已输出前缀，不追加普通 ERROR/完成标记，并清理临时文件；生产构建忽略测试 hook。排序缓冲独立，结果 spool 与 external sort 分开评估。"
+    },
+    {
+      "id": "turn-012",
+      "role": "agent",
+      "content": "round13-final-result-memory.json 实测父版本对 61,483,893-byte 响应的查询峰值为 71,471,104 bytes，最终候选为 18,558,976 bytes，7,500 行 ID、payload 和行数均完整验证。1 MiB 是响应缓冲的记账预算，不是进程总内存上限；单个超大行、事务 overlay 和排序缓冲仍是独立边界。test_result_spool_io.py 在 0 与 65,536 bytes 两个位置注入读取失败：故障进程非零退出，stdout 保持准确的部分前缀，stderr 报告 IO_ERROR，未遗留 .mvd-result-* 文件；正常 binary 忽略 fault hook 并完成完整重试。最终 round13 的 47 条本地验证命令通过，Linux 的 256 MiB/default-cache 与 64 MiB/8 MiB-cache 资源配置也未 OOM、均完成重启恢复。"
+    },
+    {
+      "id": "turn-013",
+      "role": "student",
+      "content": "18,558,976 bytes 的结果和 61,483,893-byte 响应形成对比，加上两个截断点的前缀、清理和 production isolation，说明优化改变的是结果所有权，协议格式没有变化。指标来自 Windows 进程，大结果也增加了 staging I/O；`1 MiB` 约束响应缓冲，排序仍是独立问题。接下来做专用 query path：显式 ORDER BY d,id ASC 命中有界 TopK heap 的条件是一个距离项、有限 LIMIT、距离升序、次级键为空或就是实际 PK；普通单键 TopK 和其他排序继续走通用路径。paired benchmark 同机、串行、交替顺序、每次 fresh DB，负样本保留。最后用 ARIS 的 Analyze 对原始 JSON 重算结论，review agent 按五维做证据定位和复核。"
+    },
+    {
+      "id": "turn-014",
+      "role": "agent",
+      "content": "round9 的专用路径验证符合这个边界：补充的 ORDER BY d,id ASC workload 父版查询中位数为 0.3764080s、候选为 0.1794820s，paired ratio 2.0687411，五轮范围为 1.8871580–2.1371469；标准单键 paired query ratio 为 0.9898680，低 cache 补充路径为 1.0204999，因此 2.07x 只归给显式 PK 补充负载。显式 PK 路径的 exact-order suite 在 normal/scalar 各通过 680 个 SELECT、761 条 SQL，selection suite 覆盖 616 个查询和两次重启。ARIS 的正式 reviewer MCP 未注册，状态记录为 REVIEW_UNAVAILABLE；同模型 subagent 仅作测试和反例辅助。"
+    },
+    {
+      "id": "turn-015",
+      "role": "student",
+      "content": "我的复盘集中在四个可迁移的决策。第一，先造父版本可失败的最小反例，再改代码；`INSERT` 列数、float32 中点、ready handshake 和内存峰值都采用这个方法，但各自作为不同问题记录。第二，oracle 本身也要被质疑：浮点用 Fraction/整数语义，SQL 用状态机差分，协议用真实管道和原始字节，性能用 paired 数据和负样本。第三，subagent 的价值在角色分工：一个 explorer 找边界，一个 implementer 保持改动最小，一个 read-only verifier 维护反例，最后 reviewer 只看冻结材料；写入范围和测试维护权限分开。第四，结论绑定实际运行环境：公开 20 组、Windows 进程峰值、注入故障和 Docker CI 各自说明能覆盖的范围。后续优先补 Linux cgroup 的峰值与余量、完整 official driver 的 framing、外部排序和大事务上界；ANN 合同明确后再引入受控索引并保留 exact fallback。"
+    },
+    {
+      "id": "turn-016",
+      "role": "agent",
+      "content": "材料最终按七条独立链收束，每条保留问题、父版本反例、修正后的复测、负结果和适用条件。最重要的协作结论是：先让 Agent 证明一个可失败的最小假设，再由只读角色寻找反例和协议边界，实现与测试断言分离；分析阶段引用实际命令或 CI，Claim 阶段收束到日志能够支持的结论。公开输入、Linux cgroup、真实掉电和完整 official driver 是下一步继续补齐的实验项。"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "exp-01",
+      "chain_id": "storage-publication",
+      "name": "Commit/catalog publication and allocation fault classification",
+      "command": "python -X utf8 -B tests/test_commit_publication.py build/round14-normal/minivectordb.exe build/round14-fault/minivectordb.exe; python -X utf8 -B tests/test_catalog_publication.py build/round14-normal/minivectordb.exe build/round14-fault/minivectordb.exe; python -X utf8 -B tests/test_statement_allocation.py build/round14-test_statement_allocation_normal.exe",
+      "exit_code": 0,
+      "stdout_excerpt": "PASS commit publication: 6 cases, 19 child processes, 0.437s total | PASS catalog publication: 12 cases, 48 child processes, 0.726s total | PASS INSERT: 28 allocation failures; COMMIT/ROLLBACK/restart and success verified",
+      "source_record": "refine-logs/round14-validation.json",
+      "version_scope": "candidate c7011357bd616101da56c5f02f6cd8f478d73f2a"
+    },
+    {
+      "id": "exp-02",
+      "chain_id": "duplicate-column-insert",
+      "name": "Explicit duplicate INSERT column and restart visibility",
+      "command": "python -X utf8 -B tests/test_stream_followup.py build/round8-submission-6d6fbb85f/build/normal/minivectordb.exe; python -X utf8 -B tests/test_stream_followup.py build/minivectordb.exe",
+      "exit_code": 1,
+      "exit_code_after_fix": 0,
+      "stdout_excerpt": "archived parent: Ran 5 tests in 0.226s | FAILED (failures=8) | fixed candidate: Ran 5 tests in 0.225s | OK",
+      "source_record": "refine-logs/round9-insert-before.txt and refine-logs/round9-insert-after.txt",
+      "version_scope": "parent 60593a746887d1ddf920d6620386f9e1e2e02fb8b91b7c974e8d37ab0acbe6ef; fixed candidate 66d5aee2e7a1e6b185f38d6c8798d2352c1b6fc9747bc8d8c6a3a32613ed7b3a"
+    },
+    {
+      "id": "exp-03",
+      "chain_id": "float32-rounding",
+      "name": "Direct decimal-to-float32 rounding and TopK membership",
+      "command": "python -X utf8 -B tests/test_float32_literals.py build/round9-submission-398575eb2/build/normal/minivectordb.exe; python -X utf8 -B tests/test_float32_literals.py build/minivectordb.exe",
+      "exit_code": 1,
+      "exit_code_after_fix": 0,
+      "stdout_excerpt": "archived parent: 31 failed assertions, including 1065353216 != 1065353217 | fixed candidate: Ran 7 tests | OK",
+      "source_record": "refine-logs/round10-float32-before-final.txt, refine-logs/round10-float32-after.txt, and refine-logs/round14-validation.json",
+      "version_scope": "parent 398575eb23bc47d37e209c8c041f377c765f41f2; fixed candidate c7011357bd616101da56c5f02f6cd8f478d73f2a"
+    },
+    {
+      "id": "exp-04",
+      "chain_id": "jsonl-runtime-contract",
+      "name": "Pre-input ready and typed JSONL protocol",
+      "command": "python -X utf8 -B tests/test_json_protocol.py build/round14-normal/minivectordb.exe; .github/workflows/minivectordb.yml run 42761191623 job 129646994733",
+      "exit_code": 0,
+      "stdout_excerpt": "Ran 14 tests | OK | PASS: 20/20 published groups; 95/95 SQL responses (local JSONL) | Linux Docker CI conclusion=success",
+      "source_record": "refine-logs/round14-validation.json and refine-logs/round14-linux-validation.json",
+      "version_scope": "candidate c7011357bd616101da56c5f02f6cd8f478d73f2a"
+    },
+    {
+      "id": "exp-05",
+      "chain_id": "ordered-projection-memory",
+      "name": "Bounded payload retention for ordered scalar projection",
+      "command": "python -X utf8 -B bench/evaluate_projection_memory.py --baseline build/round12-parent-6fb385e05/minivectordb.exe --candidate build/minivectordb.exe --report bench/results/round12-projection-memory.json",
+      "exit_code": 0,
+      "stdout_excerpt": "baseline after_ordered_projection PeakWorkingSetSize_bytes=99385344 | candidate after_ordered_projection PeakWorkingSetSize_bytes=15900672 | baseline rows_verified=20000 | candidate rows_verified=20000 | status=passed",
+      "source_record": "bench/results/round12-projection-memory.json",
+      "version_scope": "parent 6fb385e05fa47ac6bb3da91584c0506c5addd3ac; candidate da87738c6f484ae80abccbbf9ce4afffdc4e0d4fb69c0d28cedc6a7baed44e72"
+    },
+    {
+      "id": "exp-06",
+      "chain_id": "large-result-spool",
+      "name": "Disk-backed large response and replay fail-stop",
+      "command": "python -X utf8 -B bench/evaluate_result_memory.py --baseline build/minivectordb.exe --candidate build/round13-normal/minivectordb.exe; python -X utf8 -B tests/test_result_spool_io.py build/round13-normal/minivectordb.exe build/round13-fault/minivectordb.exe",
+      "exit_code": 0,
+      "stdout_excerpt": "baseline after_select PeakWorkingSetSize_bytes=71471104 | candidate after_select PeakWorkingSetSize_bytes=18558976 | output_bytes=61483893 | rows_verified=7500 | PASS replay failure after 65536 bytes closes partial response",
+      "source_record": "bench/results/round13-final-result-memory.json and refine-logs/round13-validation.json",
+      "version_scope": "candidate 18ff30fbc3a877469c979335cce107857ccfe0d5462655a18450ae554f23df2e"
+    },
+    {
+      "id": "exp-07",
+      "chain_id": "explicit-pk-topk",
+      "name": "Explicit primary-key TopK path and standard-path negative result",
+      "command": "python -X utf8 -B bench/evaluate_tiebreak.py; python -X utf8 -B bench/evaluate.py",
+      "exit_code": 0,
+      "stdout_excerpt": "supplemental explicit PK paired query ratio median=2.0687410927428647, min=1.8871579724212062, max=2.1371469005248436 | standard single-key paired query ratio median=0.9898680487500373",
+      "source_record": "bench/results/round9-tiebreak.json and bench/results/round9-main.json",
+      "version_scope": "parent 60593a746887d1ddf920d6620386f9e1e2e02fb8b91b7c974e8d37ab0acbe6ef; candidate 66d5aee2e7a1e6b185f38d6c8798d2352c1b6fc9747bc8d8c6a3a32613ed7b3a"
+    }
+  ],
+  "instance_map": [
+    {
+      "id": "instance-01",
+      "chain_id": "storage-publication",
+      "dimension": "问题理解与自主拆解",
+      "student_turns": ["turn-001", "turn-003"],
+      "result_records": ["exp-01"]
+    },
+    {
+      "id": "instance-02",
+      "chain_id": "duplicate-column-insert",
+      "dimension": "独立验证与质疑",
+      "student_turns": ["turn-003", "turn-005"],
+      "result_records": ["exp-02"]
+    },
+    {
+      "id": "instance-03",
+      "chain_id": "float32-rounding",
+      "dimension": "技术理解与迁移",
+      "student_turns": ["turn-005", "turn-007"],
+      "result_records": ["exp-03"]
+    },
+    {
+      "id": "instance-04",
+      "chain_id": "jsonl-runtime-contract",
+      "dimension": "实验与反馈迭代",
+      "student_turns": ["turn-007", "turn-009"],
+      "result_records": ["exp-04"]
+    },
+    {
+      "id": "instance-05",
+      "chain_id": "ordered-projection-memory",
+      "dimension": "实验与反馈迭代",
+      "student_turns": ["turn-009", "turn-011"],
+      "result_records": ["exp-05"]
+    },
+    {
+      "id": "instance-06",
+      "chain_id": "large-result-spool",
+      "dimension": "实验与反馈迭代",
+      "student_turns": ["turn-011", "turn-013"],
+      "result_records": ["exp-06"]
+    },
+    {
+      "id": "instance-07",
+      "chain_id": "explicit-pk-topk",
+      "dimension": "取舍与反思",
+      "student_turns": ["turn-013", "turn-015"],
+      "result_records": ["exp-07"]
+    }
+  ]
+}
