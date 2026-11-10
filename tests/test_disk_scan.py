@@ -103,6 +103,12 @@ def run(executable: Path):
         )
         ids = [int(value.split("\t", 1)[0]) for value in result]
         assert ids == list(range(2, 21, 2)), ids
+        # Hash traversal previously issued random seeks whenever a query had no
+        # ORDER BY. Disk scans now follow current row offsets even though SQL
+        # result ordering remains unspecified.
+        result = client.execute("SELECT id FROM big")
+        ids = sorted(int(value) for value in result)
+        assert ids == list(range(1, row_count + 1)), ids[:20]
     finally:
         client.close()
         if os.name != "nt":
@@ -114,7 +120,7 @@ def main():
     parser.add_argument("executable", type=Path)
     args = parser.parse_args()
     run(args.executable.resolve())
-    print("PASS out-of-cache disk scan and filtered TopK")
+    print("PASS out-of-cache ordered, filtered TopK and unordered full scan")
 
 
 if __name__ == "__main__":

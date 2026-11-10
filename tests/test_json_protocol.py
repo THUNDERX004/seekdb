@@ -22,6 +22,7 @@ import math
 from pathlib import Path
 import subprocess
 import tempfile
+import time
 import unittest
 
 from jsonl_client import JsonlClient, same_json
@@ -277,6 +278,26 @@ class JsonProtocolContract(ExecutableCase):
         restarted = self.client()  # Same explicit temporary data directory.
         self.rows(restarted.execute("SELECT id,s FROM durable ORDER BY id"),
                   ["id", "s"], [[1, "autocommit"], [3, "committed"]])
+        restarted.shutdown()
+
+    def test_shutdown_response_precedes_large_pending_overlay_release(self):
+        client = self.client()
+        self.success(client.execute(
+            "CREATE TABLE pending(id BIGINT PRIMARY KEY,v VECTOR(16))"
+        ))
+        self.success(client.execute("BEGIN"))
+        for start in range(0, 8000, 1000):
+            rows = ",".join(
+                f"({ident},'[{ident},1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]')"
+                for ident in range(start, start + 1000)
+            )
+            self.affected(client.execute("INSERT INTO pending VALUES" + rows), 1000)
+        started = time.monotonic()
+        client.shutdown()
+        self.assertLess(time.monotonic() - started, min(self.timeout, 5.0))
+        restarted = self.client()
+        self.rows(restarted.execute("SELECT id FROM pending ORDER BY id"),
+                  ["id"], [])
         restarted.shutdown()
 
     def test_spooled_response_over_one_mib_preserves_escaping_and_row_boundaries(self):
