@@ -174,17 +174,20 @@ comparison baseline is commit 3659b39d6de0537fb81bd08a70b6f580c4e26f37, not
 the unpublished official performance baseline.
 
 The optimized implementation uses checked float32 parsing, bulk little-endian
-serialization, an equivalent table-driven CRC32, untied stdin/stdout, a reused
-file stream for disk scans, PK point lookup, and a budgeted ordinary-column
-equality candidate index. The index holds cached row pointers when available
-and lightweight primary-key/physical-offset entries otherwise. It is
-invalidated on committed changes and combined with the current transaction
-overlay. Row cache accounting
+serialization, an equivalent slicing-by-8 IEEE CRC32, untied stdin/stdout, a
+reused file stream for disk scans, PK point lookup, and a budgeted
+ordinary-column equality candidate index. The index holds cached row pointers
+when available and lightweight primary-key/physical-offset entries otherwise.
+BIGINT equality probes use integer keys while VARCHAR probes retain exact
+string keys. The index is invalidated on committed changes and combined with
+the current transaction overlay. Unfiltered non-cached distance TopK scans can
+extract only the primary key and vector from validated row payloads, then fully
+deserialize only the selected output window. Row cache accounting
 uses actual value capacities, is divided across tables, and releases row storage
-when disabled. Set MVD_CACHE_LIMIT_MB to a positive integer to change the
-default 192 MiB row-cache budget. This is not a process/cgroup memory limit:
-PK metadata, transaction overlays, output rows and OS file caches also consume
-memory. There is no automatic cgroup budget discovery.
+when disabled. The cache budget follows detected cgroup memory limits when
+available; MVD_CACHE_LIMIT_MB can override it with a positive integer. This is
+not a process/cgroup memory limit: PK metadata, transaction overlays, output
+rows and OS file caches also consume memory.
 
 Distance subtraction and accumulation use double precision. The exact TopK
 scan prepares the constant probe and chooses the CPU kernel once per query.

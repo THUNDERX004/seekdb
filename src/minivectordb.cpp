@@ -220,20 +220,50 @@ bool equalAsciiIgnoreCase(std::string_view left, std::string_view right) {
 }
 
 uint32_t crc32(const uint8_t *data, size_t size) {
-  static constexpr auto table = [] {
-    std::array<uint32_t, 256> values{};
-    for (uint32_t i = 0; i < values.size(); ++i) {
+  static constexpr auto tables = [] {
+    std::array<std::array<uint32_t, 256>, 8> values{};
+    for (uint32_t i = 0; i < values[0].size(); ++i) {
       uint32_t value = i;
       for (int bit = 0; bit < 8; ++bit) {
         value = (value >> 1U) ^ (0xedb88320U & (0U - (value & 1U)));
       }
-      values[i] = value;
+      values[0][i] = value;
+    }
+    for (size_t table = 1; table < values.size(); ++table) {
+      for (size_t i = 0; i < values[table].size(); ++i) {
+        const uint32_t previous = values[table - 1][i];
+        values[table][i] =
+            (previous >> 8U) ^ values[0][previous & 0xffU];
+      }
     }
     return values;
   }();
   uint32_t crc = 0xffffffffU;
-  for (size_t i = 0; i < size; ++i) {
-    crc = (crc >> 8U) ^ table[(crc ^ data[i]) & 0xffU];
+  size_t offset = 0;
+  while (size - offset >= sizeof(uint64_t)) {
+    uint64_t word = 0;
+    if constexpr (std::endian::native == std::endian::little) {
+      std::memcpy(&word, data + offset, sizeof(word));
+    } else {
+      for (size_t byte = 0; byte < sizeof(word); ++byte) {
+        word |= static_cast<uint64_t>(data[offset + byte]) << (byte * 8U);
+      }
+    }
+    const uint32_t low = static_cast<uint32_t>(word) ^ crc;
+    const uint32_t high = static_cast<uint32_t>(word >> 32U);
+    crc = tables[7][low & 0xffU] ^
+          tables[6][(low >> 8U) & 0xffU] ^
+          tables[5][(low >> 16U) & 0xffU] ^
+          tables[4][low >> 24U] ^
+          tables[3][high & 0xffU] ^
+          tables[2][(high >> 8U) & 0xffU] ^
+          tables[1][(high >> 16U) & 0xffU] ^
+          tables[0][high >> 24U];
+    offset += sizeof(word);
+  }
+  while (offset < size) {
+    crc = (crc >> 8U) ^ tables[0][(crc ^ data[offset]) & 0xffU];
+    ++offset;
   }
   return ~crc;
 }
@@ -470,6 +500,63 @@ Row deserializeRow(const std::vector<uint8_t> &data) {
     fail("CORRUPT_DATA", "trailing bytes in serialized row");
   }
   return row;
+}
+
+void extractPrimaryAndVector(
+    const std::vector<uint8_t> &data, const TableDef &definition,
+    size_t vector_column, int64_t &primary,
+    std::vector<float> &components) {
+  size_t pos = 0;
+  const uint32_t count = readScalar<uint32_t>(data, pos);
+  if (count != definition.columns.size()) {
+    fail("CORRUPT_DATA", "stored row does not match the catalog schema");
+  }
+  bool found_primary = false;
+  bool found_vector = false;
+  for (uint32_t i = 0; i < count; ++i) {
+    const int64_t integer = readScalar<int64_t>(data, pos);
+    if (i == definition.primary_key) {
+      primary = integer;
+      found_primary = true;
+    }
+
+    const uint32_t text_size = readScalar<uint32_t>(data, pos);
+    if (text_size > data.size() - pos) {
+      fail("CORRUPT_DATA", "truncated string value");
+    }
+    pos += text_size;
+
+    const uint32_t vector_size = readScalar<uint32_t>(data, pos);
+    if (vector_size > (1U << 20U)) {
+      fail("CORRUPT_DATA", "vector dimension is invalid");
+    }
+    const size_t vector_bytes = static_cast<size_t>(vector_size) * sizeof(float);
+    if (vector_bytes > data.size() - pos) {
+      fail("CORRUPT_DATA", "truncated vector value");
+    }
+    if (i == vector_column) {
+      if (vector_size != definition.columns[vector_column].length) {
+        fail("CORRUPT_DATA", "stored vector dimension does not match schema");
+      }
+      components.resize(vector_size);
+      if constexpr (std::endian::native == std::endian::little) {
+        if (vector_bytes != 0) {
+          std::memcpy(components.data(), data.data() + pos, vector_bytes);
+        }
+        pos += vector_bytes;
+      } else {
+        for (float &component : components) {
+          component = std::bit_cast<float>(readScalar<uint32_t>(data, pos));
+        }
+      }
+      found_vector = true;
+    } else {
+      pos += vector_bytes;
+    }
+  }
+  if (pos != data.size() || !found_primary || !found_vector) {
+    fail("CORRUPT_DATA", "invalid serialized row for exact vector scan");
+  }
 }
 
 std::string formatFloat(float value, int precision = 9) {
@@ -2221,38 +2308,46 @@ class Table {
     }
     const size_t column = condition.column;
     const bool text = definition_.columns[column].type == ColumnType::VarChar;
-    const auto keyFor = [&](const Value &value) {
-      return text ? value.text : std::to_string(value.integer);
-    };
     if (equality_column_ != column) {
       clearEqualityIndex();
       // Build off to the side: an allocation failure must never publish a
       // partially populated candidate index to a later successful query.
-      decltype(equality_index_) staged;
+      decltype(integer_equality_index_) staged_integer;
+      decltype(text_equality_index_) staged_text;
       const size_t available = cache_enabled_
           ? (cache_limit_bytes_ > cache_bytes_
                  ? cache_limit_bytes_ - cache_bytes_ : 0)
           : equalityMetadataLimitBytes();
       size_t allocated = 0;
-      const auto append = [&](int64_t primary, const Version &version,
-                              const Row &row) {
-        std::string key = keyFor(row[column]);
-        auto [entry, inserted] = staged.try_emplace(std::move(key));
+      const auto appendTo = [&](auto &index, auto key, int64_t primary,
+                                const Version &version) {
+        using Index = std::remove_reference_t<decltype(index)>;
+        auto [entry, inserted] = index.try_emplace(std::move(key));
         if (inserted) {
-          allocated += sizeof(decltype(equality_index_)::value_type) + 64 +
-                       entry->first.capacity() + 1;
+          allocated += sizeof(typename Index::value_type) + 64;
+          if constexpr (std::is_same_v<typename Index::key_type, std::string>) {
+            allocated += entry->first.capacity() + 1;
+          }
         }
         IndexedRows &rows = entry->second;
         const size_t old_capacity = rows.capacity();
         rows.push_back({primary, version.offset,
                         version.cached ? &version.row : nullptr});
         allocated += (rows.capacity() - old_capacity) * sizeof(IndexedRows::value_type);
-        if (allocated + staged.bucket_count() * sizeof(void *) > available) {
+        if (allocated + staged_integer.bucket_count() * sizeof(void *) +
+                staged_text.bucket_count() * sizeof(void *) > available) {
           equality_column_ = column;
           equality_disabled_ = true;
           return false;
         }
         return true;
+      };
+      const auto append = [&](int64_t primary, const Version &version,
+                              const Row &row) {
+        if (text) {
+          return appendTo(staged_text, row[column].text, primary, version);
+        }
+        return appendTo(staged_integer, row[column].integer, primary, version);
       };
       if (cache_enabled_) {
         // The fully cached path already has every payload and can avoid a
@@ -2283,15 +2378,21 @@ class Table {
           }
         }
       }
-      equality_index_.swap(staged);
+      integer_equality_index_.swap(staged_integer);
+      text_equality_index_.swap(staged_text);
       equality_column_ = column;
     }
     if (equality_disabled_) {
       return nullptr;
     }
-    const auto found = equality_index_.find(keyFor(condition.value));
     static const IndexedRows empty;
-    return found == equality_index_.end() ? &empty : &found->second;
+    if (text) {
+      const auto found = text_equality_index_.find(condition.value.text);
+      return found == text_equality_index_.end() ? &empty : &found->second;
+    }
+    const auto found =
+        integer_equality_index_.find(condition.value.integer);
+    return found == integer_equality_index_.end() ? &empty : &found->second;
   }
 
   template <typename Callback>
@@ -2462,6 +2563,13 @@ class Table {
     return true;
   }
 
+  template <typename Callback>
+  bool forEachDiskDistanceBase(size_t vector_column,
+                               Callback &&callback) const {
+    return forEachDiskDistanceBaseImpl(
+        vector_column, std::forward<Callback>(callback));
+  }
+
  private:
   void applyRecord(const DecodedRecord &record,
                    const std::vector<uint8_t> &payload, uint64_t offset) {
@@ -2525,8 +2633,9 @@ class Table {
     return readRow(offset, input, input_position, payload);
   }
 
-  Row readRow(uint64_t offset, std::ifstream &input, uint64_t *input_position,
-              std::vector<uint8_t> &payload) const {
+  DecodedRecord readRecordPayload(
+      uint64_t offset, std::ifstream &input, uint64_t *input_position,
+      std::vector<uint8_t> &payload) const {
     if (offset > next_offset_ || next_offset_ - offset < 32) {
       fail("CORRUPT_DATA", "row offset exceeds committed file bounds");
     }
@@ -2549,13 +2658,56 @@ class Table {
     if (!payload.empty() && !readExact(input, payload.data(), payload.size())) {
       fail("CORRUPT_DATA", "row payload is truncated");
     }
-    if (crc32(payload) != rowPayloadChecksum(header) || record.op == 3) {
+    if (crc32(payload) != rowPayloadChecksum(header)) {
       fail("CORRUPT_DATA", "invalid row payload");
     }
     if (input_position != nullptr) {
       *input_position = offset + header.size() + payload_size;
     }
+    return record;
+  }
+
+  Row readRow(uint64_t offset, std::ifstream &input, uint64_t *input_position,
+              std::vector<uint8_t> &payload) const {
+    const DecodedRecord record =
+        readRecordPayload(offset, input, input_position, payload);
+    if (record.op == 3) {
+      fail("CORRUPT_DATA", "invalid row payload");
+    }
     return deserializeRow(payload);
+  }
+
+  template <typename Callback>
+  bool forEachDiskDistanceBaseImpl(size_t vector_column,
+                                   Callback &&callback) const {
+    if (cache_enabled_) {
+      return false;
+    }
+    std::ifstream input(data_path_, std::ios::binary);
+    uint64_t input_position = std::numeric_limits<uint64_t>::max();
+    std::vector<uint8_t> payload;
+    std::vector<float> components;
+    for (const auto &[offset, primary] : physicalOrder()) {
+      const auto found = versions_.find(primary);
+      if (found == versions_.end() || found->second.offset != offset) {
+        continue;
+      }
+      const DecodedRecord record =
+          readRecordPayload(offset, input, &input_position, payload);
+      if (record.op == 3) {
+        fail("CORRUPT_DATA", "current row points to a delete record");
+      }
+      int64_t stored_primary = 0;
+      extractPrimaryAndVector(payload, definition_, vector_column,
+                              stored_primary, components);
+      if (stored_primary != primary) {
+        fail("CORRUPT_DATA", "stored primary key does not match row metadata");
+      }
+      if (!callback(stored_primary, components)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   void disableCache() noexcept {
@@ -2580,7 +2732,8 @@ class Table {
   uint64_t next_offset_ = 0;
   size_t equality_column_ = std::numeric_limits<size_t>::max();
   bool equality_disabled_ = false;
-  std::unordered_map<std::string, IndexedRows> equality_index_;
+  std::unordered_map<int64_t, IndexedRows> integer_equality_index_;
+  std::unordered_map<std::string, IndexedRows> text_equality_index_;
 
   size_t equalityMetadataLimitBytes() const noexcept {
     constexpr size_t minimum = 256ULL * 1024ULL;
@@ -2589,7 +2742,8 @@ class Table {
   }
 
   void clearEqualityIndex() noexcept {
-    decltype(equality_index_){}.swap(equality_index_);
+    decltype(integer_equality_index_){}.swap(integer_equality_index_);
+    decltype(text_equality_index_){}.swap(text_equality_index_);
     equality_column_ = std::numeric_limits<size_t>::max();
     equality_disabled_ = false;
   }
@@ -3508,6 +3662,101 @@ class Database {
               ? std::numeric_limits<int64_t>::max()
               : statement.offset + statement.limit;
       const size_t capacity = std::min(static_cast<size_t>(wanted), visible_upper);
+      const auto overlay_table = overlay_.find(definition.oid);
+      constexpr size_t compact_candidate_budget = 4ULL * 1024ULL * 1024ULL;
+      const size_t vector_bytes =
+          static_cast<size_t>(definition.columns[distance_spec.column].length) *
+          sizeof(float);
+      const bool compact_disk_scan =
+          !table.fullyCached() && statement.conditions.empty() &&
+          (overlay_table == overlay_.end() || overlay_table->second.empty()) &&
+          capacity <= 256 &&
+          vector_bytes <= compact_candidate_budget / capacity;
+      if (compact_disk_scan) {
+        struct PayloadCandidate {
+          double squared_distance = 0;
+          int64_t primary = 0;
+          std::vector<float> vector;
+        };
+        struct PayloadWorseFirst {
+          const std::vector<float> *probe;
+          bool operator()(const PayloadCandidate &left,
+                          const PayloadCandidate &right) const {
+            const int comparison = compareDistances(
+                left.squared_distance, left.vector,
+                right.squared_distance, right.vector, *probe);
+            return comparison != 0 ? comparison < 0
+                                   : left.primary < right.primary;
+          }
+        };
+        const PayloadWorseFirst payload_less{&distance_spec.probe};
+        std::vector<PayloadCandidate> payload_heap;
+        payload_heap.reserve(capacity);
+        const double rejection_multiplier =
+            1 + (static_cast<double>(prepared_probe.size()) + 16) * 16 *
+                    std::numeric_limits<double>::epsilon();
+        double reject_above = std::numeric_limits<double>::infinity();
+        const auto updateRejectionBoundary = [&] {
+          reject_above = std::nextafter(
+              payload_heap.front().squared_distance * rejection_multiplier,
+              std::numeric_limits<double>::infinity());
+        };
+        if (!table.forEachDiskDistanceBase(
+                distance_spec.column,
+                [&](int64_t primary, const std::vector<float> &vector) {
+          if (vector.size() != prepared_probe.size()) {
+            fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
+          }
+          MVD_PROFILE_SCOPE(distance_profile, Distance, 255);
+          const double squared = distance_kernel(
+              vector.data(), prepared_probe.data(), prepared_probe.size());
+          MVD_PROFILE_END(distance_profile);
+          if (payload_heap.size() < capacity) {
+            MVD_PROFILE_SCOPE(heap_profile, Heap, 31);
+            payload_heap.push_back({squared, primary, vector});
+            std::push_heap(payload_heap.begin(), payload_heap.end(),
+                           payload_less);
+            updateRejectionBoundary();
+          } else if (squared <= reject_above) {
+            const PayloadCandidate &worst = payload_heap.front();
+            const int comparison = compareDistances(
+                squared, vector, worst.squared_distance, worst.vector,
+                distance_spec.probe);
+            if (comparison < 0 ||
+                (comparison == 0 && primary < worst.primary)) {
+              MVD_PROFILE_SCOPE(heap_profile, Heap, 31);
+              std::pop_heap(payload_heap.begin(), payload_heap.end(),
+                            payload_less);
+              payload_heap.back() = PayloadCandidate{squared, primary, vector};
+              std::push_heap(payload_heap.begin(), payload_heap.end(),
+                             payload_less);
+              updateRejectionBoundary();
+            }
+          }
+          return true;
+        })) {
+          fail("CORRUPT_DATA", "cannot complete compact disk vector scan");
+        }
+        std::sort_heap(payload_heap.begin(), payload_heap.end(), payload_less);
+        ExecResult result;
+        result.select = true;
+        if (static_cast<uint64_t>(statement.offset) < payload_heap.size()) {
+          const size_t begin = static_cast<size_t>(statement.offset);
+          const size_t end = begin + std::min(
+              payload_heap.size() - begin,
+              static_cast<size_t>(statement.limit));
+          result.reserveRows(end - begin);
+          for (size_t i = begin; i < end; ++i) {
+            Row row;
+            if (!currentRow(table, payload_heap[i].primary, row)) {
+              fail("CORRUPT_DATA",
+                   "selected disk row disappeared during output");
+            }
+            result.appendRow(makeOutput(row), data_dir_, json_output_);
+          }
+        }
+        return result;
+      }
       const WorseFirst candidateLess{distance_spec.column, &distance_spec.probe};
       std::vector<Candidate> heap;
       heap.reserve(std::min<size_t>(capacity, 64));
