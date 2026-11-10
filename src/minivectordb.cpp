@@ -38,6 +38,7 @@
 #endif
 
 #ifdef _WIN32
+#include <fcntl.h>
 #include <io.h>
 #else
 #include <fcntl.h>
@@ -627,6 +628,7 @@ struct SelectItem {
   bool star = false;
   bool distance = false;
   bool hidden = false;
+  bool aliased = false;
   size_t column = 0;
   std::string source_name;
   std::vector<float> probe;
@@ -1016,7 +1018,8 @@ class Parser {
       SelectItem item;
       if (consumeSymbol("*")) {
         item.star = true;
-      } else if (tokenIsKeyword(peek(), "l2_distance")) {
+      } else if (tokenIsKeyword(peek(), "l2_distance") &&
+                 peek(1).kind == TokenKind::Symbol && peek(1).text == "(") {
         ++pos_;
         expectSymbol("(");
         item.distance = true;
@@ -1037,6 +1040,7 @@ class Parser {
       }
       if (acceptKeyword("as")) {
         item.output_name = expectIdentifier();
+        item.aliased = true;
       }
       statement.items.push_back(std::move(item));
       if (!consumeSymbol(",")) {
@@ -1065,7 +1069,8 @@ class Parser {
       expectKeyword("by");
       while (true) {
         OrderKey key;
-        if (tokenIsKeyword(peek(), "l2_distance")) {
+        if (tokenIsKeyword(peek(), "l2_distance") &&
+            peek(1).kind == TokenKind::Symbol && peek(1).text == "(") {
           ++pos_;
           expectSymbol("(");
           key.distance = true;
@@ -2594,7 +2599,8 @@ class Database {
       } else {
         for (size_t i = 0; i < statement.items.size(); ++i) {
           if (lower(statement.items[i].output_name) == lower(key.reference) &&
-              !statement.items[i].star) {
+              !statement.items[i].star &&
+              (!statement.items[i].distance || statement.items[i].aliased)) {
             resolved.distance = statement.items[i].distance;
             resolved.column = statement.items[i].column;
             resolved.distance_index = i;
@@ -3415,6 +3421,14 @@ int run(int argc, char **argv) {
 int main(int argc, char **argv) {
 #ifdef MVD_PROFILE
   mvd::ProfileReport profile_report;
+#endif
+#ifdef _WIN32
+  // Preserve SQL and result bytes, including literal CR/LF and control-Z.
+  if (_setmode(_fileno(stdin), _O_BINARY) == -1 ||
+      _setmode(_fileno(stdout), _O_BINARY) == -1) {
+    std::cerr << "ERROR IO_ERROR: cannot set binary standard streams\n";
+    return 1;
+  }
 #endif
   // Responses explicitly flush stdout. Avoid flushing it, and synchronizing
   // with C stdio, for every get()/peek() while reading a SQL request.

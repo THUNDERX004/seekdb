@@ -1,0 +1,94 @@
+name: MiniVectorDB Linux validation
+
+on:
+  push:
+    branches: [2026-competition-round2]
+    paths:
+      - src/minivectordb.cpp
+      - tests/**
+      - mysqltest/**
+      - Dockerfile
+      - CMakeLists.txt
+      - .github/workflows/minivectordb.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Build the submission image
+        run: |
+          docker build --tag minivectordb:validation .
+          mkdir -p build/linux-normal build/linux-scalar build/linux-fault
+          container_id=$(docker create minivectordb:validation)
+          docker cp "$container_id":/app/minivectordb build/linux-normal/minivectordb
+          docker rm "$container_id"
+      - name: Build scalar and isolated fault tests
+        run: |
+          docker run --rm --network=none --mount type=bind,src="$PWD",dst=/work --workdir /work \
+            gcc:14.3.0-bookworm@sha256:5e927c284bf55a7dc796262e311a0703344f62f41f5621eb56843111b1d37e15 \
+            bash -euc '
+              flags="-std=c++20 -static-libstdc++ -static-libgcc"
+              g++ $flags -O3 -DNDEBUG -Wall -Wextra -Wpedantic -DMVD_FORCE_SCALAR src/minivectordb.cpp -o build/linux-scalar/minivectordb
+              g++ $flags -O3 -DNDEBUG -Wall -Wextra -Wpedantic -DMVD_TEST_FAULTS src/minivectordb.cpp -o build/linux-fault/minivectordb
+              for mode in normal scalar; do
+                extra=""
+                if [ "$mode" = scalar ]; then extra=-DMVD_FORCE_SCALAR; fi
+                for kind in statement commit catalog; do
+                  g++ $flags -O1 $extra tests/test_${kind}_allocation.cpp -o build/test_${kind}_allocation_${mode}
+                done
+              done
+            '
+      - name: Run the full local correctness contract on Linux
+        run: |
+          python3 -X utf8 -B tests/validate_all.py \
+            --normal build/linux-normal/minivectordb \
+            --scalar build/linux-scalar/minivectordb \
+            --fault build/linux-fault/minivectordb \
+            --allocation-normal build/test_statement_allocation_normal \
+            --allocation-scalar build/test_statement_allocation_scalar \
+            --commit-allocation-normal build/test_commit_allocation_normal \
+            --commit-allocation-scalar build/test_commit_allocation_scalar \
+            --catalog-allocation-normal build/test_catalog_allocation_normal \
+            --catalog-allocation-scalar build/test_catalog_allocation_scalar \
+            --prefix refine-logs/linux-validation
+      - name: Verify the actual container entrypoint and data mount
+        run: |
+          python3 -X utf8 -B - <<'PY'
+          import pathlib
+          import subprocess
+          import tempfile
+
+          with tempfile.TemporaryDirectory(prefix="mvd-image-") as directory:
+              command = ["docker", "run", "--rm", "--interactive", "--network=none",
+                         "--cpus=2", "--memory=256m", "--mount",
+                         "type=bind,src=" + str(pathlib.Path(directory).resolve()) + ",dst=/data",
+                         "minivectordb:validation"]
+              requests = [
+                  (b"CREATE TABLE t(id BIGINT PRIMARY KEY,v VECTOR(2));"
+                   b"INSERT INTO t VALUES(1,'[3,4]');"
+                   b"SELECT id,L2_DISTANCE(v,'[0,0]') AS d FROM t ORDER BY d;"
+                   b"BEGIN;DELETE FROM t;", b"OK\nOK 1\n1\t5.000000\nOK\nOK 1\n"),
+                  (b"SELECT id FROM t;", b"1\n"),
+              ]
+              for sql, expected in requests:
+                  result = subprocess.run(command, input=sql, capture_output=True, timeout=30)
+                  if result.returncode != 0 or result.stdout != expected:
+                      raise SystemExit(repr((result.returncode, result.stdout, result.stderr)))
+              print("PASS: image startup, SQL, mounted durability and EOF rollback")
+          PY
+      - name: Print versioned validation records
+        if: always()
+        run: |
+          git rev-parse HEAD
+          sha256sum src/minivectordb.cpp build/linux-normal/minivectordb
+          if [ -f refine-logs/linux-validation.json ]; then
+            python3 -c 'import json; p="refine-logs/linux-validation.json"; r=json.load(open(p)); print(r["status"],len(r["runs"])); print([(x["label"],x["returncode"]) for x in r["runs"]])'
+          fi
