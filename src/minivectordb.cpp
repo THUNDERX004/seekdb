@@ -165,7 +165,8 @@ size_t cacheLimitBytes() {
   // process itself instead of using the same fixed budget at every cgroup size.
   const size_t proportional = static_cast<size_t>(
       (*memory_limit / 8ULL) * 3ULL + ((*memory_limit % 8ULL) * 3ULL) / 8ULL);
-  return std::clamp(proportional, size_t{8} * 1024ULL * 1024ULL,
+  constexpr size_t minimum_cache = size_t{8} * 1024 * 1024;
+  return std::clamp(proportional, minimum_cache,
                     kMaximumDetectedCacheBytes);
 }
 
