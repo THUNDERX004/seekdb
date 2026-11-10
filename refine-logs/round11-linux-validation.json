@@ -1,0 +1,21 @@
+{
+  "checked_on_local_date": "2026-11-10",
+  "repository": "THUNDERX004/seekdb",
+  "commit": "6fb385e05fa47ac6bb3da91584c0506c5addd3ac",
+  "run_id": 42729295098,
+  "job_id": 129542912551,
+  "run_url": "https://github.com/THUNDERX004/seekdb/actions/runs/42729295098",
+  "conclusion": "success",
+  "scope": "Linux x86_64 development validation, not formal platform acceptance",
+  "image_build": "success",
+  "image_id": "sha256:43137f0acb2410b9881f59ecff2bf8b9f58be4fa2a579fb26be2bb1a2473b4e1",
+  "source_sha256": "9cba5828098cf5c6c55783f9a0cbfd925f11d078d5082cabce52a0e6279db8e1",
+  "linux_normal_sha256": "6719d8e2816a0b4269f84e5badf5e5d9f3d6c718eb034338c6e0abe6bc70058b",
+  "correctness_commands": 42,
+  "correctness_result": "passed",
+  "actual_image_startup_mount_durability_eof_rollback": "passed",
+  "smoke_container_memory_limit_mib": 256,
+  "formal_submission": false,
+  "formal_hidden_cases_verified": false,
+  "official_performance_metrics_collected": false
+}

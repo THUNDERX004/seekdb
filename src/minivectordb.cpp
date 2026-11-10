@@ -2797,6 +2797,39 @@ class Database {
       return result;
     }
 
+    // Ephemeral disk rows only need their output and sort columns retained.
+    // Keeping an unprojected vector for every selected row can otherwise make
+    // a small scalar result require the entire table payload in memory.
+    std::vector<bool> retained_columns;
+    bool retain_all = false;
+    const auto retainSelectedRow = [&](const Row &row, bool stable) {
+      if (stable) {
+        return RetainedRow::keep(row, true);
+      }
+      if (retained_columns.empty()) {
+        retained_columns.assign(definition.columns.size(), false);
+        retained_columns[definition.primary_key] = true;
+        for (const Projection &projection : projections) {
+          retained_columns[projection.column] = true;
+        }
+        for (const ResolvedOrder &key : resolved_order) {
+          retained_columns[key.column] = true;
+        }
+        retain_all = std::all_of(retained_columns.begin(), retained_columns.end(),
+                                 [](bool retained) { return retained; });
+      }
+      if (retain_all) {
+        return RetainedRow::keep(row, false);
+      }
+      Row retained(row.size());
+      for (size_t column = 0; column < row.size(); ++column) {
+        if (retained_columns[column]) {
+          retained[column] = row[column];
+        }
+      }
+      return RetainedRow{nullptr, std::move(retained)};
+    };
+
     const auto selectedLess = [&](const SelectedRow &left, const SelectedRow &right) {
       const Row &a = left.source.get();
       const Row &b = right.source.get();
@@ -2851,13 +2884,13 @@ class Database {
       }
       SelectedRow candidate = makeSelected(row);
       if (statement.limit < 0 || selected.size() < capacity) {
-        candidate.source = RetainedRow::keep(row, stable);
+        candidate.source = retainSelectedRow(row, stable);
         selected.push_back(std::move(candidate));
         if (statement.limit >= 0) {
           std::push_heap(selected.begin(), selected.end(), selectedLess);
         }
       } else if (selectedLess(candidate, selected.front())) {
-        candidate.source = RetainedRow::keep(row, stable);
+        candidate.source = retainSelectedRow(row, stable);
         std::pop_heap(selected.begin(), selected.end(), selectedLess);
         selected.back() = std::move(candidate);
         std::push_heap(selected.begin(), selected.end(), selectedLess);

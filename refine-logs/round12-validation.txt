@@ -1,0 +1,540 @@
+=== normal/run_public.py exit=0 seconds=0.464548 ===
+PASS sql_crud
+PASS sql_comparisons
+PASS sql_ordering
+PASS sql_empty
+PASS sql_primary_key
+PASS sql_unicode
+PASS sql_bigint
+PASS sql_unsupported
+PASS storage_restart
+PASS vector_euclidean
+PASS transaction_commit
+PASS transaction_rollback
+PASS storage_mutations
+PASS storage_multiple_tables
+PASS vector_ties_and_filter
+PASS vector_float32
+PASS vector_index_maintenance
+PASS transaction_failed_insert
+PASS transaction_autocommit_atomic
+PASS transaction_shutdown_rollback
+PASS 20 public cases
+
+=== normal/test_extended.py exit=0 seconds=0.152586 ===
+PASS extended transaction, vector, persistence, and recovery tests
+
+=== normal/test_semantics.py exit=0 seconds=0.121904 ===
+PASS SQL boundary, atomicity, and error semantics
+
+=== normal/test_disk_scan.py exit=0 seconds=0.199873 ===
+PASS out-of-cache disk scan and filtered TopK
+
+=== normal/test_hidden_edges.py exit=0 seconds=0.767391 ===
+test_recovery_does_not_reuse_cross_table_txid (__main__.HiddenEdges.test_recovery_does_not_reuse_cross_table_txid)
+Simulated interrupted-commit storage fixture, not a real process crash. ... ok
+test_large_finite_distances (__main__.HiddenEdges.test_large_finite_distances) ... ok
+test_tiny_distances_preserve_exact_topk (__main__.HiddenEdges.test_tiny_distances_preserve_exact_topk) ... ok
+test_near_distances_are_not_false_ties (__main__.HiddenEdges.test_near_distances_are_not_false_ties) ... ok
+test_mixed_scale_16d_order_is_kernel_independent (__main__.HiddenEdges.test_mixed_scale_16d_order_is_kernel_independent) ... ok
+test_exact_order_when_double_and_fsum_tie (__main__.HiddenEdges.test_exact_order_when_double_and_fsum_tie) ... ok
+test_exact_key_maximum_subnormal_and_cancellation (__main__.HiddenEdges.test_exact_key_maximum_subnormal_and_cancellation) ... ok
+test_topk_respects_all_order_keys_and_offset (__main__.HiddenEdges.test_topk_respects_all_order_keys_and_offset) ... ok
+test_ordinary_aliases_keep_the_source_column (__main__.HiddenEdges.test_ordinary_aliases_keep_the_source_column) ... ok
+test_where_literals_can_exceed_varchar_length (__main__.HiddenEdges.test_where_literals_can_exceed_varchar_length) ... ok
+test_long_where_literals_in_update_and_delete (__main__.HiddenEdges.test_long_where_literals_in_update_and_delete) ... ok
+test_varchar_write_lengths_remain_enforced (__main__.HiddenEdges.test_varchar_write_lengths_remain_enforced) ... ok
+test_query_edges_invalid_create_is_atomic (__main__.HiddenEdges.test_query_edges_invalid_create_is_atomic) ... ok
+test_query_edges_null_writes_are_statement_atomic (__main__.HiddenEdges.test_query_edges_null_writes_are_statement_atomic) ... ok
+test_query_edges_unprojected_distance_orders (__main__.HiddenEdges.test_query_edges_unprojected_distance_orders) ... ok
+test_query_edges_maximum_limit_and_offset (__main__.HiddenEdges.test_query_edges_maximum_limit_and_offset) ... ok
+test_query_edges_vector_order_is_always_rejected (__main__.HiddenEdges.test_query_edges_vector_order_is_always_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.634s
+
+OK
+
+=== normal/test_differential.py exit=0 seconds=1.907430 ===
+PASS exact distance oracle: 1D large-probe order and Fraction boundaries
+PASS case=random seed=7 dim=4 statements=850
+PASS case=random seed=429 dim=8 statements=828
+PASS case=random seed=20261109 dim=33 statements=849
+PASS case=semantics seed=7 dim=4 statements=319
+PASS case=numeric seed=20261109 dim=1 statements=403
+PASS case=numeric seed=20261109 dim=3 statements=403
+PASS case=numeric seed=20261109 dim=4 statements=403
+PASS case=numeric seed=20261109 dim=8 statements=403
+PASS case=numeric seed=20261109 dim=31 statements=403
+PASS case=numeric seed=20261109 dim=32 statements=403
+PASS case=numeric seed=20261109 dim=33 statements=403
+PASS case=numeric seed=20261109 dim=128 statements=403
+PASS differential: 12/12 cases, 6070 SQL statements, 0 query mismatches
+
+=== normal/test_exact_distance.py exit=0 seconds=0.381583 ===
+test_exact_identities_and_double_collision (__main__.OracleTests.test_exact_identities_and_double_collision) ... ok
+test_float32_roundtrip_and_lattice (__main__.OracleTests.test_float32_roundtrip_and_lattice) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+OK
+Running default: D:\Projects\OceanBase\seekdb-minivectordb\build\minivectordb.exe
+test_carry_borrow_and_extreme_exponent_mixture (__main__.ExactDistanceTests.test_carry_borrow_and_extreme_exponent_mixture) ... ok
+test_common_large_component_has_distinct_exact_topk (__main__.ExactDistanceTests.test_common_large_component_has_distinct_exact_topk) ... ok
+test_opposite_signs_and_nonzero_tiny_probes (__main__.ExactDistanceTests.test_opposite_signs_and_nonzero_tiny_probes) ... ok
+test_seeded_bit_patterns_cover_simd_blocks_and_tails (__main__.ExactDistanceTests.test_seeded_bit_patterns_cover_simd_blocks_and_tails) ... ok
+test_subnormal_boundaries_and_signed_zero (__main__.ExactDistanceTests.test_subnormal_boundaries_and_signed_zero) ... ok
+test_true_distance_ties_use_secondary_keys_then_pk (__main__.ExactDistanceTests.test_true_distance_ties_use_secondary_keys_then_pk) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.258s
+
+OK
+PASS default: 6 database tests, 761 SQL statements, 680 exact-order SELECTs
+
+=== normal/test_selection_paths.py exit=0 seconds=2.453479 ===
+PASS selection cache=64MiB: 308 exact queries, 341 SQL statements, 2 restarts, 0.634s
+PASS selection cache=1MiB: 308 exact queries, 341 SQL statements, 2 restarts, 1.609s
+PASS selection paths: 616 exact queries, 682 SQL statements, 2.244s total
+
+=== normal/test_stdio_contract.py exit=0 seconds=0.419069 ===
+test_adjacent_statements_receive_separate_responses (__main__.StdioContract.test_adjacent_statements_receive_separate_responses) ... ok
+test_block_comment_cannot_execute_embedded_mutations (__main__.StdioContract.test_block_comment_cannot_execute_embedded_mutations) ... ok
+test_block_comment_delimiters_cannot_overlap (__main__.StdioContract.test_block_comment_delimiters_cannot_overlap) ... ok
+test_block_comment_is_preserved_across_pipe_chunks (__main__.StdioContract.test_block_comment_is_preserved_across_pipe_chunks) ... ok
+test_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) ... ok
+test_comments_and_empty_statements_do_not_add_responses (__main__.StdioContract.test_comments_and_empty_statements_do_not_add_responses) ... ok
+test_complete_request_needs_no_newline_or_eof (__main__.StdioContract.test_complete_request_needs_no_newline_or_eof) ... ok
+test_default_protocol_flushes_at_semicolon (__main__.StdioContract.test_default_protocol_flushes_at_semicolon) ... ok
+test_error_response_does_not_need_following_byte (__main__.StdioContract.test_error_response_does_not_need_following_byte) ... ok
+test_malformed_comment_or_string_still_returns_error (__main__.StdioContract.test_malformed_comment_or_string_still_returns_error) ... ok
+test_split_comments_quotes_and_utf8_do_not_split_statements (__main__.StdioContract.test_split_comments_quotes_and_utf8_do_not_split_statements) ... ok
+test_trailing_comments_do_not_generate_extra_frames (__main__.StdioContract.test_trailing_comments_do_not_generate_extra_frames) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.297s
+
+OK
+
+=== normal/test_formal_sql_edges.py exit=0 seconds=0.341809 ===
+test_late_invalid_literals_preserve_prior_work_and_allow_commit (__main__.FormalSqlEdges.test_late_invalid_literals_preserve_prior_work_and_allow_commit) ... ok
+test_malformed_numbers_cannot_become_varchar_literals (__main__.FormalSqlEdges.test_malformed_numbers_cannot_become_varchar_literals) ... ok
+test_multirow_changes_see_prior_values_and_rollback_together (__main__.FormalSqlEdges.test_multirow_changes_see_prior_values_and_rollback_together) ... ok
+test_projection_metadata_aliases_and_unprojected_order_keys (__main__.FormalSqlEdges.test_projection_metadata_aliases_and_unprojected_order_keys) ... ok
+test_quoted_apostrophe_and_delimiters_remain_string_data (__main__.FormalSqlEdges.test_quoted_apostrophe_and_delimiters_remain_string_data) ... ok
+test_unicode_length_counts_codepoints_and_failed_batch_leaves_no_rows (__main__.FormalSqlEdges.test_unicode_length_counts_codepoints_and_failed_batch_leaves_no_rows) ... ok
+test_unicode_order_uses_codepoints_and_primary_key_ties (__main__.FormalSqlEdges.test_unicode_order_uses_codepoints_and_primary_key_ties) ... ok
+test_unknown_identifier_in_delete_cannot_remove_a_matching_literal (__main__.FormalSqlEdges.test_unknown_identifier_in_delete_cannot_remove_a_matching_literal) ... ok
+test_unknown_identifier_in_multirow_insert_is_atomic (__main__.FormalSqlEdges.test_unknown_identifier_in_multirow_insert_is_atomic) ... ok
+test_unknown_identifier_in_multirow_update_is_rejected (__main__.FormalSqlEdges.test_unknown_identifier_in_multirow_update_is_rejected) ... ok
+test_unknown_identifier_in_select_is_not_a_string (__main__.FormalSqlEdges.test_unknown_identifier_in_select_is_not_a_string) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.222s
+
+OK
+
+=== normal/test_round6_sql_contract.py exit=0 seconds=0.367660 ===
+test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) ... ok
+test_supported_transaction_controls_and_invalid_tails (__main__.SqlContract.test_supported_transaction_controls_and_invalid_tails) ... ok
+test_supported_unicode_length_and_finite_float32_literals (__main__.SqlContract.test_supported_unicode_length_and_finite_float32_literals) ... ok
+test_valid_transaction_variants_keep_commit_and_rollback_semantics (__main__.SqlContract.test_valid_transaction_variants_keep_commit_and_rollback_semantics) ... ok
+test_varchar_requires_length_before_creating_catalog_entry (__main__.SqlContract.test_varchar_requires_length_before_creating_catalog_entry) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.244s
+
+OK
+
+=== normal/test_round6_stream_contract.py exit=0 seconds=6.760920 ===
+binary_sha256=da87738c6f484ae80abccbbf9ce4afffdc4e0d4fb69c0d28cedc6a7baed44e72
+test_crlf_whitespace_may_arrive_after_response (__main__.Round6StreamContract.test_crlf_whitespace_may_arrive_after_response) ... ok
+test_default_records_continue_after_errors_with_open_stdin (__main__.Round6StreamContract.test_default_records_continue_after_errors_with_open_stdin) ... ok
+test_delayed_quote_escape_and_utf8_boundaries_preserve_values (__main__.Round6StreamContract.test_delayed_quote_escape_and_utf8_boundaries_preserve_values) ... ok
+test_eof_comment_tails_do_not_add_response_frames (__main__.Round6StreamContract.test_eof_comment_tails_do_not_add_response_frames) ... ok
+test_eof_malformed_tail_reports_one_error_after_prior_response (__main__.Round6StreamContract.test_eof_malformed_tail_reports_one_error_after_prior_response) ... ok
+test_every_split_of_block_comment_keeps_embedded_sql_inert (__main__.Round6StreamContract.test_every_split_of_block_comment_keeps_embedded_sql_inert) ... ok
+test_every_split_of_crlf_comments_preserves_following_request (__main__.Round6StreamContract.test_every_split_of_crlf_comments_preserves_following_request) ... ok
+test_response_flags_match_public_assertions_without_frozen_error_map (__main__.Round6StreamContract.test_response_flags_match_public_assertions_without_frozen_error_map) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 6.623s
+
+OK
+
+=== normal/test_stream_followup.py exit=0 seconds=0.350204 ===
+binary=D:\Projects\OceanBase\seekdb-minivectordb\build\minivectordb.exe
+binary_sha256=da87738c6f484ae80abccbbf9ce4afffdc4e0d4fb69c0d28cedc6a7baed44e72
+test_full_duplicate_lists_and_too_many_values_remain_errors (__main__.StreamFollowup.test_full_duplicate_lists_and_too_many_values_remain_errors) ... ok
+test_malformed_later_row_preserves_prior_transaction_insert (__main__.StreamFollowup.test_malformed_later_row_preserves_prior_transaction_insert) ... ok
+test_short_duplicate_list_on_multicolumn_table (__main__.StreamFollowup.test_short_duplicate_list_on_multicolumn_table) ... ok
+test_short_row_cannot_hide_duplicate_insert_column (__main__.StreamFollowup.test_short_row_cannot_hide_duplicate_insert_column) ... ok
+test_valid_reordered_explicit_columns_commit_and_restart (__main__.StreamFollowup.test_valid_reordered_explicit_columns_commit_and_restart) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.218s
+
+OK
+
+=== normal/test_float32_literals.py exit=0 seconds=0.248148 ===
+test_midpoint_ties_and_direction (__main__.LiteralOracle.test_midpoint_ties_and_direction) ... ok
+test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) ... ok
+test_literal_rounding_changes_stored_topk_membership (__main__.Float32Literals.test_literal_rounding_changes_stored_topk_membership) ... ok
+test_overflow_and_nonfinite_values_remain_atomic_errors (__main__.Float32Literals.test_overflow_and_nonfinite_values_remain_atomic_errors) ... ok
+test_overflow_midpoint_is_not_rounded_via_double (__main__.Float32Literals.test_overflow_midpoint_is_not_rounded_via_double) ... ok
+test_probe_and_update_use_the_same_direct_rounding (__main__.Float32Literals.test_probe_and_update_use_the_same_direct_rounding) ... ok
+test_tiny_decimal_exponents_round_to_zero (__main__.Float32Literals.test_tiny_decimal_exponents_round_to_zero) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.108s
+
+OK
+
+=== normal/test_sql_round11.py exit=0 seconds=0.207290 ===
+test_function_name_is_a_valid_order_by_alias (__main__.SqlRound11.test_function_name_is_a_valid_order_by_alias) ... ok
+test_function_name_is_a_valid_ordinary_column (__main__.SqlRound11.test_function_name_is_a_valid_ordinary_column) ... ok
+test_unaliased_distance_does_not_enable_direct_vector_order (__main__.SqlRound11.test_unaliased_distance_does_not_enable_direct_vector_order) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.056s
+
+OK
+
+=== normal/test_protocol_round11.py exit=0 seconds=2.001187 ===
+binary=D:\Projects\OceanBase\seekdb-minivectordb\build\minivectordb.exe
+binary_sha256=da87738c6f484ae80abccbbf9ce4afffdc4e0d4fb69c0d28cedc6a7baed44e72
+os_name=nt
+test_byte_chunks_utf8_quotes_comments_and_adjacent_requests (__main__.ProtocolRound11.test_byte_chunks_utf8_quotes_comments_and_adjacent_requests) ... ok
+test_column_metadata_describes_empty_query_without_official_encoding_claim (__main__.ProtocolRound11.test_column_metadata_describes_empty_query_without_official_encoding_claim) ... ok
+test_default_empty_result_and_startup_do_not_add_stdout_records (__main__.ProtocolRound11.test_default_empty_result_and_startup_do_not_add_stdout_records) ... ok
+test_eof_restart_rolls_back_only_uncommitted_changes (__main__.ProtocolRound11.test_eof_restart_rolls_back_only_uncommitted_changes) ... ok
+test_local_control_z_in_comment_is_not_transport_eof (__main__.ProtocolRound11.test_local_control_z_in_comment_is_not_transport_eof) ... ok
+test_local_input_preserves_raw_crlf_inside_string_literal (__main__.ProtocolRound11.test_local_input_preserves_raw_crlf_inside_string_literal) ... ok
+test_local_raw_output_preserves_literal_lf_besides_record_terminator (__main__.ProtocolRound11.test_local_raw_output_preserves_literal_lf_besides_record_terminator) ... ok
+test_ready_marker_frames_empty_result_and_error_then_continues (__main__.ProtocolRound11.test_ready_marker_frames_empty_result_and_error_then_continues) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 1.854s
+
+OK
+
+=== normal/test_selection_retention.py exit=0 seconds=0.769926 ===
+PASS selection retention: 2048 base rows, 128 dimensions, 34 exact-field queries, cache=1 MiB
+
+=== scalar/run_public.py exit=0 seconds=0.547597 ===
+PASS sql_crud
+PASS sql_comparisons
+PASS sql_ordering
+PASS sql_empty
+PASS sql_primary_key
+PASS sql_unicode
+PASS sql_bigint
+PASS sql_unsupported
+PASS storage_restart
+PASS vector_euclidean
+PASS transaction_commit
+PASS transaction_rollback
+PASS storage_mutations
+PASS storage_multiple_tables
+PASS vector_ties_and_filter
+PASS vector_float32
+PASS vector_index_maintenance
+PASS transaction_failed_insert
+PASS transaction_autocommit_atomic
+PASS transaction_shutdown_rollback
+PASS 20 public cases
+
+=== scalar/test_extended.py exit=0 seconds=0.162167 ===
+PASS extended transaction, vector, persistence, and recovery tests
+
+=== scalar/test_semantics.py exit=0 seconds=0.115786 ===
+PASS SQL boundary, atomicity, and error semantics
+
+=== scalar/test_disk_scan.py exit=0 seconds=0.200559 ===
+PASS out-of-cache disk scan and filtered TopK
+
+=== scalar/test_hidden_edges.py exit=0 seconds=0.776766 ===
+test_recovery_does_not_reuse_cross_table_txid (__main__.HiddenEdges.test_recovery_does_not_reuse_cross_table_txid)
+Simulated interrupted-commit storage fixture, not a real process crash. ... ok
+test_large_finite_distances (__main__.HiddenEdges.test_large_finite_distances) ... ok
+test_tiny_distances_preserve_exact_topk (__main__.HiddenEdges.test_tiny_distances_preserve_exact_topk) ... ok
+test_near_distances_are_not_false_ties (__main__.HiddenEdges.test_near_distances_are_not_false_ties) ... ok
+test_mixed_scale_16d_order_is_kernel_independent (__main__.HiddenEdges.test_mixed_scale_16d_order_is_kernel_independent) ... ok
+test_exact_order_when_double_and_fsum_tie (__main__.HiddenEdges.test_exact_order_when_double_and_fsum_tie) ... ok
+test_exact_key_maximum_subnormal_and_cancellation (__main__.HiddenEdges.test_exact_key_maximum_subnormal_and_cancellation) ... ok
+test_topk_respects_all_order_keys_and_offset (__main__.HiddenEdges.test_topk_respects_all_order_keys_and_offset) ... ok
+test_ordinary_aliases_keep_the_source_column (__main__.HiddenEdges.test_ordinary_aliases_keep_the_source_column) ... ok
+test_where_literals_can_exceed_varchar_length (__main__.HiddenEdges.test_where_literals_can_exceed_varchar_length) ... ok
+test_long_where_literals_in_update_and_delete (__main__.HiddenEdges.test_long_where_literals_in_update_and_delete) ... ok
+test_varchar_write_lengths_remain_enforced (__main__.HiddenEdges.test_varchar_write_lengths_remain_enforced) ... ok
+test_query_edges_invalid_create_is_atomic (__main__.HiddenEdges.test_query_edges_invalid_create_is_atomic) ... ok
+test_query_edges_null_writes_are_statement_atomic (__main__.HiddenEdges.test_query_edges_null_writes_are_statement_atomic) ... ok
+test_query_edges_unprojected_distance_orders (__main__.HiddenEdges.test_query_edges_unprojected_distance_orders) ... ok
+test_query_edges_maximum_limit_and_offset (__main__.HiddenEdges.test_query_edges_maximum_limit_and_offset) ... ok
+test_query_edges_vector_order_is_always_rejected (__main__.HiddenEdges.test_query_edges_vector_order_is_always_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.644s
+
+OK
+
+=== scalar/test_differential.py exit=0 seconds=1.945468 ===
+PASS exact distance oracle: 1D large-probe order and Fraction boundaries
+PASS case=random seed=7 dim=4 statements=850
+PASS case=random seed=429 dim=8 statements=828
+PASS case=random seed=20261109 dim=33 statements=849
+PASS case=semantics seed=7 dim=4 statements=319
+PASS case=numeric seed=20261109 dim=1 statements=403
+PASS case=numeric seed=20261109 dim=3 statements=403
+PASS case=numeric seed=20261109 dim=4 statements=403
+PASS case=numeric seed=20261109 dim=8 statements=403
+PASS case=numeric seed=20261109 dim=31 statements=403
+PASS case=numeric seed=20261109 dim=32 statements=403
+PASS case=numeric seed=20261109 dim=33 statements=403
+PASS case=numeric seed=20261109 dim=128 statements=403
+PASS differential: 12/12 cases, 6070 SQL statements, 0 query mismatches
+
+=== scalar/test_exact_distance.py exit=0 seconds=0.392152 ===
+test_exact_identities_and_double_collision (__main__.OracleTests.test_exact_identities_and_double_collision) ... ok
+test_float32_roundtrip_and_lattice (__main__.OracleTests.test_float32_roundtrip_and_lattice) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+OK
+Running default: D:\Projects\OceanBase\seekdb-minivectordb\build\scalar\minivectordb.exe
+test_carry_borrow_and_extreme_exponent_mixture (__main__.ExactDistanceTests.test_carry_borrow_and_extreme_exponent_mixture) ... ok
+test_common_large_component_has_distinct_exact_topk (__main__.ExactDistanceTests.test_common_large_component_has_distinct_exact_topk) ... ok
+test_opposite_signs_and_nonzero_tiny_probes (__main__.ExactDistanceTests.test_opposite_signs_and_nonzero_tiny_probes) ... ok
+test_seeded_bit_patterns_cover_simd_blocks_and_tails (__main__.ExactDistanceTests.test_seeded_bit_patterns_cover_simd_blocks_and_tails) ... ok
+test_subnormal_boundaries_and_signed_zero (__main__.ExactDistanceTests.test_subnormal_boundaries_and_signed_zero) ... ok
+test_true_distance_ties_use_secondary_keys_then_pk (__main__.ExactDistanceTests.test_true_distance_ties_use_secondary_keys_then_pk) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.264s
+
+OK
+PASS default: 6 database tests, 761 SQL statements, 680 exact-order SELECTs
+
+=== scalar/test_selection_paths.py exit=0 seconds=2.500209 ===
+PASS selection cache=64MiB: 308 exact queries, 341 SQL statements, 2 restarts, 0.662s
+PASS selection cache=1MiB: 308 exact queries, 341 SQL statements, 2 restarts, 1.619s
+PASS selection paths: 616 exact queries, 682 SQL statements, 2.282s total
+
+=== scalar/test_stdio_contract.py exit=0 seconds=0.420542 ===
+test_adjacent_statements_receive_separate_responses (__main__.StdioContract.test_adjacent_statements_receive_separate_responses) ... ok
+test_block_comment_cannot_execute_embedded_mutations (__main__.StdioContract.test_block_comment_cannot_execute_embedded_mutations) ... ok
+test_block_comment_delimiters_cannot_overlap (__main__.StdioContract.test_block_comment_delimiters_cannot_overlap) ... ok
+test_block_comment_is_preserved_across_pipe_chunks (__main__.StdioContract.test_block_comment_is_preserved_across_pipe_chunks) ... ok
+test_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) ... ok
+test_comments_and_empty_statements_do_not_add_responses (__main__.StdioContract.test_comments_and_empty_statements_do_not_add_responses) ... ok
+test_complete_request_needs_no_newline_or_eof (__main__.StdioContract.test_complete_request_needs_no_newline_or_eof) ... ok
+test_default_protocol_flushes_at_semicolon (__main__.StdioContract.test_default_protocol_flushes_at_semicolon) ... ok
+test_error_response_does_not_need_following_byte (__main__.StdioContract.test_error_response_does_not_need_following_byte) ... ok
+test_malformed_comment_or_string_still_returns_error (__main__.StdioContract.test_malformed_comment_or_string_still_returns_error) ... ok
+test_split_comments_quotes_and_utf8_do_not_split_statements (__main__.StdioContract.test_split_comments_quotes_and_utf8_do_not_split_statements) ... ok
+test_trailing_comments_do_not_generate_extra_frames (__main__.StdioContract.test_trailing_comments_do_not_generate_extra_frames) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.298s
+
+OK
+
+=== scalar/test_formal_sql_edges.py exit=0 seconds=0.339615 ===
+test_late_invalid_literals_preserve_prior_work_and_allow_commit (__main__.FormalSqlEdges.test_late_invalid_literals_preserve_prior_work_and_allow_commit) ... ok
+test_malformed_numbers_cannot_become_varchar_literals (__main__.FormalSqlEdges.test_malformed_numbers_cannot_become_varchar_literals) ... ok
+test_multirow_changes_see_prior_values_and_rollback_together (__main__.FormalSqlEdges.test_multirow_changes_see_prior_values_and_rollback_together) ... ok
+test_projection_metadata_aliases_and_unprojected_order_keys (__main__.FormalSqlEdges.test_projection_metadata_aliases_and_unprojected_order_keys) ... ok
+test_quoted_apostrophe_and_delimiters_remain_string_data (__main__.FormalSqlEdges.test_quoted_apostrophe_and_delimiters_remain_string_data) ... ok
+test_unicode_length_counts_codepoints_and_failed_batch_leaves_no_rows (__main__.FormalSqlEdges.test_unicode_length_counts_codepoints_and_failed_batch_leaves_no_rows) ... ok
+test_unicode_order_uses_codepoints_and_primary_key_ties (__main__.FormalSqlEdges.test_unicode_order_uses_codepoints_and_primary_key_ties) ... ok
+test_unknown_identifier_in_delete_cannot_remove_a_matching_literal (__main__.FormalSqlEdges.test_unknown_identifier_in_delete_cannot_remove_a_matching_literal) ... ok
+test_unknown_identifier_in_multirow_insert_is_atomic (__main__.FormalSqlEdges.test_unknown_identifier_in_multirow_insert_is_atomic) ... ok
+test_unknown_identifier_in_multirow_update_is_rejected (__main__.FormalSqlEdges.test_unknown_identifier_in_multirow_update_is_rejected) ... ok
+test_unknown_identifier_in_select_is_not_a_string (__main__.FormalSqlEdges.test_unknown_identifier_in_select_is_not_a_string) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.221s
+
+OK
+
+=== scalar/test_round6_sql_contract.py exit=0 seconds=0.390254 ===
+test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) ... ok
+test_supported_transaction_controls_and_invalid_tails (__main__.SqlContract.test_supported_transaction_controls_and_invalid_tails) ... ok
+test_supported_unicode_length_and_finite_float32_literals (__main__.SqlContract.test_supported_unicode_length_and_finite_float32_literals) ... ok
+test_valid_transaction_variants_keep_commit_and_rollback_semantics (__main__.SqlContract.test_valid_transaction_variants_keep_commit_and_rollback_semantics) ... ok
+test_varchar_requires_length_before_creating_catalog_entry (__main__.SqlContract.test_varchar_requires_length_before_creating_catalog_entry) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.267s
+
+OK
+
+=== scalar/test_round6_stream_contract.py exit=0 seconds=6.792327 ===
+binary_sha256=125b5ac3de5b6a2c8a8a3a6c94817184618586e2df8ddeca13028b2194ea9b3c
+test_crlf_whitespace_may_arrive_after_response (__main__.Round6StreamContract.test_crlf_whitespace_may_arrive_after_response) ... ok
+test_default_records_continue_after_errors_with_open_stdin (__main__.Round6StreamContract.test_default_records_continue_after_errors_with_open_stdin) ... ok
+test_delayed_quote_escape_and_utf8_boundaries_preserve_values (__main__.Round6StreamContract.test_delayed_quote_escape_and_utf8_boundaries_preserve_values) ... ok
+test_eof_comment_tails_do_not_add_response_frames (__main__.Round6StreamContract.test_eof_comment_tails_do_not_add_response_frames) ... ok
+test_eof_malformed_tail_reports_one_error_after_prior_response (__main__.Round6StreamContract.test_eof_malformed_tail_reports_one_error_after_prior_response) ... ok
+test_every_split_of_block_comment_keeps_embedded_sql_inert (__main__.Round6StreamContract.test_every_split_of_block_comment_keeps_embedded_sql_inert) ... ok
+test_every_split_of_crlf_comments_preserves_following_request (__main__.Round6StreamContract.test_every_split_of_crlf_comments_preserves_following_request) ... ok
+test_response_flags_match_public_assertions_without_frozen_error_map (__main__.Round6StreamContract.test_response_flags_match_public_assertions_without_frozen_error_map) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 6.637s
+
+OK
+
+=== scalar/test_stream_followup.py exit=0 seconds=0.359351 ===
+binary=D:\Projects\OceanBase\seekdb-minivectordb\build\scalar\minivectordb.exe
+binary_sha256=125b5ac3de5b6a2c8a8a3a6c94817184618586e2df8ddeca13028b2194ea9b3c
+test_full_duplicate_lists_and_too_many_values_remain_errors (__main__.StreamFollowup.test_full_duplicate_lists_and_too_many_values_remain_errors) ... ok
+test_malformed_later_row_preserves_prior_transaction_insert (__main__.StreamFollowup.test_malformed_later_row_preserves_prior_transaction_insert) ... ok
+test_short_duplicate_list_on_multicolumn_table (__main__.StreamFollowup.test_short_duplicate_list_on_multicolumn_table) ... ok
+test_short_row_cannot_hide_duplicate_insert_column (__main__.StreamFollowup.test_short_row_cannot_hide_duplicate_insert_column) ... ok
+test_valid_reordered_explicit_columns_commit_and_restart (__main__.StreamFollowup.test_valid_reordered_explicit_columns_commit_and_restart) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.223s
+
+OK
+
+=== scalar/test_float32_literals.py exit=0 seconds=0.274111 ===
+test_midpoint_ties_and_direction (__main__.LiteralOracle.test_midpoint_ties_and_direction) ... ok
+test_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) ... ok
+test_literal_rounding_changes_stored_topk_membership (__main__.Float32Literals.test_literal_rounding_changes_stored_topk_membership) ... ok
+test_overflow_and_nonfinite_values_remain_atomic_errors (__main__.Float32Literals.test_overflow_and_nonfinite_values_remain_atomic_errors) ... ok
+test_overflow_midpoint_is_not_rounded_via_double (__main__.Float32Literals.test_overflow_midpoint_is_not_rounded_via_double) ... ok
+test_probe_and_update_use_the_same_direct_rounding (__main__.Float32Literals.test_probe_and_update_use_the_same_direct_rounding) ... ok
+test_tiny_decimal_exponents_round_to_zero (__main__.Float32Literals.test_tiny_decimal_exponents_round_to_zero) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.120s
+
+OK
+
+=== scalar/test_sql_round11.py exit=0 seconds=0.200232 ===
+test_function_name_is_a_valid_order_by_alias (__main__.SqlRound11.test_function_name_is_a_valid_order_by_alias) ... ok
+test_function_name_is_a_valid_ordinary_column (__main__.SqlRound11.test_function_name_is_a_valid_ordinary_column) ... ok
+test_unaliased_distance_does_not_enable_direct_vector_order (__main__.SqlRound11.test_unaliased_distance_does_not_enable_direct_vector_order) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.049s
+
+OK
+
+=== scalar/test_protocol_round11.py exit=0 seconds=2.021021 ===
+binary=D:\Projects\OceanBase\seekdb-minivectordb\build\scalar\minivectordb.exe
+binary_sha256=125b5ac3de5b6a2c8a8a3a6c94817184618586e2df8ddeca13028b2194ea9b3c
+os_name=nt
+test_byte_chunks_utf8_quotes_comments_and_adjacent_requests (__main__.ProtocolRound11.test_byte_chunks_utf8_quotes_comments_and_adjacent_requests) ... ok
+test_column_metadata_describes_empty_query_without_official_encoding_claim (__main__.ProtocolRound11.test_column_metadata_describes_empty_query_without_official_encoding_claim) ... ok
+test_default_empty_result_and_startup_do_not_add_stdout_records (__main__.ProtocolRound11.test_default_empty_result_and_startup_do_not_add_stdout_records) ... ok
+test_eof_restart_rolls_back_only_uncommitted_changes (__main__.ProtocolRound11.test_eof_restart_rolls_back_only_uncommitted_changes) ... ok
+test_local_control_z_in_comment_is_not_transport_eof (__main__.ProtocolRound11.test_local_control_z_in_comment_is_not_transport_eof) ... ok
+test_local_input_preserves_raw_crlf_inside_string_literal (__main__.ProtocolRound11.test_local_input_preserves_raw_crlf_inside_string_literal) ... ok
+test_local_raw_output_preserves_literal_lf_besides_record_terminator (__main__.ProtocolRound11.test_local_raw_output_preserves_literal_lf_besides_record_terminator) ... ok
+test_ready_marker_frames_empty_result_and_error_then_continues (__main__.ProtocolRound11.test_ready_marker_frames_empty_result_and_error_then_continues) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 1.878s
+
+OK
+
+=== scalar/test_selection_retention.py exit=0 seconds=0.786524 ===
+PASS selection retention: 2048 base rows, 128 dimensions, 34 exact-field queries, cache=1 MiB
+
+=== public-adapter-regressions exit=0 seconds=0.421760 ===
+test_affected_rows_and_rows_are_not_ignored (__main__.PublicHarnessTests.test_affected_rows_and_rows_are_not_ignored) ... ok
+test_bigint_unicode_and_float_tolerance_are_preserved (__main__.PublicHarnessTests.test_bigint_unicode_and_float_tolerance_are_preserved) ... ok
+test_column_names_are_compared_even_for_empty_results (__main__.PublicHarnessTests.test_column_names_are_compared_even_for_empty_results) ... ok
+test_column_order_and_actual_row_width_are_checked (__main__.PublicHarnessTests.test_column_order_and_actual_row_width_are_checked) ... ok
+test_empty_expectation_does_not_hide_control_error (__main__.PublicHarnessTests.test_empty_expectation_does_not_hide_control_error) ... ok
+test_empty_expectation_requires_success_for_queries_and_dml (__main__.PublicHarnessTests.test_empty_expectation_requires_success_for_queries_and_dml) ... ok
+test_empty_query_is_framed_separately_from_following_status_and_rows (__main__.PublicHarnessTests.test_empty_query_is_framed_separately_from_following_status_and_rows) ... ok
+test_empty_string_cell_is_not_confused_with_empty_result (__main__.PublicHarnessTests.test_empty_string_cell_is_not_confused_with_empty_result) ... ok
+test_expected_error_does_not_stop_following_sql (__main__.PublicHarnessTests.test_expected_error_does_not_stop_following_sql) ... ok
+test_expected_errors_accept_nonempty_unfrozen_codes (__main__.PublicHarnessTests.test_expected_errors_accept_nonempty_unfrozen_codes) ... ok
+test_expected_errors_reject_success_empty_code_and_malformed_records (__main__.PublicHarnessTests.test_expected_errors_reject_success_empty_code_and_malformed_records) ... ok
+test_extra_missing_and_empty_frames_are_failures (__main__.PublicHarnessTests.test_extra_missing_and_empty_frames_are_failures) ... ok
+test_extra_or_missing_rows_do_not_shift_following_assertion (__main__.PublicHarnessTests.test_extra_or_missing_rows_do_not_shift_following_assertion) ... ok
+test_leading_consecutive_and_trailing_restarts (__main__.PublicHarnessTests.test_leading_consecutive_and_trailing_restarts) ... ok
+test_main_runs_remaining_cases_after_crash_or_timeout (__main__.PublicHarnessTests.test_main_runs_remaining_cases_after_crash_or_timeout) ... ok
+test_missing_marker_and_unframed_output_are_failures (__main__.PublicHarnessTests.test_missing_marker_and_unframed_output_are_failures) ... ok
+test_mode_directives_do_not_consume_assertions_and_survive_restart (__main__.PublicHarnessTests.test_mode_directives_do_not_consume_assertions_and_survive_restart) ... ok
+test_mode_failure_is_checked_without_consuming_sql_assertion (__main__.PublicHarnessTests.test_mode_failure_is_checked_without_consuming_sql_assertion) ... ok
+test_restart_does_not_ignore_failed_shutdown (__main__.PublicHarnessTests.test_restart_does_not_ignore_failed_shutdown) ... ok
+test_restart_sends_eof_and_reuses_one_directory (__main__.PublicHarnessTests.test_restart_sends_eof_and_reuses_one_directory) ... ok
+test_sql_and_manifest_assertion_counts_are_checked (__main__.PublicHarnessTests.test_sql_and_manifest_assertion_counts_are_checked) ... ok
+test_unexpected_error_is_reported_without_desynchronizing_next_sql (__main__.PublicHarnessTests.test_unexpected_error_is_reported_without_desynchronizing_next_sql) ... ok
+test_unknown_directive_is_rejected (__main__.PublicHarnessTests.test_unknown_directive_is_rejected) ... ok
+test_unordered_comparison_preserves_duplicate_rows (__main__.PublicHarnessTests.test_unordered_comparison_preserves_duplicate_rows) ... ok
+
+----------------------------------------------------------------------
+Ran 24 tests in 0.232s
+
+OK
+
+=== commit-failure-regressions exit=0 seconds=0.432786 ===
+PASS injected-publication-failure: writer exit=1; both tables' complete fields verified through two normal-binary restarts
+PASS fault-build-without-env: writer exit=0; both tables' complete fields verified through two normal-binary restarts
+PASS rollback-with-fault-env: writer exit=0; both tables' complete fields verified through two normal-binary restarts
+PASS normal-build-ignores-fault-env: writer exit=0; both tables' complete fields verified through two normal-binary restarts
+PASS torn-wal-failure: writer exit=1; both tables' complete fields verified through two normal-binary restarts
+PASS noop mutations: no WAL growth, no fault activation, two restarts
+PASS commit publication: 6 cases, 19 child processes, 0.323s total
+
+=== catalog-failure-regressions exit=0 seconds=0.730544 ===
+PASS table-torn-fail-stop: writer exit=1; complete transcript, catalog, and rows checked through two normal restarts
+PASS table-full-fail-stop: writer exit=1; complete transcript, catalog, and rows checked through two normal restarts
+PASS table-normal-without-env: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts
+PASS table-fault-build-without-env: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts
+PASS table-normal-ignores-torn: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts
+PASS table-normal-ignores-full: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts
+PASS index-torn-fail-stop: writer exit=1; complete transcript, catalog, and rows checked through two normal restarts
+PASS index-full-fail-stop: writer exit=1; complete transcript, catalog, and rows checked through two normal restarts
+PASS index-normal-without-env: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts
+PASS index-fault-build-without-env: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts
+PASS index-normal-ignores-torn: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts
+PASS index-normal-ignores-full: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts
+PASS catalog publication: 12 cases, 48 child processes, 0.619s total
+
+=== normal/long-random exit=0 seconds=8.765573 ===
+PASS exact distance oracle: 1D large-probe order and Fraction boundaries
+PASS case=random seed=13 dim=8 statements=9027
+PASS case=random seed=2147483647 dim=8 statements=8995
+PASS case=random seed=20261129 dim=33 statements=9012
+PASS differential: 3/3 cases, 27034 SQL statements, 0 query mismatches
+
+=== allocation-normal exit=0 seconds=0.307444 ===
+PASS INSERT: 28 allocation failures; COMMIT/ROLLBACK/restart and success verified
+PASS UPDATE: 22 allocation failures; COMMIT/ROLLBACK/restart and success verified
+PASS DELETE: 11 allocation failures; COMMIT/ROLLBACK/restart and success verified
+
+=== allocation-scalar exit=0 seconds=0.284837 ===
+PASS INSERT: 28 allocation failures; COMMIT/ROLLBACK/restart and success verified
+PASS UPDATE: 22 allocation failures; COMMIT/ROLLBACK/restart and success verified
+PASS DELETE: 11 allocation failures; COMMIT/ROLLBACK/restart and success verified
+
+=== commit-allocation-normal exit=0 seconds=1.375634 ===
+PASS COMMIT tables=1 retry=COMMIT: 10 retryable failures, 22 recovery-required failures; retry and reload verified
+PASS COMMIT tables=1 retry=ROLLBACK: 10 retryable failures, 22 recovery-required failures; retry and reload verified
+PASS COMMIT tables=2 retry=COMMIT: 12 retryable failures, 37 recovery-required failures; retry and reload verified
+PASS COMMIT tables=2 retry=ROLLBACK: 12 retryable failures, 37 recovery-required failures; retry and reload verified
+
+=== commit-allocation-scalar exit=0 seconds=1.404758 ===
+PASS COMMIT tables=1 retry=COMMIT: 10 retryable failures, 22 recovery-required failures; retry and reload verified
+PASS COMMIT tables=1 retry=ROLLBACK: 10 retryable failures, 22 recovery-required failures; retry and reload verified
+PASS COMMIT tables=2 retry=COMMIT: 12 retryable failures, 37 recovery-required failures; retry and reload verified
+PASS COMMIT tables=2 retry=ROLLBACK: 12 retryable failures, 37 recovery-required failures; retry and reload verified
+
+=== catalog-allocation-normal exit=0 seconds=0.449354 ===
+SUMMARY CREATE_TABLE failures=51 violations=0 first_success_budget=51
+SUMMARY CREATE_INDEX failures=39 violations=0 first_success_budget=39
+
+=== catalog-allocation-scalar exit=0 seconds=0.443289 ===
+SUMMARY CREATE_TABLE failures=51 violations=0 first_success_budget=51
+SUMMARY CREATE_INDEX failures=39 violations=0 first_success_budget=39
+

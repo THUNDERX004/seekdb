@@ -74,8 +74,11 @@ Dockerfile, tests its extracted Linux executable plus scalar/fault/allocation
 variants built with the same pinned GCC image, and checks the actual image
 entrypoint, mounted durability and EOF rollback under a 256 MiB container cap.
 It has read-only repository permission and no retained checkout credentials.
-YAML parsing and shell syntax checks pass locally. Linux execution results
-remain pending until its run finishes; no existing workflow was changed.
+YAML parsing and shell syntax checks pass locally. The workflow completed
+successfully for 6fb385e05fa47ac6bb3da91584c0506c5addd3ac, run 42729295098,
+job 129542912551: image build, all 42 Linux commands and actual-container smoke
+checks pass. Machine-readable details are in round11-linux-validation.json.
+No existing workflow was changed.
 
 The public package still withholds nine groups' inputs and explicitly omits
 the full driver. No actual platform failure input/log or result for this

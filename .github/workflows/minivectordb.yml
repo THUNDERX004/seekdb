@@ -84,6 +84,11 @@ jobs:
                       raise SystemExit(repr((result.returncode, result.stdout, result.stderr)))
               print("PASS: image startup, SQL, mounted durability and EOF rollback")
           PY
+      - name: Verify data larger than the hard memory limit
+        run: |
+          python3 -X utf8 -B tests/test_container_resources.py --image minivectordb:validation
+          python3 -X utf8 -B tests/test_container_resources.py --image minivectordb:validation \
+            --memory-mib 64 --dim 1024 --cache-mib 8
       - name: Print versioned validation records
         if: always()
         run: |
