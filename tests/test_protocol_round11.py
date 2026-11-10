@@ -41,7 +41,7 @@ def record_lines(data):
 class BytePipe:
     def __init__(self, executable, directory):
         self.process = subprocess.Popen(
-            [str(executable), f"--data-dir={directory}",
+            [str(executable), "--stdio=text", f"--data-dir={directory}",
              "--startup-marker=" + START.decode(),
              "--ready-marker=" + END.decode()],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -143,7 +143,7 @@ class ProtocolRound11(unittest.TestCase):
 
     def batch(self, sql, *options):
         result = subprocess.run(
-            [str(self.executable), f"--data-dir={self.directory}", *options],
+            [str(self.executable), "--stdio=text", f"--data-dir={self.directory}", *options],
             input=sql, capture_output=True, timeout=5, cwd=self.directory,
         )
         self.assertEqual(result.returncode, 0, result.stderr)

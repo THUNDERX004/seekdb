@@ -105,7 +105,7 @@ def run_process(executable, data_dir, steps, label, fault_env=None,
     data_dir.mkdir(parents=True, exist_ok=True)
     try:
         result = subprocess.run(
-            [str(executable), f"--data-dir={data_dir}",
+            [str(executable), "--stdio=text", f"--data-dir={data_dir}",
              f"--ready-marker={MARKER}", f"--startup-marker={STARTUP}"],
             cwd=data_dir, input=sql, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, text=True, encoding="utf-8",

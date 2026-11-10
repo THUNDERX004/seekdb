@@ -16,6 +16,7 @@ class Client:
         self.process = subprocess.Popen(
             [
                 str(executable),
+                "--stdio=text",
                 f"--data-dir={data_dir}",
                 "--ready-marker=__END__",
             ],

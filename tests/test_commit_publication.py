@@ -174,7 +174,7 @@ def run_process(executable, data_dir, steps, label, inject=False, expected_steps
     sql = "".join(step.sql.rstrip().rstrip(";") + ";\n" for step in steps)
     try:
         result = subprocess.run(
-            [str(executable), f"--data-dir={data_dir}",
+            [str(executable), "--stdio=text", f"--data-dir={data_dir}",
              f"--ready-marker={MARKER}", f"--startup-marker={STARTUP}"],
             input=sql, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True, encoding="utf-8", errors="strict", env=environment,

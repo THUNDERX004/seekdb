@@ -136,7 +136,7 @@ class LargeResults(unittest.TestCase):
         self.directory = Path(temporary.name).resolve(strict=True)
 
     def run_script(self, writer, *, cache_mib=1, header=True, markers=True, startup=True):
-        command = [str(self.executable), f"--data-dir={self.directory}"]
+        command = [str(self.executable), "--stdio=text", f"--data-dir={self.directory}"]
         if header:
             command.append("--column-header")
         if markers:

@@ -449,6 +449,284 @@ std::string valueToString(const Value &value, ColumnType type) {
   return {};
 }
 
+std::string jsonString(std::string_view value) {
+  std::string output;
+  output.reserve(value.size() + 2);
+  output.push_back('"');
+  constexpr char hex[] = "0123456789abcdef";
+  for (size_t i = 0; i < value.size(); ++i) {
+    const unsigned char c = static_cast<unsigned char>(value[i]);
+    if (c == '"' || c == '\\') {
+      output.push_back('\\');
+      output.push_back(static_cast<char>(c));
+    } else if (c < 0x20U) {
+      output += "\\u00";
+      output.push_back(hex[c >> 4U]);
+      output.push_back(hex[c & 15U]);
+    } else if (c >= 0x80U) {
+      // Diagnostics may quote a single lexer byte from an unsupported Unicode
+      // token. Never let such a byte make an otherwise valid error frame
+      // undecodable. Stored VARCHAR values already contain valid UTF-8.
+      const size_t length = c >= 0xc2U && c <= 0xdfU ? 2
+          : c >= 0xe0U && c <= 0xefU ? 3
+          : c >= 0xf0U && c <= 0xf4U ? 4 : 0;
+      uint32_t cp = length == 2 ? c & 0x1fU
+          : length == 3 ? c & 0x0fU : c & 0x07U;
+      bool valid = length != 0 && length <= value.size() - i;
+      for (size_t j = 1; valid && j < length; ++j) {
+        const unsigned char next = static_cast<unsigned char>(value[i + j]);
+        valid = (next & 0xc0U) == 0x80U;
+        cp = (cp << 6U) | (next & 63U);
+      }
+      valid = valid && !((length == 2 && cp < 0x80U) ||
+          (length == 3 && cp < 0x800U) || (length == 4 && cp < 0x10000U) ||
+          cp > 0x10ffffU || (cp >= 0xd800U && cp <= 0xdfffU));
+      if (valid) {
+        output.append(value.substr(i, length));
+        i += length - 1;
+      } else {
+        output += "\\ufffd";
+      }
+    } else {
+      output.push_back(static_cast<char>(c));
+    }
+  }
+  output.push_back('"');
+  return output;
+}
+
+struct JsonRequest {
+  // Keep the validated JSON token instead of converting IDs through double.
+  std::string id = "null";
+  std::string op;
+  std::string sql;
+  std::string mode = "exact";
+};
+
+class JsonRequestParser {
+ public:
+  explicit JsonRequestParser(std::string_view input) : input_(input) {}
+
+  void parse(JsonRequest &request) {
+    space();
+    expect('{');
+    std::set<std::string> keys;
+    bool has_sql = false;
+    if (!take('}')) {
+      do {
+        const std::string key = string();
+        if (!keys.insert(key).second) {
+          invalid("duplicate JSON key");
+        }
+        expect(':');
+        space();
+        if (key == "id") {
+          const size_t start = pos_;
+          value(0);
+          request.id = std::string(input_.substr(start, pos_ - start));
+        } else if (key == "op") {
+          request.op = string();
+        } else if (key == "sql") {
+          request.sql = string();
+          has_sql = true;
+        } else if (key == "search_mode") {
+          request.mode = string();
+        } else {
+          value(0);
+        }
+      } while (take(','));
+      expect('}');
+    }
+    space();
+    if (pos_ != input_.size() || !keys.contains("id") || !keys.contains("op")) {
+      invalid("request requires id and op in one JSON object");
+    }
+    if (request.op == "execute" && !has_sql) {
+      invalid("execute requires a SQL string");
+    }
+    if (request.mode != "exact" && request.mode != "ann") {
+      invalid("search_mode must be exact or ann");
+    }
+  }
+
+ private:
+  [[noreturn]] static void invalid(const char *message) {
+    fail("INVALID_REQUEST", message);
+  }
+
+  void space() {
+    while (pos_ < input_.size() && (input_[pos_] == ' ' || input_[pos_] == '\t' ||
+           input_[pos_] == '\r' || input_[pos_] == '\n')) {
+      ++pos_;
+    }
+  }
+
+  bool take(char c) {
+    space();
+    if (pos_ < input_.size() && input_[pos_] == c) {
+      ++pos_;
+      return true;
+    }
+    return false;
+  }
+
+  void expect(char c) {
+    if (!take(c)) {
+      invalid("invalid JSON syntax");
+    }
+  }
+
+  uint32_t hexQuad() {
+    uint32_t result = 0;
+    for (unsigned i = 0; i < 4; ++i) {
+      if (pos_ == input_.size()) {
+        invalid("truncated Unicode escape");
+      }
+      const char c = input_[pos_++];
+      result <<= 4U;
+      if (c >= '0' && c <= '9') {
+        result |= static_cast<uint32_t>(c - '0');
+      } else if (c >= 'a' && c <= 'f') {
+        result |= static_cast<uint32_t>(c - 'a' + 10);
+      } else if (c >= 'A' && c <= 'F') {
+        result |= static_cast<uint32_t>(c - 'A' + 10);
+      } else {
+        invalid("invalid Unicode escape");
+      }
+    }
+    return result;
+  }
+
+  std::string string() {
+    expect('"');
+    std::string result;
+    while (pos_ < input_.size()) {
+      const unsigned char c = static_cast<unsigned char>(input_[pos_++]);
+      if (c == '"') {
+        countCodepointsStrict(result);
+        return result;
+      }
+      if (c < 0x20U) {
+        invalid("unescaped control character in JSON string");
+      }
+      if (c != '\\') {
+        result.push_back(static_cast<char>(c));
+        continue;
+      }
+      if (pos_ == input_.size()) {
+        invalid("truncated JSON escape");
+      }
+      switch (input_[pos_++]) {
+        case '"': result.push_back('"'); break;
+        case '\\': result.push_back('\\'); break;
+        case '/': result.push_back('/'); break;
+        case 'b': result.push_back('\b'); break;
+        case 'f': result.push_back('\f'); break;
+        case 'n': result.push_back('\n'); break;
+        case 'r': result.push_back('\r'); break;
+        case 't': result.push_back('\t'); break;
+        case 'u': {
+          uint32_t cp = hexQuad();
+          if (cp >= 0xd800U && cp <= 0xdbffU) {
+            if (input_.substr(pos_, 2) != "\\u") {
+              invalid("missing low Unicode surrogate");
+            }
+            pos_ += 2;
+            const uint32_t low = hexQuad();
+            if (low < 0xdc00U || low > 0xdfffU) {
+              invalid("invalid low Unicode surrogate");
+            }
+            cp = 0x10000U + ((cp - 0xd800U) << 10U) + low - 0xdc00U;
+          } else if (cp >= 0xdc00U && cp <= 0xdfffU) {
+            invalid("unpaired low Unicode surrogate");
+          }
+          if (cp < 0x80U) {
+            result.push_back(static_cast<char>(cp));
+          } else if (cp < 0x800U) {
+            result.push_back(static_cast<char>(0xc0U | (cp >> 6U)));
+            result.push_back(static_cast<char>(0x80U | (cp & 63U)));
+          } else {
+            if (cp >= 0x10000U) {
+              result.push_back(static_cast<char>(0xf0U | (cp >> 18U)));
+              result.push_back(static_cast<char>(0x80U | ((cp >> 12U) & 63U)));
+            } else {
+              result.push_back(static_cast<char>(0xe0U | (cp >> 12U)));
+            }
+            result.push_back(static_cast<char>(0x80U | ((cp >> 6U) & 63U)));
+            result.push_back(static_cast<char>(0x80U | (cp & 63U)));
+          }
+          break;
+        }
+        default: invalid("invalid JSON escape");
+      }
+    }
+    invalid("unterminated JSON string");
+  }
+
+  void value(unsigned depth) {
+    if (depth > 64) {
+      invalid("JSON nesting is too deep");
+    }
+    space();
+    if (pos_ == input_.size()) {
+      invalid("missing JSON value");
+    }
+    if (input_[pos_] == '"') {
+      string();
+    } else if (take('{')) {
+      std::set<std::string> keys;
+      if (!take('}')) {
+        do {
+          if (!keys.insert(string()).second) {
+            invalid("duplicate JSON key");
+          }
+          expect(':');
+          value(depth + 1);
+        } while (take(','));
+        expect('}');
+      }
+    } else if (take('[')) {
+      if (!take(']')) {
+        do { value(depth + 1); } while (take(','));
+        expect(']');
+      }
+    } else {
+      for (std::string_view literal : {"true", "false", "null"}) {
+        if (input_.substr(pos_, literal.size()) == literal) {
+          pos_ += literal.size();
+          return;
+        }
+      }
+      const auto digit = [&] {
+        return pos_ < input_.size() && input_[pos_] >= '0' && input_[pos_] <= '9';
+      };
+      if (input_[pos_] == '-') { ++pos_; }
+      if (!digit()) { invalid("invalid JSON number"); }
+      if (input_[pos_] == '0') {
+        ++pos_;
+      } else {
+        do { ++pos_; } while (digit());
+      }
+      if (pos_ < input_.size() && input_[pos_] == '.') {
+        ++pos_;
+        if (!digit()) { invalid("missing fractional digits"); }
+        do { ++pos_; } while (digit());
+      }
+      if (pos_ < input_.size() && (input_[pos_] == 'e' || input_[pos_] == 'E')) {
+        ++pos_;
+        if (pos_ < input_.size() && (input_[pos_] == '+' || input_[pos_] == '-')) {
+          ++pos_;
+        }
+        if (!digit()) { invalid("missing exponent digits"); }
+        do { ++pos_; } while (digit());
+      }
+    }
+  }
+
+  std::string_view input_;
+  size_t pos_ = 0;
+};
+
 enum class TokenKind { Identifier, Number, String, Symbol, End };
 
 struct Token {
@@ -801,6 +1079,10 @@ class Parser {
   }
 
   void expectEnd() {
+    // JSON execute carries the complete SQL, including an optional terminator.
+    // Consume it only after parsing, so quoted semicolons remain literal data
+    // and multiple statements cannot partially execute inside one request.
+    consumeSymbol(";");
     if (peek().kind != TokenKind::End) {
       fail("UNSUPPORTED", "unexpected token '" + peek().text + "'");
     }
@@ -2033,14 +2315,18 @@ class ResultSpool {
     file_.reset(stream);
   }
 
-  void append(const std::vector<std::string> &row) {
+  void append(const std::vector<std::string> &row, bool json, bool first) {
+    if (json) {
+      if (!first) { write(",", 1); }
+      write("[", 1);
+    }
     for (size_t column = 0; column < row.size(); ++column) {
       if (column != 0) {
-        write("\t", 1);
+        write(json ? "," : "\t", 1);
       }
       write(row[column].data(), row[column].size());
     }
-    write("\n", 1);
+    write(json ? "]" : "\n", 1);
   }
 
   void prepare() {
@@ -2098,7 +2384,8 @@ struct ExecResult {
 
   void reserveRows(size_t count) { rows.reserve(std::min<size_t>(count, 4096)); }
 
-  void appendRow(std::vector<std::string> row, const fs::path &directory) {
+  void appendRow(std::vector<std::string> row, const fs::path &directory,
+                 bool json = false) {
     constexpr size_t budget = 1024 * 1024;
     if (!spool) {
       size_t bytes = sizeof(row);
@@ -2116,13 +2403,15 @@ struct ExecResult {
         return;
       }
       spool = std::make_unique<ResultSpool>(directory);
+      bool first = true;
       for (const auto &buffered : rows) {
-        spool->append(buffered);
+        spool->append(buffered, json, first);
+        first = false;
       }
       decltype(rows){}.swap(rows);
       buffered_bytes = 0;
     }
-    spool->append(row);
+    spool->append(row, json, row_count == 0);
     ++row_count;
   }
 };
@@ -2156,8 +2445,8 @@ bool valuesCompare(const Value &left, const Value &right, CompareOp op,
 
 class Database {
  public:
-  explicit Database(fs::path data_dir, bool ann)
-      : data_dir_(std::move(data_dir)), ann_mode_(ann) {
+  explicit Database(fs::path data_dir, bool ann, bool json_output = false)
+      : data_dir_(std::move(data_dir)), ann_mode_(ann), json_output_(json_output) {
     fs::create_directories(data_dir_);
     loadCatalog();
     rebalanceRowCaches();
@@ -2252,6 +2541,8 @@ class Database {
     overlay_.clear();
     explicit_transaction_ = false;
   }
+
+  void setSearchMode(bool ann) noexcept { ann_mode_ = ann; }
 
  private:
   struct Projection {
@@ -2784,7 +3075,9 @@ class Database {
         }
         if (item.star) {
           for (size_t column = 0; column < definition.columns.size(); ++column) {
-            output.push_back(valueToString(row[column], definition.columns[column].type));
+            const ColumnType type = definition.columns[column].type;
+            output.push_back(json_output_ && type == ColumnType::VarChar
+                ? jsonString(row[column].text) : valueToString(row[column], type));
           }
         } else if (item.distance) {
           std::ostringstream distance;
@@ -2793,8 +3086,9 @@ class Database {
                    << l2Distance(row[item.column].vector, item.probe);
           output.push_back(distance.str());
         } else {
-          output.push_back(valueToString(row[item.column],
-                                        definition.columns[item.column].type));
+          const ColumnType type = definition.columns[item.column].type;
+          output.push_back(json_output_ && type == ColumnType::VarChar
+              ? jsonString(row[item.column].text) : valueToString(row[item.column], type));
         }
       }
       return output;
@@ -2815,7 +3109,7 @@ class Database {
               ++skipped;
               return true;
             }
-            result.appendRow(makeOutput(row), data_dir_);
+            result.appendRow(makeOutput(row), data_dir_, json_output_);
             return statement.limit < 0 ||
                    result.row_count < static_cast<uint64_t>(statement.limit);
           });
@@ -2930,7 +3224,7 @@ class Database {
             heap.size() - begin, static_cast<size_t>(statement.limit));
         result.reserveRows(end - begin);
         for (size_t i = begin; i < end; ++i) {
-          result.appendRow(makeOutput(heap[i].row.get()), data_dir_);
+          result.appendRow(makeOutput(heap[i].row.get()), data_dir_, json_output_);
         }
       }
       return result;
@@ -3048,7 +3342,7 @@ class Database {
     result.select = true;
     result.reserveRows(end - begin);
     for (size_t i = begin; i < end; ++i) {
-      result.appendRow(makeOutput(selected[i].source.get()), data_dir_);
+      result.appendRow(makeOutput(selected[i].source.get()), data_dir_, json_output_);
     }
     return result;
   }
@@ -3245,6 +3539,7 @@ class Database {
 
   fs::path data_dir_;
   bool ann_mode_ = false;
+  bool json_output_ = false;
   bool explicit_transaction_ = false;
   uint32_t next_oid_ = 1;
   uint64_t next_txid_ = 1;
@@ -3383,6 +3678,99 @@ void printResult(const ExecResult &result, const std::optional<std::string> &mar
   std::cout.flush();
 }
 
+void printJsonResult(const ExecResult &result, const std::string &id) {
+  // Build metadata before beginning a response. Large row bodies are already
+  // encoded, staged and rewound; a replay failure is fatal to this stream.
+  std::string header = "{\"id\":" + id + ",\"ok\":true";
+  if (result.select) {
+    header += ",\"columns\":[";
+    for (size_t i = 0; i < result.columns.size(); ++i) {
+      if (i != 0) { header.push_back(','); }
+      header += jsonString(result.columns[i]);
+    }
+    header += "],\"rows\":[";
+    std::cout << header;
+    if (result.spool) {
+      result.spool->print(std::cout);
+    } else {
+      bool first = true;
+      for (const auto &row : result.rows) {
+        if (!first) { std::cout.put(','); }
+        first = false;
+        std::cout.put('[');
+        for (size_t i = 0; i < row.size(); ++i) {
+          if (i != 0) { std::cout.put(','); }
+          std::cout << row[i];
+        }
+        std::cout.put(']');
+      }
+    }
+    std::cout << "]}\n";
+  } else {
+    if (result.affected) {
+      header += ",\"affected_rows\":" + std::to_string(*result.affected);
+    }
+    std::cout << header << "}\n";
+  }
+  std::cout.flush();
+  if (!std::cout) {
+    fail("IO_ERROR", "cannot write JSON response");
+  }
+}
+
+void printJsonError(const DBError &error, const std::string &id) {
+  const std::string response = "{\"id\":" + id +
+      ",\"ok\":false,\"error\":{\"code\":" + jsonString(error.code()) +
+      ",\"message\":" + jsonString(error.what()) + "}}\n";
+  std::cout << response;
+  std::cout.flush();
+  if (!std::cout) {
+    fail("IO_ERROR", "cannot write JSON error response");
+  }
+}
+
+int runJson(Database &database) {
+  std::cout << "{\"type\":\"ready\"}\n";
+  std::cout.flush();
+  if (!std::cout) {
+    fail("IO_ERROR", "cannot write startup handshake");
+  }
+  std::string line;
+  while (std::getline(std::cin, line)) {
+    JsonRequest request;
+    std::optional<ExecResult> result;
+    bool shutdown = false;
+    try {
+      JsonRequestParser(line).parse(request);
+      if (request.op == "shutdown") {
+        database.rollbackSilently();
+        result.emplace();
+        shutdown = true;
+      } else if (request.op == "execute") {
+        database.setSearchMode(request.mode == "ann");
+        result = database.execute(request.sql);
+        // Even empty/comment-only execute requests receive one success frame.
+        if (!result) { result.emplace(); }
+      } else {
+        fail("UNSUPPORTED_OP", "unsupported request operation");
+      }
+    } catch (const RecoveryRequired &) {
+      throw;
+    } catch (const DBError &error) {
+      printJsonError(error, request.id);
+      continue;
+    } catch (const std::exception &error) {
+      printJsonError(DBError("INTERNAL_ERROR", error.what()), request.id);
+      continue;
+    }
+    printJsonResult(*result, request.id);
+    if (shutdown) { return 0; }
+  }
+  if (std::cin.bad()) { fail("IO_ERROR", "cannot read JSON request"); }
+  database.rollbackSilently();
+  return 0;
+}
+
 std::string numericErrorCode(const std::string &code) {
   static const std::unordered_map<std::string, int> codes = {
       {"SQL_SYNTAX", 1064},
@@ -3422,6 +3810,7 @@ void printError(const DBError &error, bool numeric_errors,
 
 struct Options {
   fs::path data_dir = "/data";
+  bool text_stdio = false;
   bool ann = false;
   bool numeric_errors = false;
   bool column_header = false;
@@ -3444,6 +3833,11 @@ Options parseOptions(int argc, char **argv) {
       options.data_dir = *value;
     } else if (argument == "--data-dir" && i + 1 < argc) {
       options.data_dir = argv[++i];
+    } else if (auto value = valueAfter("--stdio=")) {
+      if (*value != "text" && *value != "json") {
+        fail("UNSUPPORTED", "--stdio must be json or text");
+      }
+      options.text_stdio = *value == "text";
     } else if (auto value = valueAfter("--vector-mode=")) {
       if (*value != "exact" && *value != "ann") {
         fail("UNSUPPORTED", "--vector-mode must be exact or ann");
@@ -3470,6 +3864,7 @@ Options parseOptions(int argc, char **argv) {
     } else if (argument == "--help" || argument == "-h") {
       std::cout
           << "Usage: minivectordb [--data-dir PATH] [--vector-mode exact|ann]\n"
+             "       [--stdio=json|text] (default: json)\n"
              "       [--ready-marker TOKEN] [--startup-marker TOKEN]\n"
              "       [--numeric-errors] [--column-header]\n";
       std::exit(0);
@@ -3477,14 +3872,21 @@ Options parseOptions(int argc, char **argv) {
       fail("UNSUPPORTED", "unknown command-line argument '" + argument + "'");
     }
   }
+  if (!options.text_stdio && (options.numeric_errors || options.column_header ||
+      options.marker || options.startup_marker)) {
+    fail("UNSUPPORTED", "text formatting options require --stdio=text");
+  }
   return options;
 }
 
 int run(int argc, char **argv) {
   Options options = parseOptions(argc, argv);
-  Database database(options.data_dir, options.ann);
+  Database database(options.data_dir, options.ann, !options.text_stdio);
   std::cerr << "[minivectordb] ready data_dir=" << options.data_dir.string()
             << " mode=" << (options.ann ? "ann" : "exact") << '\n';
+  if (!options.text_stdio) {
+    return runJson(database);
+  }
   if (options.startup_marker.has_value()) {
     std::cout << *options.startup_marker << '\n';
     std::cout.flush();

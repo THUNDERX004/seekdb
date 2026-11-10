@@ -46,7 +46,8 @@ def main():
               "test_round6_sql_contract.py", "test_round6_stream_contract.py",
               "test_stream_followup.py", "test_float32_literals.py",
               "test_sql_round11.py", "test_protocol_round11.py",
-              "test_selection_retention.py", "test_large_results.py")
+              "test_selection_retention.py", "test_large_results.py",
+              "test_json_protocol.py", "test_official_json_public.py")
     commands = []
     for label in ("normal", "scalar"):
         commands.extend((f"{label}/{suite}",
@@ -78,6 +79,8 @@ def main():
                                        str(root / "tests/test_statement_allocation.py"),
                                        str(binaries[key])]))
     paths = [root / "src/minivectordb.cpp", root / "CMakeLists.txt", root / "Dockerfile",
+             root / "STDIO_PROTOCOL.md", *sorted((root / "protocol_check").glob("*.py")),
+             root / "protocol_check/config.json",
              *sorted((root / "tests").glob("*.py")),
              *sorted((root / "tests").glob("*.cpp")), root / "mysqltest/manifest.json"]
     before = {str(path.relative_to(root)): fingerprint(path) for path in paths}

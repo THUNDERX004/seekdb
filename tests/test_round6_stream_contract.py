@@ -41,7 +41,7 @@ class Round6StreamContract(unittest.TestCase):
         if isinstance(payload, str):
             payload = payload.encode("utf-8")
         result = subprocess.run(
-            [str(self.executable), f"--data-dir={self.directory}", *options],
+            [str(self.executable), "--stdio=text", f"--data-dir={self.directory}", *options],
             input=payload, capture_output=True, timeout=10, check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8"))
@@ -175,7 +175,7 @@ class Round6StreamContract(unittest.TestCase):
                         def option(name, value):
                             return [name, value] if separated else [f"{name}={value}"]
 
-                        command = [str(self.executable), "--column-header"]
+                        command = [str(self.executable), "--stdio=text", "--column-header"]
                         for name, value in (("--data-dir", directory),
                                             ("--ready-marker", END),
                                             ("--startup-marker", READY),

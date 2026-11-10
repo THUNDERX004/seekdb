@@ -40,7 +40,7 @@ class FormalSqlEdges(unittest.TestCase):
     def check_sql(self, *steps):
         """Run every statement, then report all mismatches, including side effects."""
         process = subprocess.run(
-            [str(self.executable), f"--data-dir={self.data_dir}",
+            [str(self.executable), "--stdio=text", f"--data-dir={self.data_dir}",
              "--column-header", f"--ready-marker={MARKER}"],
             input="".join(sql + ";\n" for sql, _ in steps),
             text=True, encoding="utf-8", errors="strict", capture_output=True,

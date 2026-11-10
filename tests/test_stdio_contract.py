@@ -22,7 +22,7 @@ END = "__MVD_STDIO_END__"
 
 class PipeSession:
     def __init__(self, executable: Path, directory: Path, *, marker=True):
-        command = [str(executable), f"--data-dir={directory}",
+        command = [str(executable), "--stdio=text", f"--data-dir={directory}",
                    f"--startup-marker={READY}"]
         if marker:
             command.append(f"--ready-marker={END}")
@@ -107,7 +107,7 @@ class StdioContract(unittest.TestCase):
 
     def batch(self, payload, *options):
         result = subprocess.run(
-            [str(self.executable), f"--data-dir={self.directory}", *options],
+            [str(self.executable), "--stdio=text", f"--data-dir={self.directory}", *options],
             input=payload.encode("utf-8"), stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, timeout=10, check=False,
         )

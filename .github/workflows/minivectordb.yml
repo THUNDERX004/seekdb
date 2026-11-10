@@ -7,6 +7,8 @@ on:
       - src/minivectordb.cpp
       - tests/**
       - mysqltest/**
+      - protocol_check/**
+      - STDIO_PROTOCOL.md
       - Dockerfile
       - CMakeLists.txt
       - .github/workflows/minivectordb.yml
@@ -59,9 +61,19 @@ jobs:
             --catalog-allocation-normal build/test_catalog_allocation_normal \
             --catalog-allocation-scalar build/test_catalog_allocation_scalar \
             --prefix refine-logs/linux-validation
+      - name: Run the unchanged official JSONL checker
+        run: |
+          python3 -X utf8 -B protocol_check/run.py --image minivectordb:validation \
+            --handshake-only --output protocol-results/docker-handshake
+          python3 -X utf8 -B protocol_check/run.py --image minivectordb:validation \
+            --output protocol-results/docker-public
+          python3 -X utf8 -B protocol_check/run.py \
+            --command '["build/linux-scalar/minivectordb","--data-dir={data_dir}"]' \
+            --output protocol-results/scalar-public
       - name: Verify the actual container entrypoint and data mount
         run: |
           python3 -X utf8 -B - <<'PY'
+          import json
           import pathlib
           import subprocess
           import tempfile
@@ -71,18 +83,27 @@ jobs:
                          "--cpus=2", "--memory=256m", "--mount",
                          "type=bind,src=" + str(pathlib.Path(directory).resolve()) + ",dst=/data",
                          "minivectordb:validation"]
-              requests = [
-                  (b"CREATE TABLE t(id BIGINT PRIMARY KEY,v VECTOR(2));"
-                   b"INSERT INTO t VALUES(1,'[3,4]');"
-                   b"SELECT id,L2_DISTANCE(v,'[0,0]') AS d FROM t ORDER BY d;"
-                   b"BEGIN;DELETE FROM t;", b"OK\nOK 1\n1\t5.000000\nOK\nOK 1\n"),
-                  (b"SELECT id FROM t;", b"1\n"),
+              sessions = [
+                  (["CREATE TABLE t(id BIGINT PRIMARY KEY,v VECTOR(2));",
+                    "INSERT INTO t VALUES(1,'[3,4]');",
+                    "SELECT id,L2_DISTANCE(v,'[0,0]') AS d FROM t ORDER BY d;",
+                    "BEGIN;", "DELETE FROM t;"],
+                   [{"id":1,"ok":True}, {"id":2,"ok":True,"affected_rows":1},
+                    {"id":3,"ok":True,"columns":["id","d"],"rows":[[1,5.0]]},
+                    {"id":4,"ok":True}, {"id":5,"ok":True,"affected_rows":1}]),
+                  (["SELECT id FROM t;"],
+                   [{"id":1,"ok":True,"columns":["id"],"rows":[[1]]}]),
               ]
-              for sql, expected in requests:
-                  result = subprocess.run(command, input=sql, capture_output=True, timeout=30)
-                  if result.returncode != 0 or result.stdout != expected:
+              for statements, expected in sessions:
+                  payload = "".join(json.dumps({"id":index,"op":"execute","sql":sql,
+                                               "search_mode":"exact"}) + "\n"
+                                    for index, sql in enumerate(statements, 1)).encode()
+                  result = subprocess.run(command, input=payload, capture_output=True, timeout=30)
+                  messages = [json.loads(line) for line in result.stdout.split(b"\n")[:-1]]
+                  if (result.returncode != 0 or not result.stdout.endswith(b"\n") or
+                          messages != [{"type":"ready"}] + expected):
                       raise SystemExit(repr((result.returncode, result.stdout, result.stderr)))
-              print("PASS: image startup, SQL, mounted durability and EOF rollback")
+              print("PASS: default JSON image startup, SQL, mounted durability and EOF rollback")
           PY
       - name: Verify data larger than the hard memory limit
         run: |

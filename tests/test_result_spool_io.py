@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -16,15 +17,22 @@ ROWS = 256
 WIDTH = 8192
 
 
-def invoke(executable, directory, sql, hook=None):
+def invoke(executable, directory, sql, hook=None, *, json_protocol=False):
     environment = {key: value for key, value in os.environ.items()
                    if not key.upper().startswith("MVD_TEST_")}
     environment["MVD_CACHE_LIMIT_MB"] = "8"
     if hook is not None:
         environment[HOOK] = str(hook)
+    command = [str(executable), f"--data-dir={directory}"]
+    if json_protocol:
+        sql = b"".join((json.dumps({"id":index,"op":"execute","sql":statement,
+                                  "search_mode":"exact"}) + "\n").encode()
+                       for index, statement in enumerate(sql, 1))
+    else:
+        command += ["--stdio=text", "--column-header",
+                    "--ready-marker=" + MARKER.decode().rstrip("\n")]
     return subprocess.run(
-        [str(executable), f"--data-dir={directory}", "--column-header",
-         "--ready-marker=" + MARKER.decode().rstrip("\n")],
+        command,
         input=sql, capture_output=True, env=environment, timeout=30, check=False,
     )
 
@@ -63,6 +71,24 @@ def main():
             assert recovered.stdout == all_results, "production hook isolation/recovery differs"
             assert not list(Path(directory).glob(".mvd-result-*")), "recovery spool leaked"
             print("PASS production isolation, full retry and committed-data recovery")
+        json_query = ["SELECT id,s FROM t ORDER BY id;", "SELECT id FROM t WHERE id=1;"]
+        ready = b'{"type":"ready"}\n'
+        header = b'{"id":1,"ok":true,"columns":["id","s"],"rows":['
+        body = b",".join(f'[{key},"{text}"]'.encode()
+                         for key in range(1, ROWS + 1))
+        complete = (ready + header + body + b"]}\n" +
+                    b'{"id":2,"ok":true,"columns":["id"],"rows":[[1]]}\n')
+        for block in (0, 1):
+            failed = invoke(fault, directory, json_query, block, json_protocol=True)
+            assert failed.returncode != 0, "JSON replay failure did not stop process"
+            assert failed.stdout == ready + header + body[:block * 65536], repr(failed.stdout[:200])
+            assert b"injected query result temporary read failure" in failed.stderr
+            assert not list(Path(directory).glob(".mvd-result-*")), "JSON spool leaked"
+            recovered = invoke(normal, directory, json_query, block, json_protocol=True)
+            assert recovered.returncode == 0, recovered.stderr
+            assert recovered.stdout == complete, "JSON production retry or hook isolation differs"
+            assert not list(Path(directory).glob(".mvd-result-*")), "JSON recovery spool leaked"
+            print(f"PASS JSON replay failure after {block * 65536} bytes, production retry and isolation")
     return 0
 
 

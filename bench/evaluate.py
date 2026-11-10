@@ -161,8 +161,11 @@ def diagnostic_delta(before: dict, after: dict) -> dict:
 class Client:
     """Timeouts cover writes and reads; stderr is continuously drained."""
 
-    def __init__(self, executable: Path, data_dir: Path, timeout: float):
+    def __init__(self, executable: Path, data_dir: Path, timeout: float,
+                 protocol: str = "text"):
         self.timeout = timeout
+        self.protocol = protocol
+        self.sequence = 0
         self.closed = False
         self.requests: queue.Queue = queue.Queue()
         self.responses: queue.Queue = queue.Queue()
@@ -170,10 +173,14 @@ class Client:
         token = uuid.uuid4().hex
         self.marker = f"__MVD_END_{token}__".encode()
         self.startup_marker = f"__MVD_READY_{token}__".encode()
+        command = [str(executable), f"--data-dir={data_dir}"]
+        if protocol != "json":
+            if protocol == "text":
+                command.append("--stdio=text")
+            command += ["--vector-mode=exact", f"--ready-marker={self.marker.decode()}",
+                        f"--startup-marker={self.startup_marker.decode()}"]
         self.process = subprocess.Popen(
-            [str(executable), f"--data-dir={data_dir}", "--vector-mode=exact",
-             f"--ready-marker={self.marker.decode()}",
-             f"--startup-marker={self.startup_marker.decode()}"],
+            command,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         )
         self.diagnostics = WindowsDiagnostics(self.process.pid)
@@ -213,14 +220,28 @@ class Client:
 
     def _exchange(self):
         try:
-            self.responses.put((True, self._read_response(self.startup_marker)))
+            if self.protocol == "json":
+                if self._read_json() != {"type": "ready"}:
+                    raise EvaluationError("incorrect JSON startup handshake")
+                self.responses.put((True, []))
+            else:
+                self.responses.put((True, self._read_response(self.startup_marker)))
             while True:
                 statement = self.requests.get()
                 if statement is None:
                     break
+                if self.protocol == "json":
+                    self.sequence += 1
+                    statement = (json.dumps({"id":self.sequence,"op":"execute",
+                                             "sql":statement.decode("utf-8"),
+                                             "search_mode":"exact"},
+                                            ensure_ascii=False, allow_nan=False) + "\n").encode()
                 self.process.stdin.write(statement)
                 self.process.stdin.flush()
-                self.responses.put((True, self._read_response(self.marker)))
+                if self.protocol == "json":
+                    self.responses.put((True, self._json_rows(self._read_json())))
+                else:
+                    self.responses.put((True, self._read_response(self.marker)))
         except Exception as error:
             self.responses.put((False, error))
         finally:
@@ -228,6 +249,38 @@ class Client:
                 self.process.stdin.close()
             except (OSError, ValueError):
                 pass
+
+    def _read_json(self):
+        line = self.process.stdout.readline(64 * 1024 * 1024 + 1)
+        if not line.endswith(b"\n") or len(line) > 64 * 1024 * 1024:
+            raise EvaluationError("missing or oversized JSON response line")
+        response = json.loads(line)
+        if type(response) is not dict:
+            raise EvaluationError("JSON response is not an object")
+        return response
+
+    def _json_rows(self, response):
+        if type(response.get("id")) is not int or response["id"] != self.sequence:
+            raise EvaluationError("JSON response ID differs")
+        if type(response.get("ok")) is not bool or not response["ok"]:
+            raise EvaluationError(f"SQL JSON error: {response!r}")
+        if "rows" in response:
+            if type(response.get("columns")) is not list or type(response["rows"]) is not list:
+                raise EvaluationError("JSON query lacks columns/rows arrays")
+            # Reuse the existing independent oracle after parsing typed JSON.
+            def field(value):
+                if type(value) is str:
+                    return value
+                if type(value) not in (int, float, list):
+                    raise EvaluationError("unexpected typed JSON cell")
+                return json.dumps(value, separators=(",", ":"), allow_nan=False)
+            return ["\t".join(field(value) for value in row).encode("utf-8")
+                    for row in response["rows"]]
+        if "affected_rows" in response:
+            if type(response["affected_rows"]) is not int:
+                raise EvaluationError("affected_rows is not an integer")
+            return [f"OK {response['affected_rows']}".encode()]
+        return [b"OK"]
 
     def _receive(self, context: str) -> list[bytes]:
         try:
@@ -480,11 +533,12 @@ def validate_persistence(client: Client, workload: Workload) -> dict:
             "extra_rows_checked": True}
 
 
-def evaluate_binary(executable: Path, workload: Workload, timeout: float, result: dict):
-    result.update(status="running", write_batch_ns=[], queries_raw=[])
+def evaluate_binary(executable: Path, workload: Workload, timeout: float, result: dict,
+                    protocol: str = "text"):
+    result.update(status="running", protocol=protocol, write_batch_ns=[], queries_raw=[])
     with tempfile.TemporaryDirectory(prefix="mvd-evaluate-") as directory:
         data_dir = Path(directory)
-        with Client(executable, data_dir, timeout) as client:
+        with Client(executable, data_dir, timeout, protocol) as client:
             result["pid"] = client.process.pid
             output = client.execute(workload.create_sql)
             if output != [b"OK"]:
@@ -524,7 +578,7 @@ def evaluate_binary(executable: Path, workload: Workload, timeout: float, result
             }
         result["validation"] = validate_queries(workload, query_outputs)
         # A fresh process opens the same directory; every column of every row is read.
-        with Client(executable, data_dir, timeout) as recovered:
+        with Client(executable, data_dir, timeout, protocol) as recovered:
             result["restart_pid"] = recovered.process.pid
             result["persistence"] = validate_persistence(recovered, workload)
             result["restart_diagnostics"] = recovered.diagnostics.snapshot()
@@ -586,6 +640,9 @@ def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--baseline", required=True, type=Path)
     parser.add_argument("--candidate", required=True, type=Path)
+    for label in ("baseline", "candidate"):
+        parser.add_argument(f"--{label}-protocol", choices=("text", "legacy-text", "json"),
+                            default="text", help="wire protocol; legacy-text is for older binaries")
     for name, default in (("runs", 3), ("rows", 10000), ("dim", 128),
                           ("queries", 1000), ("batch", 100), ("k", 10),
                           ("seed", 20261109)):
@@ -625,7 +682,8 @@ def main(argv=None) -> int:
         "status": "running", "started_at_utc": datetime.now(timezone.utc).isoformat(),
         "official_cgroup_metrics_collected": False, "official_score": None, "official_rank": None,
         "parameters": {name: getattr(args, name) for name in
-                       ("runs", "rows", "dim", "queries", "batch", "k", "seed", "timeout")},
+                       ("runs", "rows", "dim", "queries", "batch", "k", "seed", "timeout",
+                        "baseline_protocol", "candidate_protocol")},
         "environment": {
             "platform": platform.platform(), "machine": platform.machine(),
             "processor": platform.processor(), "logical_cpus": os.cpu_count(),
@@ -667,7 +725,8 @@ def main(argv=None) -> int:
                 print(f"Round {index + 1}: {label}", file=sys.stderr, flush=True)
                 result = run["results"][label] = {}
                 try:
-                    evaluate_binary(getattr(args, label), workload, args.timeout, result)
+                    evaluate_binary(getattr(args, label), workload, args.timeout, result,
+                                    getattr(args, label + "_protocol"))
                 except BaseException as error:
                     result.update(status="failed", error=f"{type(error).__name__}: {error}")
                     raise

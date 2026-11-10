@@ -8,12 +8,15 @@ Quick variant:
 
 Defaults leave the image's cache environment unchanged. Current resource
 failures are test failures, never expected failures or skipped successes.
+The image uses its default JSONL protocol; large result rows are decoded one
+at a time from the captured output file.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 import shutil
 import subprocess
@@ -22,12 +25,13 @@ import tempfile
 import uuid
 
 
-START = b"__MVD_RESOURCES_STARTED__\n"
-END = b"__MVD_RESOURCES_END__\n"
+READY = {"type": "ready"}
 OWNER_LABEL = "org.minivectordb.resource-test"
 CLI_TIMEOUT = 20
 SESSION_TIMEOUT = 300
 BATCH_SIZE = 100
+HEADER_LIMIT = 65536
+READ_SIZE = 8192
 
 
 class Failure(RuntimeError):
@@ -45,24 +49,200 @@ def vector(first, dim):
     return "[" + str(first) + ",0" * (dim - 1) + "]"
 
 
+def write_execute(stream, ident, sql):
+    request = {"id": ident, "op": "execute", "sql": sql, "search_mode": "exact"}
+    stream.write((json.dumps(request, separators=(",", ":"), allow_nan=False)
+                  + "\n").encode("ascii"))
+
+
+def write_pending_delete(stream, ident):
+    write_execute(stream, ident, "BEGIN;")
+    write_execute(stream, ident + 1, "DELETE FROM t WHERE id=1;")
+    # Deliberately no shutdown or COMMIT: the next session must recover this row.
+
+
 def write_load(stream, args):
-    stream.write(("CREATE TABLE t(id BIGINT PRIMARY KEY,tag BIGINT,"
-                  f"v VECTOR({args.dim}));\n").encode("ascii"))
+    write_execute(stream, 1, "CREATE TABLE t(id BIGINT PRIMARY KEY,tag BIGINT,"
+                  f"v VECTOR({args.dim}));")
+    ident = 2
     for start in range(1, args.rows + 1, BATCH_SIZE):
         rows = ",".join(
             f"({row},{row % 7},'{vector(row, args.dim)}')"
             for row in range(start, min(start + BATCH_SIZE, args.rows + 1))
         )
         # Each INSERT is its own autocommitted statement; no giant transaction.
-        stream.write(("INSERT INTO t VALUES" + rows + ";\n").encode("ascii"))
+        write_execute(stream, ident, "INSERT INTO t VALUES" + rows + ";")
+        ident += 1
+    write_pending_delete(stream, ident)
 
 
-def load_output(rows):
-    output = bytearray(b"OK\n" + END)
-    for start in range(1, rows + 1, BATCH_SIZE):
-        output.extend(f"OK {min(BATCH_SIZE, rows - start + 1)}\n".encode("ascii"))
-        output.extend(END)
-    return bytes(output)
+def pending_responses(ident):
+    return [{"id": ident, "ok": True},
+            {"id": ident + 1, "ok": True, "affected_rows": 1}]
+
+
+def load_responses(rows):
+    responses = [{"id": 1, "ok": True}]
+    for ident, start in enumerate(range(1, rows + 1, BATCH_SIZE), 2):
+        responses.append({"id": ident, "ok": True,
+                          "affected_rows": min(BATCH_SIZE, rows - start + 1)})
+    return responses
+
+
+def typed_equal(actual, expected):
+    if type(expected) is float:
+        return type(actual) in (int, float) and actual == expected
+    if type(expected) is list:
+        return (type(actual) is list and len(actual) == len(expected)
+                and all(typed_equal(a, b) for a, b in zip(actual, expected)))
+    return type(actual) is type(expected) and actual == expected
+
+
+def reject_constant(value):
+    raise ValueError(f"non-finite JSON number: {value}")
+
+
+def finite_float(value):
+    result = float(value)
+    if not math.isfinite(result):
+        raise ValueError(f"non-finite JSON number: {value}")
+    return result
+
+
+def unique_pairs(items):
+    result = {}
+    for key, value in items:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+class JsonlReader:
+    """Decode bounded metadata or a single row, never the full result line.
+
+    This workload's names and numeric rows are ASCII. A physical newline may
+    occur only after the response object, even when an array spans many reads.
+    """
+
+    def __init__(self, stream):
+        self.stream = stream
+        self.buffer = ""
+        self.position = 0
+        self.decoder = json.JSONDecoder(parse_constant=reject_constant,
+                                        parse_float=finite_float,
+                                        object_pairs_hook=unique_pairs)
+
+    def fill(self):
+        chunk = self.stream.read(READ_SIZE)
+        try:
+            self.buffer += chunk.decode("ascii")
+        except UnicodeError as error:
+            raise Failure(f"non-ASCII output at byte {self.position}") from error
+        return bool(chunk)
+
+    def consume(self, count):
+        self.buffer = self.buffer[count:]
+        self.position += count
+
+    def space(self):
+        while self.buffer or self.fill():
+            count = len(self.buffer) - len(self.buffer.lstrip(" \t\r"))
+            self.consume(count)
+            if self.buffer:
+                return
+
+    def take(self, token):
+        self.space()
+        if self.buffer.startswith(token):
+            self.consume(len(token))
+            return True
+        return False
+
+    def require(self, token):
+        if not self.take(token):
+            raise Failure(f"expected {token!r} at byte {self.position}, "
+                          f"received {self.buffer[:80]!r}")
+
+    def value(self, limit=HEADER_LIMIT):
+        self.space()
+        while True:
+            newline = self.buffer.find("\n")
+            text = self.buffer if newline < 0 else self.buffer[:newline]
+            try:
+                value, end = self.decoder.raw_decode(text)
+            except json.JSONDecodeError as error:
+                if newline >= 0 or len(text) >= limit or not self.fill():
+                    raise Failure(f"invalid or oversized JSON value at byte "
+                                  f"{self.position}: {text[:80]!r}") from error
+                continue
+            except ValueError as error:
+                raise Failure(f"invalid JSON at byte {self.position}: {error}") from error
+            if end > limit:
+                raise Failure(f"JSON value exceeds {limit} bytes at byte {self.position}")
+            # raw_decode can accept a number before its final digits/exponent
+            # have arrived. Require a delimiter before accepting the value.
+            if end == len(text) and newline < 0:
+                if self.fill():
+                    continue
+                raise Failure(f"unterminated JSON line at byte {self.position}")
+            if end < len(text) and text[end] not in " \t\r,:]}":
+                if newline < 0 and len(text) < limit and self.fill():
+                    continue
+                raise Failure(f"invalid JSON delimiter at byte {self.position + end}")
+            self.consume(end)
+            return value
+
+    def response(self, expected):
+        begin, streamed, seen = self.position, 0, set()
+        self.require("{")
+        if not self.take("}"):
+            while True:
+                key = self.value()
+                if type(key) is not str or key in seen:
+                    raise Failure(f"invalid or duplicate response key at byte {self.position}: {key!r}")
+                seen.add(key)
+                self.require(":")
+                wanted = expected.get(key)
+                if key == "rows" and callable(wanted):
+                    before = self.position
+                    wanted(self)
+                    streamed += self.position - before
+                else:
+                    actual = self.value()
+                    if key in expected and not typed_equal(actual, wanted):
+                        raise Failure(f"{key}: expected {wanted!r}, received {actual!r}")
+                    if key == "affected_rows" and type(actual) is not int:
+                        raise Failure("affected_rows must be a JSON integer")
+                    if key == "columns" and (type(actual) is not list
+                                              or any(type(name) is not str for name in actual)):
+                        raise Failure("columns must be an array of strings")
+                if self.position - begin - streamed > HEADER_LIMIT:
+                    raise Failure("response metadata exceeds byte limit")
+                if self.take("}"):
+                    break
+                self.require(",")
+        missing = expected.keys() - seen
+        if missing:
+            raise Failure(f"missing response fields: {sorted(missing)}")
+        if expected == READY and seen != READY.keys():
+            raise Failure("ready must contain exactly the type field")
+        self.require("\n")
+
+    def eof(self):
+        if self.buffer or self.fill():
+            raise Failure(f"unexpected output after the final response at byte {self.position}")
+
+
+def ordered_rows(reader, expected_rows):
+    reader.require("[")
+    for index, expected in enumerate(expected_rows):
+        if index:
+            reader.require(",")
+        actual = reader.value()
+        if not typed_equal(actual, expected):
+            raise Failure(f"row {index + 1}: expected {expected!r}, received {actual!r}")
+    reader.require("]")
 
 
 def query_cases(args):
@@ -73,76 +253,72 @@ def query_cases(args):
         ids = (row for row in range(1, args.rows + 1)
                if not predicate or row % 7 == 3)
         nearest = sorted(ids, key=lambda row: (abs(row - probe), row))[:10]
-        expected = "".join(
-            f"{row}\t{row % 7}\t{abs(row - probe):.6f}\n" for row in nearest
-        ).encode("ascii")
-        sql = f"SELECT id,tag,{distance} FROM t{predicate} ORDER BY d LIMIT 10;\n"
-        cases.append((label, sql, expected + END))
+        expected = [[row, row % 7, float(abs(row - probe))] for row in nearest]
+        sql = f"SELECT id,tag,{distance} FROM t{predicate} ORDER BY d LIMIT 10;"
+        cases.append((label, sql, {"id": len(cases) + 1, "ok": True,
+                                  "columns": ["id", "tag", "d"],
+                                  "rows": lambda reader, rows=expected: ordered_rows(reader, rows)}))
     # Deliberately no LIMIT, no vector projection, and no distance expression.
-    expected = "".join(f"{row}\t{row % 7}\n" for row in range(1, args.rows + 1))
     cases.append(("ordinary full ordered query", "SELECT id,tag FROM t ORDER BY id;",
-                  expected.encode("ascii") + END))
-    # Two copies make even the text output exceed rows * dim * 4 bytes, hence
+                  {"id": 3, "ok": True, "columns": ["id", "tag"],
+                   "rows": lambda reader: ordered_rows(
+                       reader, ([row, row % 7] for row in range(1, args.rows + 1)))}))
+    # Two copies make even compact JSON exceed rows * dim * 4 bytes, hence
     # the configured hard limit, despite zero components formatting as "0".
     # No ORDER BY: retaining/sorting projected vectors is a separate limitation.
     cases.append(("large unordered vector projection", "SELECT id,tag,v,v FROM t;",
-                  lambda stream: vector_output_problem(stream, args)))
+                  {"id": 4, "ok": True, "columns": ["id", "tag", "v", "v"],
+                   "rows": lambda reader: vector_rows(reader, args)}))
     return cases
 
 
-def vector_output_problem(stream, args):
-    """Check an unordered ID multiset and regenerate just one expected row."""
+def vector_rows(reader, args):
+    """Check both vectors in every row and the complete unordered ID multiset."""
     seen = bytearray(args.rows + 1)
-    # Generate the oracle independently of the SQL vector() input helper.
-    suffix = b",0" * (args.dim - 1) + b"]"
-    line_limit = 4 * args.dim + 3 * len(str(args.rows)) + 32
+    # Allow ordinary decimal/exponent spellings while bounding one decoded row.
+    row_limit = 128 * args.dim + 256
+    reader.require("[")
     for index in range(args.rows):
-        position = stream.tell()
-        actual = stream.readline(line_limit + 1)
-        identifier, separator, _ = actual.partition(b"\t")
-        try:
-            row = int(identifier) if separator else 0
-        except ValueError:
-            row = 0
-        if not 1 <= row <= args.rows:
-            return (f"missing or invalid row ID at row {index + 1}, byte {position}: "
-                    f"{actual[:100]!r}")
+        if index:
+            reader.require(",")
+        position = reader.position
+        actual = reader.value(row_limit)
+        if type(actual) is not list or len(actual) != 4:
+            raise Failure(f"expected four cells at row {index + 1}, byte {position}")
+        row, tag, *vectors = actual
+        if type(row) is not int or not 1 <= row <= args.rows:
+            raise Failure(f"invalid row ID at row {index + 1}, byte {position}: {row!r}")
         if seen[row]:
-            return f"duplicate row ID {row} at row {index + 1}, byte {position}"
-        vector_text = b"[" + str(row).encode("ascii") + suffix
-        expected = (f"{row}\t{row % 7}\t".encode("ascii") + vector_text
-                    + b"\t" + vector_text + b"\n")
-        if actual != expected:
-            offset = next((i for i, pair in enumerate(zip(actual, expected))
-                           if pair[0] != pair[1]), min(len(actual), len(expected)))
-            return (f"row ID {row} mismatch at byte {position + offset}: "
-                    f"expected {expected[offset:offset + 100]!r}, "
-                    f"received {actual[offset:offset + 100]!r}")
+            raise Failure(f"duplicate row ID {row} at row {index + 1}, byte {position}")
+        if not typed_equal(tag, row % 7):
+            raise Failure(f"wrong tag for row ID {row}: {tag!r}")
+        # Independent of vector(), and no full expected result is retained.
+        for column, projected in enumerate(vectors, 3):
+            if type(projected) is not list or len(projected) != args.dim:
+                raise Failure(f"wrong vector dimension for row ID {row}, column {column}")
+            for component, value in enumerate(projected):
+                wanted = row if component == 0 else 0
+                if type(value) not in (int, float) or value != wanted:
+                    raise Failure(f"row ID {row}, column {column}, component {component}: "
+                                  f"expected {wanted}, received {value!r}")
         seen[row] = 1
     # Exactly rows unique IDs in [1, rows] prove that every ID occurred once.
-    actual = stream.read(len(END))
-    if actual != END:
-        return f"expected ready marker after all vector rows; received {actual[:100]!r}"
-    return None
+    reader.require("]")
 
 
 def output_problem(stream, phases):
     stream.seek(0)
+    reader = JsonlReader(stream)
     for phase, expected in phases:
-        if callable(expected):
-            problem = expected(stream)
-            if problem:
-                return phase, problem
-            continue
-        actual = stream.read(len(expected))
-        if actual != expected:
-            offset = next((i for i, pair in enumerate(zip(actual, expected))
-                           if pair[0] != pair[1]), min(len(actual), len(expected)))
-            return phase, (f"output mismatch at byte {offset}: "
-                           f"expected {expected[offset:offset + 100]!r}, "
-                           f"received {actual[offset:offset + 100]!r}")
-    if stream.read(1):
-        return "EOF shutdown", "unexpected output after the final response"
+        try:
+            for response in expected if type(expected) is list else [expected]:
+                reader.response(response)
+        except Failure as error:
+            return phase, str(error)
+    try:
+        reader.eof()
+    except Failure as error:
+        return "EOF shutdown", str(error)
     return "EOF shutdown", None
 
 
@@ -192,11 +368,9 @@ class OwnedContainers:
         ]
         if args.cache_mib is not None:
             command += ["--env", f"MVD_CACHE_LIMIT_MB={args.cache_mib}"]
-        command += [args.image, "--data-dir=/data", "--vector-mode=exact",
-                    "--startup-marker=" + START.decode("ascii").rstrip("\n"),
-                    "--ready-marker=" + END.decode("ascii").rstrip("\n")]
+        command += [args.image, "--data-dir=/data"]
         print(f"RUN {label}: {name} (timeout {SESSION_TIMEOUT}s)", flush=True)
-        # SQL and captured output live in temporary files, not giant host buffers.
+        # JSONL requests and captured output stay in files, not giant host buffers.
         with tempfile.TemporaryFile() as sql, tempfile.TemporaryFile() as output, \
                 tempfile.TemporaryFile() as errors:
             writer(sql)
@@ -276,17 +450,21 @@ def main():
         cache = "image default (no env override)" if args.cache_mib is None else f"{args.cache_mib} MiB"
         print(f"WORKLOAD rows={args.rows} dim={args.dim} vector_payload={payload} bytes "
               f"memory={args.memory_mib} MiB cache={cache}", flush=True)
+        loaded = load_responses(args.rows)
         containers.run(args, directory, "write and EOF", lambda stream: write_load(stream, args),
-                       [("startup", START), ("autocommitted batch writes", load_output(args.rows))])
+                       [("startup", READY), ("autocommitted batch writes", loaded),
+                        ("uncommitted delete before EOF", pending_responses(len(loaded) + 1))])
         cases = query_cases(args)
 
         def write_queries(stream):
-            for _, sql, _ in cases:
-                stream.write(sql.encode("ascii"))
+            for ident, (_, sql, _) in enumerate(cases, 1):
+                write_execute(stream, ident, sql)
+            write_pending_delete(stream, len(cases) + 1)
 
         for label in ("after load EOF", "after query EOF"):
             containers.run(args, directory, label, write_queries,
-                           [("recovery", START)] + [(name, expected) for name, _, expected in cases])
+                           [("recovery", READY)] + [(name, expected) for name, _, expected in cases]
+                           + [("uncommitted delete before EOF", pending_responses(len(cases) + 1))])
     except (Failure, OSError, ValueError, subprocess.SubprocessError) as error:
         print(f"FAIL: {error}", file=sys.stderr, flush=True)
         status = 1

@@ -24,27 +24,32 @@ The container runs in the foreground and does not open a network port.
 
 ## Protocol
 
-The following describes this implementation and its local test adapter, not
-a confirmed official wire contract. The available official mysqltest package
-specifies SQL files and JSON expected-result assertions but explicitly omits
-the complete process driver. Its .result JSON is not a stdout encoding.
-Official compatibility still requires checking that companion driver's
-framing, result fields, errors, readiness and shutdown against this program.
+The default executable and Docker entrypoint use the official UTF-8 JSONL
+protocol published in round2 commit f4d4e26653af823a7601668802f80e374ad6643c.
+See [STDIO_PROTOCOL.md](STDIO_PROTOCOL.md) for the complete contract and
+[protocol_check/README.md](protocol_check/README.md) for the unchanged official
+interactive checker.
 
-- Input is UTF-8 SQL over stdin. Statements end with `;` and may span lines.
-- A complete statement responds immediately at its semicolon; an extra newline
-  or EOF is not required. Empty/comment-only input produces no response.
-- `--`, `#`, and `/* ... */` comments are accepted.
-- stdout contains only query rows or status/error records.
-- `INSERT`, `UPDATE`, and `DELETE` return `OK <affected_rows>`.
-- DDL, transaction control, and `SET` return `OK`.
-- Errors return `ERROR <CODE>: <message>` by default.
-- `--numeric-errors` returns MySQL-style numeric identifiers.
-- `--ready-marker=TOKEN` appends the token after every response.
-- `--startup-marker=TOKEN` emits a startup marker after recovery completes.
+- After recovery, stdout emits exactly `{"type":"ready"}` and flushes before
+  reading input. Logs go to stderr.
+- Each physical input line contains one JSON object, such as
+  `{"id":1,"op":"execute","sql":"SELECT id FROM docs;","search_mode":"exact"}`.
+  The SQL field accepts one statement, with an optional trailing semicolon.
+- Every request receives one flushed JSON response with the same ID value and
+  JSON type and a boolean `ok`. Queries return `columns` and typed `rows`;
+  mutations return integer `affected_rows`; SQL errors return an `error` object.
+- BIGINT uses exact JSON integers, vectors use arrays, and string controls are
+  escaped. Empty results retain their column names and return `rows:[]`.
+- `search_mode` selects exact/ann independently for each request; it defaults
+  to exact when omitted.
+- `{"id":2,"op":"shutdown"}` rolls back uncommitted work, acknowledges success,
+  flushes, and exits zero. EOF also rolls back pending work.
 
-An interactive client should use a ready marker when zero-row SELECT results
-must be distinguished from an unfinished response.
+The legacy local SQL/text interface requires explicit `--stdio=text`. Its
+optional `--column-header`, `--numeric-errors`, `--ready-marker=TOKEN` and
+`--startup-marker=TOKEN` flags apply only in that mode. Existing text regressions
+and historical comparison benchmarks select it explicitly; official protocol
+tests use the default entrypoint.
 
 ## SQL
 
@@ -83,7 +88,7 @@ transactions, ALTER TABLE, and other unsupported syntax return an error.
   in memory.
 - SELECT response buffers have a 1 MiB budget. Larger results are staged in an
   automatically deleted temporary file under the data directory, then emitted
-  using the same text protocol after query execution succeeds. Small TopK
+  using the selected protocol after query execution succeeds. Small TopK
   responses stay in memory. Sorting buffers are separate; this is not an
   external sort implementation.
 
@@ -98,6 +103,9 @@ otherwise.
 ## Tests
 
 ```bash
+python3 protocol_check/run.py --image minivectordb --handshake-only --output protocol-results/handshake-new
+python3 protocol_check/run.py --image minivectordb --output protocol-results/public-new
+python -X utf8 -B tests/test_json_protocol.py ./build/minivectordb
 python -X utf8 -B tests/run_public.py ./build/minivectordb
 python -X utf8 -B tests/test_extended.py ./build/minivectordb
 python -X utf8 -B tests/test_semantics.py ./build/minivectordb
@@ -106,7 +114,7 @@ python -X utf8 -B bench/bench.py ./build/minivectordb
 ```
 
 The public suite covers 20 published groups / 95 SQL statements from official
-round2 commit 9f6df2ba5acf871376e22b64a3d0724e4b575044, including restart, mode
+round2 commit f4d4e26653af823a7601668802f80e374ad6643c, including restart, mode
 and expected-error directives. Nine formal groups have withheld inputs. The extended
 suite covers transaction visibility, rollback, statement atomicity, clean
 restart, forced-process recovery, filtered TopK, vector-index update behavior,
@@ -147,9 +155,9 @@ The full local validator accepts optional --allocation-normal and
   checkpoint implementation.
 - Approximate indexing is intentionally replaced by exact search for the first
   correctness-complete submission.
-- The available official package withholds nine groups' inputs and does not
-  include the complete process driver or frozen resource configuration.
-  Local public-case success therefore does not establish formal acceptance.
+- The available official package withholds nine groups' inputs. Its public
+  protocol checker includes the current transport and resource configuration;
+  public-case success still does not establish formal hidden-case acceptance.
 
 ## Statement-validation corrections (2026-11-09)
 
@@ -219,10 +227,11 @@ development checks; official platform acceptance is still unverified.
 
 ## Empty-directory usage and restart
 
-Run the same command again with the same data directory after EOF to recover:
+The following example uses the optional legacy SQL/text mode. Run the same
+command again with the same data directory after EOF to recover:
 
 ```bash
-./build/minivectordb --data-dir=/tmp/mvd-demo
+./build/minivectordb --stdio=text --data-dir=/tmp/mvd-demo
 ```
 
 Send SQL over stdin, then close stdin (EOF) to exit:

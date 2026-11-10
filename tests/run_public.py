@@ -148,7 +148,7 @@ def run_case(executable: Path, case: dict, case_dir: Path) -> list[str]:
         for generation, (initial_mode, requests) in enumerate(segments, 1):
             process = subprocess.run(
                 [
-                    str(executable), f"--data-dir={data_dir}", "--column-header",
+                    str(executable), "--stdio=text", f"--data-dir={data_dir}", "--column-header",
                     f"--ready-marker={marker}", f"--vector-mode={initial_mode}",
                 ],
                 input="".join(

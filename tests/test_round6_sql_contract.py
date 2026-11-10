@@ -35,7 +35,7 @@ class SqlContract(unittest.TestCase):
 
     def check_sql(self, steps, *, data_dir=None):
         process = subprocess.run(
-            [str(self.executable), f"--data-dir={data_dir or self.data_dir}",
+            [str(self.executable), "--stdio=text", f"--data-dir={data_dir or self.data_dir}",
              "--column-header", f"--ready-marker={MARKER}"],
             input="".join(sql + ";\n" for sql, _ in steps),
             encoding="utf-8", errors="strict", capture_output=True,
