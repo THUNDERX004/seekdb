@@ -98,7 +98,6 @@
       "command": "python -X utf8 -B tests/test_commit_publication.py build/round14-normal/minivectordb.exe build/round14-fault/minivectordb.exe; python -X utf8 -B tests/test_catalog_publication.py build/round14-normal/minivectordb.exe build/round14-fault/minivectordb.exe; python -X utf8 -B tests/test_statement_allocation.py build/round14-test_statement_allocation_normal.exe",
       "exit_code": 0,
       "stdout_excerpt": "PASS commit publication: 6 cases, 19 child processes, 0.437s total | PASS catalog publication: 12 cases, 48 child processes, 0.726s total | PASS INSERT: 28 allocation failures; COMMIT/ROLLBACK/restart and success verified",
-      "source_record": "refine-logs/round14-validation.json",
       "version_scope": "candidate c7011357bd616101da56c5f02f6cd8f478d73f2a"
     },
     {
@@ -109,7 +108,6 @@
       "exit_code": 1,
       "exit_code_after_fix": 0,
       "stdout_excerpt": "archived parent: Ran 5 tests in 0.226s | FAILED (failures=8) | fixed candidate: Ran 5 tests in 0.225s | OK",
-      "source_record": "refine-logs/round9-insert-before.txt and refine-logs/round9-insert-after.txt",
       "version_scope": "parent 60593a746887d1ddf920d6620386f9e1e2e02fb8b91b7c974e8d37ab0acbe6ef; fixed candidate 66d5aee2e7a1e6b185f38d6c8798d2352c1b6fc9747bc8d8c6a3a32613ed7b3a"
     },
     {
@@ -120,17 +118,15 @@
       "exit_code": 1,
       "exit_code_after_fix": 0,
       "stdout_excerpt": "archived parent: 31 failed assertions, including 1065353216 != 1065353217 | fixed candidate: Ran 7 tests | OK",
-      "source_record": "refine-logs/round10-float32-before-final.txt, refine-logs/round10-float32-after.txt, and refine-logs/round14-validation.json",
       "version_scope": "parent 398575eb23bc47d37e209c8c041f377c765f41f2; fixed candidate c7011357bd616101da56c5f02f6cd8f478d73f2a"
     },
     {
       "id": "exp-04",
       "chain_id": "jsonl-runtime-contract",
       "name": "Pre-input ready and typed JSONL protocol",
-      "command": "python -X utf8 -B tests/test_json_protocol.py build/round14-normal/minivectordb.exe; .github/workflows/minivectordb.yml run 42761191623 job 129646994733",
+      "command": "python -X utf8 -B tests/test_json_protocol.py build/round14-normal/minivectordb.exe; Linux Docker CI run 42761191623 job 129646994733",
       "exit_code": 0,
       "stdout_excerpt": "Ran 14 tests | OK | PASS: 20/20 published groups; 95/95 SQL responses (local JSONL) | Linux Docker CI conclusion=success",
-      "source_record": "refine-logs/round14-validation.json and refine-logs/round14-linux-validation.json",
       "version_scope": "candidate c7011357bd616101da56c5f02f6cd8f478d73f2a"
     },
     {
@@ -140,7 +136,6 @@
       "command": "python -X utf8 -B bench/evaluate_projection_memory.py --baseline build/round12-parent-6fb385e05/minivectordb.exe --candidate build/minivectordb.exe --report bench/results/round12-projection-memory.json",
       "exit_code": 0,
       "stdout_excerpt": "baseline after_ordered_projection PeakWorkingSetSize_bytes=99385344 | candidate after_ordered_projection PeakWorkingSetSize_bytes=15900672 | baseline rows_verified=20000 | candidate rows_verified=20000 | status=passed",
-      "source_record": "bench/results/round12-projection-memory.json",
       "version_scope": "parent 6fb385e05fa47ac6bb3da91584c0506c5addd3ac; candidate da87738c6f484ae80abccbbf9ce4afffdc4e0d4fb69c0d28cedc6a7baed44e72"
     },
     {
@@ -150,7 +145,6 @@
       "command": "python -X utf8 -B bench/evaluate_result_memory.py --baseline build/minivectordb.exe --candidate build/round13-normal/minivectordb.exe; python -X utf8 -B tests/test_result_spool_io.py build/round13-normal/minivectordb.exe build/round13-fault/minivectordb.exe",
       "exit_code": 0,
       "stdout_excerpt": "baseline after_select PeakWorkingSetSize_bytes=71471104 | candidate after_select PeakWorkingSetSize_bytes=18558976 | output_bytes=61483893 | rows_verified=7500 | PASS replay failure after 65536 bytes closes partial response",
-      "source_record": "bench/results/round13-final-result-memory.json and refine-logs/round13-validation.json",
       "version_scope": "candidate 18ff30fbc3a877469c979335cce107857ccfe0d5462655a18450ae554f23df2e"
     },
     {
@@ -160,7 +154,6 @@
       "command": "python -X utf8 -B bench/evaluate_tiebreak.py; python -X utf8 -B bench/evaluate.py",
       "exit_code": 0,
       "stdout_excerpt": "supplemental explicit PK paired query ratio median=2.0687410927428647, min=1.8871579724212062, max=2.1371469005248436 | standard single-key paired query ratio median=0.9898680487500373",
-      "source_record": "bench/results/round9-tiebreak.json and bench/results/round9-main.json",
       "version_scope": "parent 60593a746887d1ddf920d6620386f9e1e2e02fb8b91b7c974e8d37ab0acbe6ef; candidate 66d5aee2e7a1e6b185f38d6c8798d2352c1b6fc9747bc8d8c6a3a32613ed7b3a"
     }
   ],
