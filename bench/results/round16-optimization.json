@@ -1,0 +1,32 @@
+{
+  "scope": "paired Windows development measurements; not official cgroup E or ranking",
+  "parent": "f65e5f6af3a54881072c498ff642f12a3e0ecb37",
+  "workloads": [
+    {
+      "rows": 10000,
+      "dimensions": 128,
+      "queries": 1000,
+      "k": 10,
+      "batch": 100,
+      "seed": 20261110,
+      "parent_write_seconds": [0.539848, 0.529894, 0.551351],
+      "candidate_write_seconds": [0.483020, 0.497506, 0.493774],
+      "parent_query_seconds": [0.195870, 0.183355, 0.198591],
+      "candidate_query_seconds": [0.186796, 0.178279, 0.181471],
+      "write_median_seconds": {"parent": 0.539848, "candidate": 0.493774, "change_percent": -8.53},
+      "query_median_seconds": {"parent": 0.195870, "candidate": 0.181471, "change_percent": -7.35}
+    },
+    {
+      "rows": 5000,
+      "dimensions": 4096,
+      "queries": 4,
+      "k": 10,
+      "batch": 100,
+      "seed": 20261110,
+      "parent_write_seconds": [5.671328, 5.665780, 5.643939],
+      "candidate_write_seconds": [4.852047, 4.888695, 4.810938],
+      "write_median_seconds": {"parent": 5.665780, "candidate": 4.852047, "change_percent": -14.36},
+      "note": "The four-query result is retained but is too small for a query-speed claim."
+    }
+  ]
+}

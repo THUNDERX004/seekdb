@@ -269,6 +269,9 @@ def query_cases(args):
     cases.append(("large unordered vector projection", "SELECT id,tag,v,v FROM t;",
                   {"id": 4, "ok": True, "columns": ["id", "tag", "v", "v"],
                    "rows": lambda reader: vector_rows(reader, args)}))
+    cases.append(("large ordered full projection", "SELECT * FROM t ORDER BY id;",
+                  {"id": 5, "ok": True, "columns": ["id", "tag", "v"],
+                   "rows": lambda reader: ordered_vector_rows(reader, args)}))
     return cases
 
 
@@ -303,6 +306,34 @@ def vector_rows(reader, args):
                                   f"expected {wanted}, received {value!r}")
         seen[row] = 1
     # Exactly rows unique IDs in [1, rows] prove that every ID occurred once.
+    reader.require("]")
+
+
+def ordered_vector_rows(reader, args):
+    """Verify a full vector projection ordered by ID without retaining it."""
+    row_limit = 128 * args.dim + 256
+    reader.require("[")
+    for row in range(1, args.rows + 1):
+        if row != 1:
+            reader.require(",")
+        position = reader.position
+        actual = reader.value(row_limit)
+        if type(actual) is not list or len(actual) != 3:
+            raise Failure(f"expected three cells at row {row}, byte {position}")
+        primary, tag, vector = actual
+        if type(primary) is not int or primary != row:
+            raise Failure(f"ordered row {row} has ID {primary!r}")
+        if type(tag) is not int or tag != row % 7:
+            raise Failure(f"wrong tag for ordered row {row}: {tag!r}")
+        if type(vector) is not list or len(vector) != args.dim:
+            raise Failure(f"wrong vector dimension for ordered row {row}")
+        for component, value in enumerate(vector):
+            wanted = row if component == 0 else 0
+            if type(value) not in (int, float) or value != wanted:
+                raise Failure(
+                    f"ordered row {row}, component {component}: "
+                    f"expected {wanted}, received {value!r}"
+                )
     reader.require("]")
 
 
@@ -481,7 +512,7 @@ def main():
                 print(f"FAIL cleanup of owned directory {directory}: {error}", file=sys.stderr)
                 status = 1
     if status == 0:
-        print("PASS container resource limits, TopK, ordered/unordered projection and EOF restart")
+        print("PASS resource limits, TopK, unordered and disk-ordered vector projection, EOF restart")
     return status
 
 

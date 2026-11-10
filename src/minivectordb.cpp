@@ -477,13 +477,51 @@ std::string formatFloat(float value, int precision = 9) {
   return result.empty() || result == "-0" ? "0" : result;
 }
 
+void appendFloat(std::string &out, float value, int precision = 9) {
+  if (value == 0.0F) {
+    out.push_back('0');
+    return;
+  }
+  const size_t start = out.size();
+  constexpr size_t capacity = 64;
+  out.resize(start + capacity);
+  char *begin = out.data() + start;
+  auto [end, error] = std::to_chars(begin, begin + capacity, value,
+                                    std::chars_format::general, precision);
+  if (error != std::errc() || end == begin) {
+    out.resize(start);
+    out += formatFloat(value, precision);
+    return;
+  }
+  out.resize(start + static_cast<size_t>(end - begin));
+  bool decimal = false;
+  bool exponent = false;
+  for (size_t i = start; i < out.size(); ++i) {
+    decimal = decimal || out[i] == '.';
+    exponent = exponent || out[i] == 'e' || out[i] == 'E';
+  }
+  if (decimal && !exponent) {
+    while (out.size() - start > 2 && out.back() == '0') {
+      out.pop_back();
+    }
+    if (out.back() == '.') {
+      out.pop_back();
+    }
+  }
+  if (out.size() - start == 2 && out[start] == '-' && out[start + 1] == '0') {
+    out.resize(start + 1);
+    out[start] = '0';
+  }
+}
+
 std::string formatVector(const std::vector<float> &vector) {
   std::string out = "[";
+  out.reserve(2 + vector.size() * 8);
   for (size_t i = 0; i < vector.size(); ++i) {
     if (i != 0) {
       out.push_back(',');
     }
-    out += formatFloat(vector[i]);
+    appendFloat(out, vector[i]);
   }
   out.push_back(']');
   return out;
@@ -1221,11 +1259,7 @@ class Parser {
            exponent < threshold;
   }
 
-  float parseFloat32Token() {
-    if (peek().kind != TokenKind::Number) {
-      fail("TYPE_MISMATCH", "vector component must be numeric");
-    }
-    const std::string &text = peek().text;
+  static float parseFloat32Text(std::string_view text) {
     const char *begin = text.data();
     const char *end = begin + text.size();
     if (begin != end && *begin == '+') {
@@ -1244,6 +1278,14 @@ class Parser {
         !std::isfinite(value)) {
       fail("VALUE_OUT_OF_RANGE", "vector component is not a finite float32");
     }
+    return value;
+  }
+
+  float parseFloat32Token() {
+    if (peek().kind != TokenKind::Number) {
+      fail("TYPE_MISMATCH", "vector component must be numeric");
+    }
+    const float value = parseFloat32Text(peek().text);
     ++pos_;
     return value;
   }
@@ -1263,11 +1305,79 @@ class Parser {
     }
   }
 
-  std::vector<float> parseVectorLiteralText(const std::string &text) {
-    Parser nested(text, tables_);
-    std::vector<float> value = nested.parseVectorBody();
-    nested.expectEnd();
-    return value;
+  static std::vector<float> parseVectorLiteralText(std::string_view text) {
+    size_t pos = 0;
+    const auto space = [&] {
+      while (pos < text.size() &&
+             std::isspace(static_cast<unsigned char>(text[pos]))) {
+        ++pos;
+      }
+    };
+    space();
+    if (pos == text.size() || text[pos++] != '[') {
+      fail("TYPE_MISMATCH", "VECTOR requires a bracketed numeric array");
+    }
+    std::vector<float> result;
+    space();
+    if (pos < text.size() && text[pos] == ']') {
+      ++pos;
+    } else {
+      while (true) {
+        space();
+        const size_t start = pos;
+        if (pos < text.size() && (text[pos] == '+' || text[pos] == '-')) {
+          ++pos;
+        }
+        const size_t integer_start = pos;
+        while (pos < text.size() &&
+               std::isdigit(static_cast<unsigned char>(text[pos]))) {
+          ++pos;
+        }
+        if (pos == integer_start) {
+          fail("TYPE_MISMATCH", "vector component must be numeric");
+        }
+        if (pos < text.size() && text[pos] == '.') {
+          ++pos;
+          while (pos < text.size() &&
+                 std::isdigit(static_cast<unsigned char>(text[pos]))) {
+            ++pos;
+          }
+        }
+        if (pos < text.size() && (text[pos] == 'e' || text[pos] == 'E')) {
+          ++pos;
+          if (pos < text.size() && (text[pos] == '+' || text[pos] == '-')) {
+            ++pos;
+          }
+          const size_t exponent_start = pos;
+          while (pos < text.size() &&
+                 std::isdigit(static_cast<unsigned char>(text[pos]))) {
+            ++pos;
+          }
+          if (pos == exponent_start) {
+            fail("SQL_SYNTAX", "numeric exponent requires digits");
+          }
+        }
+        result.push_back(
+            parseFloat32Text(text.substr(start, pos - start)));
+        space();
+        if (pos < text.size() && text[pos] == ']') {
+          ++pos;
+          break;
+        }
+        if (pos == text.size() || text[pos++] != ',') {
+          fail("SQL_SYNTAX", "expected ',' or ']' in vector literal");
+        }
+      }
+    }
+    space();
+    if (pos < text.size() && text[pos] == ';') {
+      ++pos;
+      space();
+    }
+    if (pos != text.size()) {
+      fail("UNSUPPORTED", "unexpected characters after vector literal");
+    }
+    return result;
   }
 
   Value parseTypedValue(ColumnType type, uint32_t length) {
@@ -1716,10 +1826,10 @@ struct DecodedRecord {
   std::vector<uint8_t> payload;
 };
 
-std::vector<uint8_t> encodeRowRecord(uint64_t txid, uint16_t op,
+std::vector<uint8_t> encodeRowHeader(uint64_t txid, uint16_t op,
                                      const std::vector<uint8_t> &payload) {
   std::vector<uint8_t> out;
-  out.reserve(32 + payload.size());
+  out.reserve(32);
   appendScalar<uint32_t>(out, kRowMagic);
   appendScalar<uint16_t>(out, kFormatVersion);
   appendScalar<uint16_t>(out, op);
@@ -1727,7 +1837,6 @@ std::vector<uint8_t> encodeRowRecord(uint64_t txid, uint16_t op,
   appendScalar<uint64_t>(out, static_cast<uint64_t>(payload.size()));
   appendScalar<uint32_t>(out, crc32(payload));
   appendScalar<uint32_t>(out, 0);
-  appendBytes(out, payload.data(), payload.size());
   return out;
 }
 
@@ -1834,7 +1943,13 @@ std::vector<uint8_t> encodeCatalogRecord(const TableDef &table) {
 
 bool readExact(std::ifstream &input, void *destination, size_t size) {
   input.read(static_cast<char *>(destination), static_cast<std::streamsize>(size));
-  return static_cast<size_t>(input.gcount()) == size;
+  if (static_cast<size_t>(input.gcount()) == size) {
+    return true;
+  }
+  if (input.bad()) {
+    fail("IO_ERROR", "failed while reading a database file");
+  }
+  return false;
 }
 
 struct ScanStats {
@@ -1892,18 +2007,25 @@ class FileWriter {
     }
 #ifdef _WIN32
     if (_fseeki64(file_, 0, SEEK_END) != 0) {
+      std::fclose(file_);
+      file_ = nullptr;
       fail("IO_ERROR", "cannot seek " + path.string());
     }
     long long current = _ftelli64(file_);
 #else
     if (std::fseek(file_, 0, SEEK_END) != 0) {
+      std::fclose(file_);
+      file_ = nullptr;
       fail("IO_ERROR", "cannot seek " + path.string());
     }
     off_t current = ftello(file_);
 #endif
-    if (current >= 0) {
-      offset_ = static_cast<uint64_t>(current);
+    if (current < 0) {
+      std::fclose(file_);
+      file_ = nullptr;
+      fail("IO_ERROR", "cannot determine size of " + path.string());
     }
+    offset_ = static_cast<uint64_t>(current);
   }
 
   FileWriter(const FileWriter &) = delete;
@@ -2154,8 +2276,9 @@ class Table {
         op = 3;
         appendScalar<int64_t>(payload, primary);
       }
-      std::vector<uint8_t> record = encodeRowRecord(txid, op, payload);
-      const uint64_t offset = writer.append(record);
+      const std::vector<uint8_t> header = encodeRowHeader(txid, op, payload);
+      const uint64_t offset = writer.append(header);
+      writer.append(payload);
       // The transaction overlay remains alive until every table is published.
       // Pending metadata does not need a second full copy of each vector row.
       pending.push_back({definition_.oid, primary, op,
@@ -2169,7 +2292,13 @@ class Table {
     // Entries point to immutable committed row objects. Invalidate before
     // replacing/deleting a row or changing the cache's residency.
     clearEqualityIndex();
-    physical_order_dirty_ = true;
+    const size_t stale_limit =
+        versions_.size() > (std::numeric_limits<size_t>::max() - 1024) / 2
+            ? std::numeric_limits<size_t>::max()
+            : versions_.size() * 2 + 1024;
+    if (physical_order_dirty_ || physical_order_.size() > stale_limit) {
+      physical_order_dirty_ = true;
+    }
     for (const PendingRecord &record : pending) {
       if (record.oid != definition_.oid) {
         continue;
@@ -2196,6 +2325,9 @@ class Table {
         cache_bytes_ += cachedRowBytes(value.row);
       }
       versions_[record.primary] = std::move(value);
+      if (!physical_order_dirty_) {
+        physical_order_.emplace_back(record.offset, record.primary);
+      }
       if (cache_bytes_ > cache_limit_bytes_) {
         disableCache();
       }
@@ -2562,7 +2694,8 @@ class Database {
       return createIndex(std::get<CreateIndexStatement>(statement));
     }
     if (std::holds_alternative<InsertStatement>(statement)) {
-      ExecResult result = executeInsert(std::get<InsertStatement>(statement));
+      ExecResult result =
+          executeInsert(std::get<InsertStatement>(std::move(statement)));
       finishMutation();
       return result;
     }
@@ -2924,13 +3057,14 @@ class Database {
     return true;
   }
 
-  ExecResult executeInsert(const InsertStatement &statement) {
+  ExecResult executeInsert(InsertStatement statement) {
     Table &table = requireTable(statement.table);
     const TableDef &definition = table.definition();
     if (statement.rows.empty()) {
       return ExecResult{false, uint64_t{0}, {}};
     }
     std::unordered_set<int64_t> batch_keys;
+    batch_keys.reserve(statement.rows.size());
     for (const Row &row : statement.rows) {
       int64_t primary = row[definition.primary_key].integer;
       if (!batch_keys.insert(primary).second) {
@@ -2942,11 +3076,13 @@ class Database {
       }
     }
     std::map<int64_t, std::optional<Row>> changes;
-    for (const Row &row : statement.rows) {
-      changes.emplace(row[definition.primary_key].integer, row);
+    for (Row &row : statement.rows) {
+      const int64_t primary = row[definition.primary_key].integer;
+      changes.emplace(primary, std::move(row));
     }
+    const uint64_t affected = static_cast<uint64_t>(changes.size());
     publishStatementChanges(definition.oid, std::move(changes));
-    return ExecResult{false, static_cast<uint64_t>(statement.rows.size()), {}};
+    return ExecResult{false, affected, {}};
   }
 
   template <typename Callback>
@@ -3289,6 +3425,115 @@ class Database {
         result.reserveRows(end - begin);
         for (size_t i = begin; i < end; ++i) {
           result.appendRow(makeOutput(heap[i].row.get()), data_dir_, json_output_);
+        }
+      }
+      return result;
+    }
+
+    const bool scalar_order = std::all_of(
+        resolved_order.begin(), resolved_order.end(),
+        [](const ResolvedOrder &key) { return !key.distance; });
+    if (scalar_order) {
+      struct ScalarCandidate {
+        int64_t primary = 0;
+        std::vector<Value> keys;
+        std::optional<Row> output;
+      };
+      std::vector<ScalarCandidate> selected;
+      constexpr size_t output_budget = 8ULL * 1024ULL * 1024ULL;
+      size_t output_bytes = 0;
+      bool retain_output = true;
+      bool outputs_cleared = false;
+      const auto keepOutput = [&](const Row &row)
+          -> std::optional<Row> {
+        if (!retain_output) {
+          return std::nullopt;
+        }
+        const size_t bytes = cachedRowBytes(row);
+        if (bytes > output_budget - std::min(output_bytes, output_budget)) {
+          retain_output = false;
+          output_bytes = 0;
+          return std::nullopt;
+        }
+        output_bytes += bytes;
+        return row;
+      };
+      const auto clearOutputs = [&] {
+        if (retain_output || outputs_cleared) {
+          return;
+        }
+        for (ScalarCandidate &retained : selected) {
+          retained.output.reset();
+        }
+        outputs_cleared = true;
+      };
+      const auto worseFirst = [&](const ScalarCandidate &left,
+                                  const ScalarCandidate &right) {
+        for (size_t index = 0; index < resolved_order.size(); ++index) {
+          const ResolvedOrder &key = resolved_order[index];
+          const int comparison = compareValues(
+              left.keys[index], right.keys[index], key.column_type);
+          if (comparison != 0) {
+            return key.descending ? comparison > 0 : comparison < 0;
+          }
+        }
+        return left.primary < right.primary;
+      };
+      const bool unlimited = statement.limit < 0 ||
+          statement.offset > std::numeric_limits<int64_t>::max() - statement.limit;
+      const int64_t wanted = unlimited ? std::numeric_limits<int64_t>::max()
+                                      : statement.offset + statement.limit;
+      const size_t capacity = std::min(static_cast<size_t>(wanted), visible_upper);
+      selected.reserve(std::min<size_t>(capacity, 64));
+      forEachCandidateView(table, statement.conditions,
+          [&](int64_t primary, const Row &row, bool) {
+        if (!matches(definition, row, statement.conditions)) {
+          return true;
+        }
+        ScalarCandidate candidate;
+        candidate.primary = primary;
+        candidate.keys.reserve(resolved_order.size());
+        for (const ResolvedOrder &key : resolved_order) {
+          candidate.keys.push_back(row[key.column]);
+        }
+        if (statement.limit < 0 || selected.size() < capacity) {
+          selected.push_back(std::move(candidate));
+          selected.back().output = keepOutput(row);
+          clearOutputs();
+          if (statement.limit >= 0) {
+            std::push_heap(selected.begin(), selected.end(), worseFirst);
+          }
+        } else if (worseFirst(candidate, selected.front())) {
+          std::pop_heap(selected.begin(), selected.end(), worseFirst);
+          selected.back() = std::move(candidate);
+          selected.back().output = keepOutput(row);
+          clearOutputs();
+          std::push_heap(selected.begin(), selected.end(), worseFirst);
+        }
+        return true;
+      }, true);
+      if (statement.limit >= 0) {
+        std::sort_heap(selected.begin(), selected.end(), worseFirst);
+      } else {
+        std::sort(selected.begin(), selected.end(), worseFirst);
+      }
+      const size_t begin =
+          std::min(static_cast<size_t>(statement.offset), selected.size());
+      const size_t end = statement.limit < 0 ? selected.size() : begin + std::min(
+          selected.size() - begin, static_cast<size_t>(statement.limit));
+      ExecResult result;
+      result.select = true;
+      result.reserveRows(end - begin);
+      for (size_t index = begin; index < end; ++index) {
+        if (selected[index].output) {
+          result.appendRow(makeOutput(*selected[index].output),
+                           data_dir_, json_output_);
+        } else {
+          Row row;
+          if (!currentRow(table, selected[index].primary, row)) {
+            fail("CORRUPT_DATA", "selected row disappeared during output");
+          }
+          result.appendRow(makeOutput(row), data_dir_, json_output_);
         }
       }
       return result;

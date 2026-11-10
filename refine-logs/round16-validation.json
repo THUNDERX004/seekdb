@@ -1,0 +1,1242 @@
+{
+  "started_at_utc": "2026-11-10T10:50:46.954576+00:00",
+  "status": "passed",
+  "files": {
+    "src\\minivectordb.cpp": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\src\\minivectordb.cpp",
+      "sha256": "a904e68f931287839f89d9732027ef3df4a5e5fd36408b529460ea6f95f3d46f",
+      "size_bytes": 146059
+    },
+    "CMakeLists.txt": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\CMakeLists.txt",
+      "sha256": "1ef43344a83e2e968522087f221f7fa7ef5f027ef540861b8c6a86d494854189",
+      "size_bytes": 535
+    },
+    "Dockerfile": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\Dockerfile",
+      "sha256": "55b84045ddfe9a9f99e68e913382d59716a40941f1de37e0fa972d8a90953438",
+      "size_bytes": 566
+    },
+    "STDIO_PROTOCOL.md": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\STDIO_PROTOCOL.md",
+      "sha256": "b71bb1dc4ff34a519653e1406926f6ba9860c275c910627285480b24b8070f3f",
+      "size_bytes": 12552
+    },
+    "protocol_check\\_assertions.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\protocol_check\\_assertions.py",
+      "sha256": "df3d680d0d03b5f5bfa838eeca7e1ed8d8e2c0cc49d69fd216af3073968b5037",
+      "size_bytes": 2133
+    },
+    "protocol_check\\_transport.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\protocol_check\\_transport.py",
+      "sha256": "8dbca9b48141e81952749ecef9e68af66ebbdcb1cf051e04870d2b78ed81f44d",
+      "size_bytes": 7980
+    },
+    "protocol_check\\example_stdio.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\protocol_check\\example_stdio.py",
+      "sha256": "9710936d417b95d9f09812392d98eac0e91fe771d016a1b8ff09fe54d761b558",
+      "size_bytes": 1637
+    },
+    "protocol_check\\run.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\protocol_check\\run.py",
+      "sha256": "fee9f469d59afb764b6ce31f73df8cdd6ffa2f51dba87e7e17c13fc9408deaf7",
+      "size_bytes": 5847
+    },
+    "protocol_check\\config.json": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\protocol_check\\config.json",
+      "sha256": "22d6504994020264281a3e6770ad2855bf4ffcea8f62386ad18f7bd936fb5441",
+      "size_bytes": 238
+    },
+    "tests\\jsonl_client.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\jsonl_client.py",
+      "sha256": "8823cbb9e8db3c1170c8272eacf1b140bc91a61ffa6d64de957dc5ae0b05ae69",
+      "size_bytes": 8950
+    },
+    "tests\\run_public.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\run_public.py",
+      "sha256": "b4ed25453cb4194b89cf46e23be3e6fd8c97478a2acb89e53c106675390c8262",
+      "size_bytes": 9068
+    },
+    "tests\\test_catalog_publication.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_catalog_publication.py",
+      "sha256": "cd001236e5fdbb5fa1f71cebdbbc9cfe611ea632c74fe7ce136247db4798404c",
+      "size_bytes": 11125
+    },
+    "tests\\test_commit_publication.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_commit_publication.py",
+      "sha256": "773fcec37e0a641f98a9756e95796ccd742da4c98af85e47bc514ffe67e93bc7",
+      "size_bytes": 11189
+    },
+    "tests\\test_container_resources.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_container_resources.py",
+      "sha256": "59593a2cef06f71b9572b499f9d12de436f97b45cf48d6dac4eaced7355b45b5",
+      "size_bytes": 22250
+    },
+    "tests\\test_differential.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_differential.py",
+      "sha256": "bea23e1d05a2d1d59b40045e9f8e958734966e6cbaccdb877599923728381e03",
+      "size_bytes": 31687
+    },
+    "tests\\test_disk_scan.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_disk_scan.py",
+      "sha256": "bfad305fd9faeeb0b40f2cf869c341aad131ef82ca1200d3edef38eb7f56e971",
+      "size_bytes": 4980
+    },
+    "tests\\test_exact_distance.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_exact_distance.py",
+      "sha256": "94a6d52fc5ea843f11f2e26af0ac212a1d4880ca193c0de3a90fb27e74a56eaf",
+      "size_bytes": 19247
+    },
+    "tests\\test_extended.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_extended.py",
+      "sha256": "ee6eb2d72550c751cc7bbe736095c3ed9b9a5a7dbabae9bc3ac6238bdb06914c",
+      "size_bytes": 10191
+    },
+    "tests\\test_float32_literals.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_float32_literals.py",
+      "sha256": "083170847d4639b61d8038923ac44da63135260d856746dbc37cba6117e703c8",
+      "size_bytes": 10233
+    },
+    "tests\\test_formal_sql_edges.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_formal_sql_edges.py",
+      "sha256": "3754ebe9dea108c05cce2ac132afeb68205d99ce592028636d9e804502c7b1fd",
+      "size_bytes": 12403
+    },
+    "tests\\test_hidden_edges.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_hidden_edges.py",
+      "sha256": "1dee60223cd20891c7bfe1013748557d97c0f19ff2fe2ae8a21b6852ede3a960",
+      "size_bytes": 36597
+    },
+    "tests\\test_json_protocol.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_json_protocol.py",
+      "sha256": "064335607dbacc20ddf0174f1ee114545eb12cf91de439deb70a92d2ba417293",
+      "size_bytes": 21224
+    },
+    "tests\\test_large_results.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_large_results.py",
+      "sha256": "afaf36413759dc731d5ed0ea5844b6ec9b592b083da5115ae3a4931d814b0165",
+      "size_bytes": 14049
+    },
+    "tests\\test_official_json_public.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_official_json_public.py",
+      "sha256": "8248ec9ec8b0fd0420c5489e365317ac432cb58d315ad83e359f0ba6b94a518e",
+      "size_bytes": 15253
+    },
+    "tests\\test_protocol_round11.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_protocol_round11.py",
+      "sha256": "c26a6a9d75575569e73a3d5a34e39cf49cc4f87c502a5158226c5af1820c5f2d",
+      "size_bytes": 10986
+    },
+    "tests\\test_public_harness.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_public_harness.py",
+      "sha256": "a03bbaf2019d1462e9d2800f27d9b8b57b9889469d3c187eb6ab13cef61e4a6f",
+      "size_bytes": 14140
+    },
+    "tests\\test_result_spool_io.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_result_spool_io.py",
+      "sha256": "18e36455d6fd83b0ffdd95e990b63a552fe09d573cea8dcf83a4de4c917f4776",
+      "size_bytes": 4856
+    },
+    "tests\\test_round6_sql_contract.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_round6_sql_contract.py",
+      "sha256": "2852135f3550e64226a4699c550efba4b1a631b62fd2e0b1b4451889c48aca1b",
+      "size_bytes": 7931
+    },
+    "tests\\test_round6_stream_contract.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_round6_stream_contract.py",
+      "sha256": "3e54f9583c2a3d4625ddd8b7ee3dd515e549668bb62a316881ee6c0c04f896ee",
+      "size_bytes": 10599
+    },
+    "tests\\test_selection_paths.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_selection_paths.py",
+      "sha256": "b821478ca331a2c0c09b8f774a003d39d48768aaf9b007110b186feb2db58504",
+      "size_bytes": 15172
+    },
+    "tests\\test_selection_retention.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_selection_retention.py",
+      "sha256": "d78b859bc1b77e5f89066584d1167facdcd4433b0a6ed8b82a4d07cf2c1e0b5c",
+      "size_bytes": 8725
+    },
+    "tests\\test_semantics.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_semantics.py",
+      "sha256": "e58412660bf53a329aabf0de04ac383a5780fc1cc4a1ed0eaf25ccab44d79884",
+      "size_bytes": 5196
+    },
+    "tests\\test_sql_round11.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_sql_round11.py",
+      "sha256": "6b54ebd6bf5edd96cb2c87b8a623df4841cebb34f882186eb0ed3878d010ab62",
+      "size_bytes": 4271
+    },
+    "tests\\test_statement_allocation.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_statement_allocation.py",
+      "sha256": "439750de65892742c3d3178f595de570a88ff53b33d9d80c92f4d2e7df92ad54",
+      "size_bytes": 907
+    },
+    "tests\\test_stdio_contract.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_stdio_contract.py",
+      "sha256": "99215f18bb9ab581e52780ff463a72172872ac1289659905a7b2ee5c46892aca",
+      "size_bytes": 9371
+    },
+    "tests\\test_stream_followup.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_stream_followup.py",
+      "sha256": "f1640f33b182168346c4e0655ad861532c007d87e446f75d589f3f58338a97b9",
+      "size_bytes": 7210
+    },
+    "tests\\validate_all.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\validate_all.py",
+      "sha256": "8173f82f7f07651349647b2dde3ba5208766b2ce64a4659b7e21bd5d8cebb91a",
+      "size_bytes": 7519
+    },
+    "tests\\test_catalog_allocation.cpp": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_catalog_allocation.cpp",
+      "sha256": "64f1db9694042665750ea9fd99a24073608648ec736ac566c0087b93147864fc",
+      "size_bytes": 7315
+    },
+    "tests\\test_commit_allocation.cpp": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_commit_allocation.cpp",
+      "sha256": "0daf20efb412ed2308e5f516c87f4434ca886c94726fc89c5336e796b585607f",
+      "size_bytes": 5226
+    },
+    "tests\\test_statement_allocation.cpp": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_statement_allocation.cpp",
+      "sha256": "05170e816016f6e0e7c656216134898a09458abbba0ff9b038591eae53f55f00",
+      "size_bytes": 5128
+    },
+    "mysqltest\\manifest.json": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\mysqltest\\manifest.json",
+      "sha256": "549079acfed240abb41b8f62af03e94b6081659483d145ee739f7ecb9feb3949",
+      "size_bytes": 4039
+    }
+  },
+  "binaries": {
+    "normal": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe",
+      "sha256": "f9f31341ae95bd599a0a9d2a63ec40270fab02f32b91680c9137f058791be6e1",
+      "size_bytes": 3885225
+    },
+    "scalar": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe",
+      "sha256": "3fe487fb1c3c9e553faf0c199ca1821a9f8108580e2889db237beb59e978056d",
+      "size_bytes": 3805298
+    },
+    "fault": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-fault\\minivectordb.exe",
+      "sha256": "9333ec55c6ac4c5f0b3dcd3a6d36a22af8bf2372b0d7c10270c32ff512731b6d",
+      "size_bytes": 3887557
+    },
+    "allocation-normal": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_statement_allocation_normal.exe",
+      "sha256": "c3dae10e95b606969ea2404120040d68c60972e7598466272513de75d5088339",
+      "size_bytes": 3939458
+    },
+    "allocation-scalar": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_statement_allocation_scalar.exe",
+      "sha256": "13ef5c2adacf1ac0040b89a5245864c87527ed0be516703455a77884c95ffa9c",
+      "size_bytes": 3858563
+    },
+    "commit-allocation-normal": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_commit_allocation_normal.exe",
+      "sha256": "18deba6b95fbad5dc5b49c32a340112a7ecd87da8b0d8c6c3f0c0309a0cbb3c2",
+      "size_bytes": 3935503
+    },
+    "commit-allocation-scalar": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_commit_allocation_scalar.exe",
+      "sha256": "21ea1c01d2e4d16ae0bca99c6db1b754d06bc1fdb7abba94cc3dd1ffbb5fbdc5",
+      "size_bytes": 3856144
+    },
+    "catalog-allocation-normal": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_catalog_allocation_normal.exe",
+      "sha256": "03abf7c99c0306120214c2a674300ed07ebefab09fa8bcf3719fb26fdf27844d",
+      "size_bytes": 3938805
+    },
+    "catalog-allocation-scalar": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_catalog_allocation_scalar.exe",
+      "sha256": "89586448cd04fe413caa6ab564bce1296b23ae4164e85a48a16a527af4d6576a",
+      "size_bytes": 3858934
+    }
+  },
+  "scope": "local correctness only; no official hidden-case or Linux claim",
+  "runs": [
+    {
+      "label": "normal/run_public.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\run_public.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.4985251000034623,
+      "output": "PASS sql_crud\nPASS sql_comparisons\nPASS sql_ordering\nPASS sql_empty\nPASS sql_primary_key\nPASS sql_unicode\nPASS sql_bigint\nPASS sql_unsupported\nPASS storage_restart\nPASS vector_euclidean\nPASS transaction_commit\nPASS transaction_rollback\nPASS storage_mutations\nPASS storage_multiple_tables\nPASS vector_ties_and_filter\nPASS vector_float32\nPASS vector_index_maintenance\nPASS transaction_failed_insert\nPASS transaction_autocommit_atomic\nPASS transaction_shutdown_rollback\nPASS 20 public cases\n"
+    },
+    {
+      "label": "normal/test_extended.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_extended.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.16264850000152364,
+      "output": "PASS extended transaction, vector, persistence, and recovery tests\n"
+    },
+    {
+      "label": "normal/test_semantics.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_semantics.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.11363629999686964,
+      "output": "PASS SQL boundary, atomicity, and error semantics\n"
+    },
+    {
+      "label": "normal/test_disk_scan.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_disk_scan.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.21155959999305196,
+      "output": "PASS out-of-cache ordered, filtered TopK and unordered full scan\n"
+    },
+    {
+      "label": "normal/test_hidden_edges.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_hidden_edges.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.8199298000108683,
+      "output": "test_recovery_does_not_reuse_cross_table_txid (__main__.HiddenEdges.test_recovery_does_not_reuse_cross_table_txid)\nSimulated interrupted-commit storage fixture, not a real process crash. ... ok\ntest_large_finite_distances (__main__.HiddenEdges.test_large_finite_distances) ... ok\ntest_tiny_distances_preserve_exact_topk (__main__.HiddenEdges.test_tiny_distances_preserve_exact_topk) ... ok\ntest_near_distances_are_not_false_ties (__main__.HiddenEdges.test_near_distances_are_not_false_ties) ... ok\ntest_mixed_scale_16d_order_is_kernel_independent (__main__.HiddenEdges.test_mixed_scale_16d_order_is_kernel_independent) ... ok\ntest_exact_order_when_double_and_fsum_tie (__main__.HiddenEdges.test_exact_order_when_double_and_fsum_tie) ... ok\ntest_exact_key_maximum_subnormal_and_cancellation (__main__.HiddenEdges.test_exact_key_maximum_subnormal_and_cancellation) ... ok\ntest_topk_respects_all_order_keys_and_offset (__main__.HiddenEdges.test_topk_respects_all_order_keys_and_offset) ... ok\ntest_ordinary_aliases_keep_the_source_column (__main__.HiddenEdges.test_ordinary_aliases_keep_the_source_column) ... ok\ntest_where_literals_can_exceed_varchar_length (__main__.HiddenEdges.test_where_literals_can_exceed_varchar_length) ... ok\ntest_long_where_literals_in_update_and_delete (__main__.HiddenEdges.test_long_where_literals_in_update_and_delete) ... ok\ntest_varchar_write_lengths_remain_enforced (__main__.HiddenEdges.test_varchar_write_lengths_remain_enforced) ... ok\ntest_query_edges_invalid_create_is_atomic (__main__.HiddenEdges.test_query_edges_invalid_create_is_atomic) ... ok\ntest_query_edges_null_writes_are_statement_atomic (__main__.HiddenEdges.test_query_edges_null_writes_are_statement_atomic) ... ok\ntest_query_edges_unprojected_distance_orders (__main__.HiddenEdges.test_query_edges_unprojected_distance_orders) ... ok\ntest_query_edges_maximum_limit_and_offset (__main__.HiddenEdges.test_query_edges_maximum_limit_and_offset) ... ok\ntest_query_edges_vector_order_is_always_rejected (__main__.HiddenEdges.test_query_edges_vector_order_is_always_rejected) ... ok\n\n----------------------------------------------------------------------\nRan 17 tests in 0.689s\n\nOK\n"
+    },
+    {
+      "label": "normal/test_differential.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_differential.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 2.1159667000029003,
+      "output": "PASS exact distance oracle: 1D large-probe order and Fraction boundaries\nPASS case=random seed=7 dim=4 statements=850\nPASS case=random seed=429 dim=8 statements=828\nPASS case=random seed=20261109 dim=33 statements=849\nPASS case=semantics seed=7 dim=4 statements=319\nPASS case=numeric seed=20261109 dim=1 statements=403\nPASS case=numeric seed=20261109 dim=3 statements=403\nPASS case=numeric seed=20261109 dim=4 statements=403\nPASS case=numeric seed=20261109 dim=8 statements=403\nPASS case=numeric seed=20261109 dim=31 statements=403\nPASS case=numeric seed=20261109 dim=32 statements=403\nPASS case=numeric seed=20261109 dim=33 statements=403\nPASS case=numeric seed=20261109 dim=128 statements=403\nPASS differential: 12/12 cases, 6070 SQL statements, 0 query mismatches\n"
+    },
+    {
+      "label": "normal/test_exact_distance.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_exact_distance.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.45168810000177473,
+      "output": "test_exact_identities_and_double_collision (__main__.OracleTests.test_exact_identities_and_double_collision) ... ok\ntest_float32_roundtrip_and_lattice (__main__.OracleTests.test_float32_roundtrip_and_lattice) ... ok\n\n----------------------------------------------------------------------\nRan 2 tests in 0.001s\n\nOK\nRunning default: D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe\ntest_carry_borrow_and_extreme_exponent_mixture (__main__.ExactDistanceTests.test_carry_borrow_and_extreme_exponent_mixture) ... ok\ntest_common_large_component_has_distinct_exact_topk (__main__.ExactDistanceTests.test_common_large_component_has_distinct_exact_topk) ... ok\ntest_opposite_signs_and_nonzero_tiny_probes (__main__.ExactDistanceTests.test_opposite_signs_and_nonzero_tiny_probes) ... ok\ntest_seeded_bit_patterns_cover_simd_blocks_and_tails (__main__.ExactDistanceTests.test_seeded_bit_patterns_cover_simd_blocks_and_tails) ... ok\ntest_subnormal_boundaries_and_signed_zero (__main__.ExactDistanceTests.test_subnormal_boundaries_and_signed_zero) ... ok\ntest_true_distance_ties_use_secondary_keys_then_pk (__main__.ExactDistanceTests.test_true_distance_ties_use_secondary_keys_then_pk) ... ok\n\n----------------------------------------------------------------------\nRan 6 tests in 0.330s\n\nOK\nPASS default: 6 database tests, 761 SQL statements, 680 exact-order SELECTs\n"
+    },
+    {
+      "label": "normal/test_selection_paths.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_selection_paths.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 2.794194400004926,
+      "output": "PASS selection cache=64MiB: 308 exact queries, 341 SQL statements, 2 restarts, 0.779s\nPASS selection cache=1MiB: 308 exact queries, 341 SQL statements, 2 restarts, 1.778s\nPASS selection paths: 616 exact queries, 682 SQL statements, 2.557s total\n"
+    },
+    {
+      "label": "normal/test_stdio_contract.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_stdio_contract.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.4717732999997679,
+      "output": "test_adjacent_statements_receive_separate_responses (__main__.StdioContract.test_adjacent_statements_receive_separate_responses) ... ok\ntest_block_comment_cannot_execute_embedded_mutations (__main__.StdioContract.test_block_comment_cannot_execute_embedded_mutations) ... ok\ntest_block_comment_delimiters_cannot_overlap (__main__.StdioContract.test_block_comment_delimiters_cannot_overlap) ... ok\ntest_block_comment_is_preserved_across_pipe_chunks (__main__.StdioContract.test_block_comment_is_preserved_across_pipe_chunks) ... ok\ntest_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) ... ok\ntest_comments_and_empty_statements_do_not_add_responses (__main__.StdioContract.test_comments_and_empty_statements_do_not_add_responses) ... ok\ntest_complete_request_needs_no_newline_or_eof (__main__.StdioContract.test_complete_request_needs_no_newline_or_eof) ... ok\ntest_default_protocol_flushes_at_semicolon (__main__.StdioContract.test_default_protocol_flushes_at_semicolon) ... ok\ntest_error_response_does_not_need_following_byte (__main__.StdioContract.test_error_response_does_not_need_following_byte) ... ok\ntest_malformed_comment_or_string_still_returns_error (__main__.StdioContract.test_malformed_comment_or_string_still_returns_error) ... ok\ntest_split_comments_quotes_and_utf8_do_not_split_statements (__main__.StdioContract.test_split_comments_quotes_and_utf8_do_not_split_statements) ... ok\ntest_trailing_comments_do_not_generate_extra_frames (__main__.StdioContract.test_trailing_comments_do_not_generate_extra_frames) ... ok\n\n----------------------------------------------------------------------\nRan 12 tests in 0.346s\n\nOK\n"
+    },
+    {
+      "label": "normal/test_formal_sql_edges.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_formal_sql_edges.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.3587773999897763,
+      "output": "test_late_invalid_literals_preserve_prior_work_and_allow_commit (__main__.FormalSqlEdges.test_late_invalid_literals_preserve_prior_work_and_allow_commit) ... ok\ntest_malformed_numbers_cannot_become_varchar_literals (__main__.FormalSqlEdges.test_malformed_numbers_cannot_become_varchar_literals) ... ok\ntest_multirow_changes_see_prior_values_and_rollback_together (__main__.FormalSqlEdges.test_multirow_changes_see_prior_values_and_rollback_together) ... ok\ntest_projection_metadata_aliases_and_unprojected_order_keys (__main__.FormalSqlEdges.test_projection_metadata_aliases_and_unprojected_order_keys) ... ok\ntest_quoted_apostrophe_and_delimiters_remain_string_data (__main__.FormalSqlEdges.test_quoted_apostrophe_and_delimiters_remain_string_data) ... ok\ntest_unicode_length_counts_codepoints_and_failed_batch_leaves_no_rows (__main__.FormalSqlEdges.test_unicode_length_counts_codepoints_and_failed_batch_leaves_no_rows) ... ok\ntest_unicode_order_uses_codepoints_and_primary_key_ties (__main__.FormalSqlEdges.test_unicode_order_uses_codepoints_and_primary_key_ties) ... ok\ntest_unknown_identifier_in_delete_cannot_remove_a_matching_literal (__main__.FormalSqlEdges.test_unknown_identifier_in_delete_cannot_remove_a_matching_literal) ... ok\ntest_unknown_identifier_in_multirow_insert_is_atomic (__main__.FormalSqlEdges.test_unknown_identifier_in_multirow_insert_is_atomic) ... ok\ntest_unknown_identifier_in_multirow_update_is_rejected (__main__.FormalSqlEdges.test_unknown_identifier_in_multirow_update_is_rejected) ... ok\ntest_unknown_identifier_in_select_is_not_a_string (__main__.FormalSqlEdges.test_unknown_identifier_in_select_is_not_a_string) ... ok\n\n----------------------------------------------------------------------\nRan 11 tests in 0.239s\n\nOK\n"
+    },
+    {
+      "label": "normal/test_round6_sql_contract.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_round6_sql_contract.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.432570000004489,
+      "output": "test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) ... ok\ntest_supported_transaction_controls_and_invalid_tails (__main__.SqlContract.test_supported_transaction_controls_and_invalid_tails) ... ok\ntest_supported_unicode_length_and_finite_float32_literals (__main__.SqlContract.test_supported_unicode_length_and_finite_float32_literals) ... ok\ntest_valid_transaction_variants_keep_commit_and_rollback_semantics (__main__.SqlContract.test_valid_transaction_variants_keep_commit_and_rollback_semantics) ... ok\ntest_varchar_requires_length_before_creating_catalog_entry (__main__.SqlContract.test_varchar_requires_length_before_creating_catalog_entry) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.313s\n\nOK\n"
+    },
+    {
+      "label": "normal/test_round6_stream_contract.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_round6_stream_contract.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 6.83214310000767,
+      "output": "binary_sha256=f9f31341ae95bd599a0a9d2a63ec40270fab02f32b91680c9137f058791be6e1\ntest_crlf_whitespace_may_arrive_after_response (__main__.Round6StreamContract.test_crlf_whitespace_may_arrive_after_response) ... ok\ntest_default_records_continue_after_errors_with_open_stdin (__main__.Round6StreamContract.test_default_records_continue_after_errors_with_open_stdin) ... ok\ntest_delayed_quote_escape_and_utf8_boundaries_preserve_values (__main__.Round6StreamContract.test_delayed_quote_escape_and_utf8_boundaries_preserve_values) ... ok\ntest_eof_comment_tails_do_not_add_response_frames (__main__.Round6StreamContract.test_eof_comment_tails_do_not_add_response_frames) ... ok\ntest_eof_malformed_tail_reports_one_error_after_prior_response (__main__.Round6StreamContract.test_eof_malformed_tail_reports_one_error_after_prior_response) ... ok\ntest_every_split_of_block_comment_keeps_embedded_sql_inert (__main__.Round6StreamContract.test_every_split_of_block_comment_keeps_embedded_sql_inert) ... ok\ntest_every_split_of_crlf_comments_preserves_following_request (__main__.Round6StreamContract.test_every_split_of_crlf_comments_preserves_following_request) ... ok\ntest_response_flags_match_public_assertions_without_frozen_error_map (__main__.Round6StreamContract.test_response_flags_match_public_assertions_without_frozen_error_map) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 6.648s\n\nOK\n"
+    },
+    {
+      "label": "normal/test_stream_followup.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_stream_followup.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.45704909999039955,
+      "output": "binary=D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe\nbinary_sha256=f9f31341ae95bd599a0a9d2a63ec40270fab02f32b91680c9137f058791be6e1\ntest_full_duplicate_lists_and_too_many_values_remain_errors (__main__.StreamFollowup.test_full_duplicate_lists_and_too_many_values_remain_errors) ... ok\ntest_malformed_later_row_preserves_prior_transaction_insert (__main__.StreamFollowup.test_malformed_later_row_preserves_prior_transaction_insert) ... ok\ntest_short_duplicate_list_on_multicolumn_table (__main__.StreamFollowup.test_short_duplicate_list_on_multicolumn_table) ... ok\ntest_short_row_cannot_hide_duplicate_insert_column (__main__.StreamFollowup.test_short_row_cannot_hide_duplicate_insert_column) ... ok\ntest_valid_reordered_explicit_columns_commit_and_restart (__main__.StreamFollowup.test_valid_reordered_explicit_columns_commit_and_restart) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.321s\n\nOK\n"
+    },
+    {
+      "label": "normal/test_float32_literals.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_float32_literals.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.39135270001133904,
+      "output": "test_midpoint_ties_and_direction (__main__.LiteralOracle.test_midpoint_ties_and_direction) ... ok\ntest_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) ... ok\ntest_literal_rounding_changes_stored_topk_membership (__main__.Float32Literals.test_literal_rounding_changes_stored_topk_membership) ... ok\ntest_overflow_and_nonfinite_values_remain_atomic_errors (__main__.Float32Literals.test_overflow_and_nonfinite_values_remain_atomic_errors) ... ok\ntest_overflow_midpoint_is_not_rounded_via_double (__main__.Float32Literals.test_overflow_midpoint_is_not_rounded_via_double) ... ok\ntest_probe_and_update_use_the_same_direct_rounding (__main__.Float32Literals.test_probe_and_update_use_the_same_direct_rounding) ... ok\ntest_tiny_decimal_exponents_round_to_zero (__main__.Float32Literals.test_tiny_decimal_exponents_round_to_zero) ... ok\ntest_vector_literal_whitespace_and_terminator (__main__.Float32Literals.test_vector_literal_whitespace_and_terminator) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 0.211s\n\nOK\n"
+    },
+    {
+      "label": "normal/test_sql_round11.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_sql_round11.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.21591080000507645,
+      "output": "test_function_name_is_a_valid_order_by_alias (__main__.SqlRound11.test_function_name_is_a_valid_order_by_alias) ... ok\ntest_function_name_is_a_valid_ordinary_column (__main__.SqlRound11.test_function_name_is_a_valid_ordinary_column) ... ok\ntest_unaliased_distance_does_not_enable_direct_vector_order (__main__.SqlRound11.test_unaliased_distance_does_not_enable_direct_vector_order) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.058s\n\nOK\n"
+    },
+    {
+      "label": "normal/test_protocol_round11.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_protocol_round11.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 2.0028470999968704,
+      "output": "binary=D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe\nbinary_sha256=f9f31341ae95bd599a0a9d2a63ec40270fab02f32b91680c9137f058791be6e1\nos_name=nt\ntest_byte_chunks_utf8_quotes_comments_and_adjacent_requests (__main__.ProtocolRound11.test_byte_chunks_utf8_quotes_comments_and_adjacent_requests) ... ok\ntest_column_metadata_describes_empty_query_without_official_encoding_claim (__main__.ProtocolRound11.test_column_metadata_describes_empty_query_without_official_encoding_claim) ... ok\ntest_default_empty_result_and_startup_do_not_add_stdout_records (__main__.ProtocolRound11.test_default_empty_result_and_startup_do_not_add_stdout_records) ... ok\ntest_eof_restart_rolls_back_only_uncommitted_changes (__main__.ProtocolRound11.test_eof_restart_rolls_back_only_uncommitted_changes) ... ok\ntest_local_control_z_in_comment_is_not_transport_eof (__main__.ProtocolRound11.test_local_control_z_in_comment_is_not_transport_eof) ... ok\ntest_local_input_preserves_raw_crlf_inside_string_literal (__main__.ProtocolRound11.test_local_input_preserves_raw_crlf_inside_string_literal) ... ok\ntest_local_raw_output_preserves_literal_lf_besides_record_terminator (__main__.ProtocolRound11.test_local_raw_output_preserves_literal_lf_besides_record_terminator) ... ok\ntest_ready_marker_frames_empty_result_and_error_then_continues (__main__.ProtocolRound11.test_ready_marker_frames_empty_result_and_error_then_continues) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 1.867s\n\nOK\n"
+    },
+    {
+      "label": "normal/test_selection_retention.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_selection_retention.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.8157130000035977,
+      "output": "PASS selection retention: 2048 base rows, 128 dimensions, 34 exact-field queries, cache=1 MiB\n"
+    },
+    {
+      "label": "normal/test_large_results.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_large_results.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 1.088494299998274,
+      "output": "test_disk_backed_raw_output_and_limit_offset (__main__.LargeResults.test_disk_backed_raw_output_and_limit_offset) ... ok\ntest_empty_headers_and_markers_after_large_query (__main__.LargeResults.test_empty_headers_and_markers_after_large_query) ... ok\ntest_explicit_transaction_read_own_writes_and_rollback_restart (__main__.LargeResults.test_explicit_transaction_read_own_writes_and_rollback_restart) ... ok\ntest_single_long_value_commit_and_repeated_select_restart (__main__.LargeResults.test_single_long_value_commit_and_repeated_select_restart) ... ok\ntest_sorted_and_topk_output_with_cache_resident_rows (__main__.LargeResults.test_sorted_and_topk_output_with_cache_resident_rows) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.957s\n\nOK\n"
+    },
+    {
+      "label": "normal/test_json_protocol.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_json_protocol.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.755002499994589,
+      "output": "Mandatory: official valid protocol and requested SQL/text regressions. Optional robustness: disabled.\ntest_affected_rows_are_integer_counts (__main__.JsonProtocolContract.test_affected_rows_are_integer_counts) ... ok\ntest_bigint_boundaries_are_exact_json_integers (__main__.JsonProtocolContract.test_bigint_boundaries_are_exact_json_integers) ... ok\ntest_empty_results_retain_column_names_and_order (__main__.JsonProtocolContract.test_empty_results_retain_column_names_and_order) ... ok\ntest_ids_preserve_all_json_types_and_huge_signed_integers (__main__.JsonProtocolContract.test_ids_preserve_all_json_types_and_huge_signed_integers) ... ok\ntest_json_wrapper_executes_sql_without_a_semicolon (__main__.JsonProtocolContract.test_json_wrapper_executes_sql_without_a_semicolon) ... ok\ntest_ready_is_exact_and_flushed_before_any_input (__main__.JsonProtocolContract.test_ready_is_exact_and_flushed_before_any_input) ... ok\ntest_search_mode_switches_per_request (__main__.JsonProtocolContract.test_search_mode_switches_per_request) ... ok\ntest_semicolon_comments_and_multi_statement_atomic_rejection (__main__.JsonProtocolContract.test_semicolon_comments_and_multi_statement_atomic_rejection) ... ok\ntest_shutdown_response_precedes_large_pending_overlay_release (__main__.JsonProtocolContract.test_shutdown_response_precedes_large_pending_overlay_release) ... ok\ntest_shutdown_rolls_back_and_restart_preserves_committed_data (__main__.JsonProtocolContract.test_shutdown_rolls_back_and_restart_preserves_committed_data) ... ok\ntest_spooled_response_over_one_mib_preserves_escaping_and_row_boundaries (__main__.JsonProtocolContract.test_spooled_response_over_one_mib_preserves_escaping_and_row_boundaries) ... ok\ntest_sql_errors_and_unsupported_null_do_not_end_session (__main__.JsonProtocolContract.test_sql_errors_and_unsupported_null_do_not_end_session) ... ok\ntest_strings_are_escaped_once_in_one_physical_response_line (__main__.JsonProtocolContract.test_strings_are_escaped_once_in_one_physical_response_line) ... ok\ntest_vectors_are_arrays_and_distances_are_finite_numbers (__main__.JsonProtocolContract.test_vectors_are_arrays_and_distances_are_finite_numbers) ... ok\ntest_explicit_stdio_text_retains_legacy_output (__main__.LegacyTextCompatibility.test_explicit_stdio_text_retains_legacy_output) ... ok\n\n----------------------------------------------------------------------\nRan 15 tests in 0.606s\n\nOK\n"
+    },
+    {
+      "label": "normal/test_official_json_public.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_official_json_public.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 2.4728276999958325,
+      "output": "binary=D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe\nbinary_sha256=f9f31341ae95bd599a0a9d2a63ec40270fab02f32b91680c9137f058791be6e1\nsql_crud: PASS (7/7 SQL) \nsql_comparisons: PASS (4/4 SQL) \nsql_ordering: PASS (4/4 SQL) \nsql_empty: PASS (3/3 SQL) \nsql_primary_key: PASS (4/4 SQL) \nsql_unicode: PASS (3/3 SQL) \nsql_bigint: PASS (3/3 SQL) \nsql_unsupported: PASS (3/3 SQL) \nstorage_restart: PASS (3/3 SQL) \nvector_euclidean: PASS (3/3 SQL) \ntransaction_commit: PASS (6/6 SQL) \ntransaction_rollback: PASS (6/6 SQL) \nstorage_mutations: PASS (6/6 SQL) \nstorage_multiple_tables: PASS (6/6 SQL) \nvector_ties_and_filter: PASS (5/5 SQL) \nvector_float32: PASS (3/3 SQL) \nvector_index_maintenance: PASS (9/9 SQL) \ntransaction_failed_insert: PASS (8/8 SQL) \ntransaction_autocommit_atomic: PASS (4/4 SQL) \ntransaction_shutdown_rollback: PASS (5/5 SQL) \nPASS: 20/20 published groups; 95/95 SQL responses (local JSONL)\n"
+    },
+    {
+      "label": "scalar/run_public.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\run_public.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.5304647000011755,
+      "output": "PASS sql_crud\nPASS sql_comparisons\nPASS sql_ordering\nPASS sql_empty\nPASS sql_primary_key\nPASS sql_unicode\nPASS sql_bigint\nPASS sql_unsupported\nPASS storage_restart\nPASS vector_euclidean\nPASS transaction_commit\nPASS transaction_rollback\nPASS storage_mutations\nPASS storage_multiple_tables\nPASS vector_ties_and_filter\nPASS vector_float32\nPASS vector_index_maintenance\nPASS transaction_failed_insert\nPASS transaction_autocommit_atomic\nPASS transaction_shutdown_rollback\nPASS 20 public cases\n"
+    },
+    {
+      "label": "scalar/test_extended.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_extended.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.19339580000087153,
+      "output": "PASS extended transaction, vector, persistence, and recovery tests\n"
+    },
+    {
+      "label": "scalar/test_semantics.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_semantics.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.13760410000395495,
+      "output": "PASS SQL boundary, atomicity, and error semantics\n"
+    },
+    {
+      "label": "scalar/test_disk_scan.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_disk_scan.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.2753019000083441,
+      "output": "PASS out-of-cache ordered, filtered TopK and unordered full scan\n"
+    },
+    {
+      "label": "scalar/test_hidden_edges.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_hidden_edges.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.8417206999874907,
+      "output": "test_recovery_does_not_reuse_cross_table_txid (__main__.HiddenEdges.test_recovery_does_not_reuse_cross_table_txid)\nSimulated interrupted-commit storage fixture, not a real process crash. ... ok\ntest_large_finite_distances (__main__.HiddenEdges.test_large_finite_distances) ... ok\ntest_tiny_distances_preserve_exact_topk (__main__.HiddenEdges.test_tiny_distances_preserve_exact_topk) ... ok\ntest_near_distances_are_not_false_ties (__main__.HiddenEdges.test_near_distances_are_not_false_ties) ... ok\ntest_mixed_scale_16d_order_is_kernel_independent (__main__.HiddenEdges.test_mixed_scale_16d_order_is_kernel_independent) ... ok\ntest_exact_order_when_double_and_fsum_tie (__main__.HiddenEdges.test_exact_order_when_double_and_fsum_tie) ... ok\ntest_exact_key_maximum_subnormal_and_cancellation (__main__.HiddenEdges.test_exact_key_maximum_subnormal_and_cancellation) ... ok\ntest_topk_respects_all_order_keys_and_offset (__main__.HiddenEdges.test_topk_respects_all_order_keys_and_offset) ... ok\ntest_ordinary_aliases_keep_the_source_column (__main__.HiddenEdges.test_ordinary_aliases_keep_the_source_column) ... ok\ntest_where_literals_can_exceed_varchar_length (__main__.HiddenEdges.test_where_literals_can_exceed_varchar_length) ... ok\ntest_long_where_literals_in_update_and_delete (__main__.HiddenEdges.test_long_where_literals_in_update_and_delete) ... ok\ntest_varchar_write_lengths_remain_enforced (__main__.HiddenEdges.test_varchar_write_lengths_remain_enforced) ... ok\ntest_query_edges_invalid_create_is_atomic (__main__.HiddenEdges.test_query_edges_invalid_create_is_atomic) ... ok\ntest_query_edges_null_writes_are_statement_atomic (__main__.HiddenEdges.test_query_edges_null_writes_are_statement_atomic) ... ok\ntest_query_edges_unprojected_distance_orders (__main__.HiddenEdges.test_query_edges_unprojected_distance_orders) ... ok\ntest_query_edges_maximum_limit_and_offset (__main__.HiddenEdges.test_query_edges_maximum_limit_and_offset) ... ok\ntest_query_edges_vector_order_is_always_rejected (__main__.HiddenEdges.test_query_edges_vector_order_is_always_rejected) ... ok\n\n----------------------------------------------------------------------\nRan 17 tests in 0.672s\n\nOK\n"
+    },
+    {
+      "label": "scalar/test_differential.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_differential.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 2.232498700002907,
+      "output": "PASS exact distance oracle: 1D large-probe order and Fraction boundaries\nPASS case=random seed=7 dim=4 statements=850\nPASS case=random seed=429 dim=8 statements=828\nPASS case=random seed=20261109 dim=33 statements=849\nPASS case=semantics seed=7 dim=4 statements=319\nPASS case=numeric seed=20261109 dim=1 statements=403\nPASS case=numeric seed=20261109 dim=3 statements=403\nPASS case=numeric seed=20261109 dim=4 statements=403\nPASS case=numeric seed=20261109 dim=8 statements=403\nPASS case=numeric seed=20261109 dim=31 statements=403\nPASS case=numeric seed=20261109 dim=32 statements=403\nPASS case=numeric seed=20261109 dim=33 statements=403\nPASS case=numeric seed=20261109 dim=128 statements=403\nPASS differential: 12/12 cases, 6070 SQL statements, 0 query mismatches\n"
+    },
+    {
+      "label": "scalar/test_exact_distance.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_exact_distance.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.43023870000615716,
+      "output": "test_exact_identities_and_double_collision (__main__.OracleTests.test_exact_identities_and_double_collision) ... ok\ntest_float32_roundtrip_and_lattice (__main__.OracleTests.test_float32_roundtrip_and_lattice) ... ok\n\n----------------------------------------------------------------------\nRan 2 tests in 0.001s\n\nOK\nRunning default: D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe\ntest_carry_borrow_and_extreme_exponent_mixture (__main__.ExactDistanceTests.test_carry_borrow_and_extreme_exponent_mixture) ... ok\ntest_common_large_component_has_distinct_exact_topk (__main__.ExactDistanceTests.test_common_large_component_has_distinct_exact_topk) ... ok\ntest_opposite_signs_and_nonzero_tiny_probes (__main__.ExactDistanceTests.test_opposite_signs_and_nonzero_tiny_probes) ... ok\ntest_seeded_bit_patterns_cover_simd_blocks_and_tails (__main__.ExactDistanceTests.test_seeded_bit_patterns_cover_simd_blocks_and_tails) ... ok\ntest_subnormal_boundaries_and_signed_zero (__main__.ExactDistanceTests.test_subnormal_boundaries_and_signed_zero) ... ok\ntest_true_distance_ties_use_secondary_keys_then_pk (__main__.ExactDistanceTests.test_true_distance_ties_use_secondary_keys_then_pk) ... ok\n\n----------------------------------------------------------------------\nRan 6 tests in 0.282s\n\nOK\nPASS default: 6 database tests, 761 SQL statements, 680 exact-order SELECTs\n"
+    },
+    {
+      "label": "scalar/test_selection_paths.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_selection_paths.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 2.7702623999939533,
+      "output": "PASS selection cache=64MiB: 308 exact queries, 341 SQL statements, 2 restarts, 0.792s\nPASS selection cache=1MiB: 308 exact queries, 341 SQL statements, 2 restarts, 1.753s\nPASS selection paths: 616 exact queries, 682 SQL statements, 2.546s total\n"
+    },
+    {
+      "label": "scalar/test_stdio_contract.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_stdio_contract.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.46483189999707974,
+      "output": "test_adjacent_statements_receive_separate_responses (__main__.StdioContract.test_adjacent_statements_receive_separate_responses) ... ok\ntest_block_comment_cannot_execute_embedded_mutations (__main__.StdioContract.test_block_comment_cannot_execute_embedded_mutations) ... ok\ntest_block_comment_delimiters_cannot_overlap (__main__.StdioContract.test_block_comment_delimiters_cannot_overlap) ... ok\ntest_block_comment_is_preserved_across_pipe_chunks (__main__.StdioContract.test_block_comment_is_preserved_across_pipe_chunks) ... ok\ntest_comment_only_eof_has_no_response (__main__.StdioContract.test_comment_only_eof_has_no_response) ... ok\ntest_comments_and_empty_statements_do_not_add_responses (__main__.StdioContract.test_comments_and_empty_statements_do_not_add_responses) ... ok\ntest_complete_request_needs_no_newline_or_eof (__main__.StdioContract.test_complete_request_needs_no_newline_or_eof) ... ok\ntest_default_protocol_flushes_at_semicolon (__main__.StdioContract.test_default_protocol_flushes_at_semicolon) ... ok\ntest_error_response_does_not_need_following_byte (__main__.StdioContract.test_error_response_does_not_need_following_byte) ... ok\ntest_malformed_comment_or_string_still_returns_error (__main__.StdioContract.test_malformed_comment_or_string_still_returns_error) ... ok\ntest_split_comments_quotes_and_utf8_do_not_split_statements (__main__.StdioContract.test_split_comments_quotes_and_utf8_do_not_split_statements) ... ok\ntest_trailing_comments_do_not_generate_extra_frames (__main__.StdioContract.test_trailing_comments_do_not_generate_extra_frames) ... ok\n\n----------------------------------------------------------------------\nRan 12 tests in 0.342s\n\nOK\n"
+    },
+    {
+      "label": "scalar/test_formal_sql_edges.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_formal_sql_edges.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.39481320000777487,
+      "output": "test_late_invalid_literals_preserve_prior_work_and_allow_commit (__main__.FormalSqlEdges.test_late_invalid_literals_preserve_prior_work_and_allow_commit) ... ok\ntest_malformed_numbers_cannot_become_varchar_literals (__main__.FormalSqlEdges.test_malformed_numbers_cannot_become_varchar_literals) ... ok\ntest_multirow_changes_see_prior_values_and_rollback_together (__main__.FormalSqlEdges.test_multirow_changes_see_prior_values_and_rollback_together) ... ok\ntest_projection_metadata_aliases_and_unprojected_order_keys (__main__.FormalSqlEdges.test_projection_metadata_aliases_and_unprojected_order_keys) ... ok\ntest_quoted_apostrophe_and_delimiters_remain_string_data (__main__.FormalSqlEdges.test_quoted_apostrophe_and_delimiters_remain_string_data) ... ok\ntest_unicode_length_counts_codepoints_and_failed_batch_leaves_no_rows (__main__.FormalSqlEdges.test_unicode_length_counts_codepoints_and_failed_batch_leaves_no_rows) ... ok\ntest_unicode_order_uses_codepoints_and_primary_key_ties (__main__.FormalSqlEdges.test_unicode_order_uses_codepoints_and_primary_key_ties) ... ok\ntest_unknown_identifier_in_delete_cannot_remove_a_matching_literal (__main__.FormalSqlEdges.test_unknown_identifier_in_delete_cannot_remove_a_matching_literal) ... ok\ntest_unknown_identifier_in_multirow_insert_is_atomic (__main__.FormalSqlEdges.test_unknown_identifier_in_multirow_insert_is_atomic) ... ok\ntest_unknown_identifier_in_multirow_update_is_rejected (__main__.FormalSqlEdges.test_unknown_identifier_in_multirow_update_is_rejected) ... ok\ntest_unknown_identifier_in_select_is_not_a_string (__main__.FormalSqlEdges.test_unknown_identifier_in_select_is_not_a_string) ... ok\n\n----------------------------------------------------------------------\nRan 11 tests in 0.273s\n\nOK\n"
+    },
+    {
+      "label": "scalar/test_round6_sql_contract.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_round6_sql_contract.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.4106976999901235,
+      "output": "test_invalid_transaction_words_do_not_disable_autocommit (__main__.SqlContract.test_invalid_transaction_words_do_not_disable_autocommit) ... ok\ntest_supported_transaction_controls_and_invalid_tails (__main__.SqlContract.test_supported_transaction_controls_and_invalid_tails) ... ok\ntest_supported_unicode_length_and_finite_float32_literals (__main__.SqlContract.test_supported_unicode_length_and_finite_float32_literals) ... ok\ntest_valid_transaction_variants_keep_commit_and_rollback_semantics (__main__.SqlContract.test_valid_transaction_variants_keep_commit_and_rollback_semantics) ... ok\ntest_varchar_requires_length_before_creating_catalog_entry (__main__.SqlContract.test_varchar_requires_length_before_creating_catalog_entry) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.276s\n\nOK\n"
+    },
+    {
+      "label": "scalar/test_round6_stream_contract.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_round6_stream_contract.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 6.844817500008503,
+      "output": "binary_sha256=3fe487fb1c3c9e553faf0c199ca1821a9f8108580e2889db237beb59e978056d\ntest_crlf_whitespace_may_arrive_after_response (__main__.Round6StreamContract.test_crlf_whitespace_may_arrive_after_response) ... ok\ntest_default_records_continue_after_errors_with_open_stdin (__main__.Round6StreamContract.test_default_records_continue_after_errors_with_open_stdin) ... ok\ntest_delayed_quote_escape_and_utf8_boundaries_preserve_values (__main__.Round6StreamContract.test_delayed_quote_escape_and_utf8_boundaries_preserve_values) ... ok\ntest_eof_comment_tails_do_not_add_response_frames (__main__.Round6StreamContract.test_eof_comment_tails_do_not_add_response_frames) ... ok\ntest_eof_malformed_tail_reports_one_error_after_prior_response (__main__.Round6StreamContract.test_eof_malformed_tail_reports_one_error_after_prior_response) ... ok\ntest_every_split_of_block_comment_keeps_embedded_sql_inert (__main__.Round6StreamContract.test_every_split_of_block_comment_keeps_embedded_sql_inert) ... ok\ntest_every_split_of_crlf_comments_preserves_following_request (__main__.Round6StreamContract.test_every_split_of_crlf_comments_preserves_following_request) ... ok\ntest_response_flags_match_public_assertions_without_frozen_error_map (__main__.Round6StreamContract.test_response_flags_match_public_assertions_without_frozen_error_map) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 6.683s\n\nOK\n"
+    },
+    {
+      "label": "scalar/test_stream_followup.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_stream_followup.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.4868438999983482,
+      "output": "binary=D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe\nbinary_sha256=3fe487fb1c3c9e553faf0c199ca1821a9f8108580e2889db237beb59e978056d\ntest_full_duplicate_lists_and_too_many_values_remain_errors (__main__.StreamFollowup.test_full_duplicate_lists_and_too_many_values_remain_errors) ... ok\ntest_malformed_later_row_preserves_prior_transaction_insert (__main__.StreamFollowup.test_malformed_later_row_preserves_prior_transaction_insert) ... ok\ntest_short_duplicate_list_on_multicolumn_table (__main__.StreamFollowup.test_short_duplicate_list_on_multicolumn_table) ... ok\ntest_short_row_cannot_hide_duplicate_insert_column (__main__.StreamFollowup.test_short_row_cannot_hide_duplicate_insert_column) ... ok\ntest_valid_reordered_explicit_columns_commit_and_restart (__main__.StreamFollowup.test_valid_reordered_explicit_columns_commit_and_restart) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.292s\n\nOK\n"
+    },
+    {
+      "label": "scalar/test_float32_literals.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_float32_literals.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.3629709999950137,
+      "output": "test_midpoint_ties_and_direction (__main__.LiteralOracle.test_midpoint_ties_and_direction) ... ok\ntest_insert_rounds_exact_decimal_directly_to_float32 (__main__.Float32Literals.test_insert_rounds_exact_decimal_directly_to_float32) ... ok\ntest_literal_rounding_changes_stored_topk_membership (__main__.Float32Literals.test_literal_rounding_changes_stored_topk_membership) ... ok\ntest_overflow_and_nonfinite_values_remain_atomic_errors (__main__.Float32Literals.test_overflow_and_nonfinite_values_remain_atomic_errors) ... ok\ntest_overflow_midpoint_is_not_rounded_via_double (__main__.Float32Literals.test_overflow_midpoint_is_not_rounded_via_double) ... ok\ntest_probe_and_update_use_the_same_direct_rounding (__main__.Float32Literals.test_probe_and_update_use_the_same_direct_rounding) ... ok\ntest_tiny_decimal_exponents_round_to_zero (__main__.Float32Literals.test_tiny_decimal_exponents_round_to_zero) ... ok\ntest_vector_literal_whitespace_and_terminator (__main__.Float32Literals.test_vector_literal_whitespace_and_terminator) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 0.178s\n\nOK\n"
+    },
+    {
+      "label": "scalar/test_sql_round11.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_sql_round11.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.27108780000708066,
+      "output": "test_function_name_is_a_valid_order_by_alias (__main__.SqlRound11.test_function_name_is_a_valid_order_by_alias) ... ok\ntest_function_name_is_a_valid_ordinary_column (__main__.SqlRound11.test_function_name_is_a_valid_ordinary_column) ... ok\ntest_unaliased_distance_does_not_enable_direct_vector_order (__main__.SqlRound11.test_unaliased_distance_does_not_enable_direct_vector_order) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.072s\n\nOK\n"
+    },
+    {
+      "label": "scalar/test_protocol_round11.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_protocol_round11.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 2.054674899991369,
+      "output": "binary=D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe\nbinary_sha256=3fe487fb1c3c9e553faf0c199ca1821a9f8108580e2889db237beb59e978056d\nos_name=nt\ntest_byte_chunks_utf8_quotes_comments_and_adjacent_requests (__main__.ProtocolRound11.test_byte_chunks_utf8_quotes_comments_and_adjacent_requests) ... ok\ntest_column_metadata_describes_empty_query_without_official_encoding_claim (__main__.ProtocolRound11.test_column_metadata_describes_empty_query_without_official_encoding_claim) ... ok\ntest_default_empty_result_and_startup_do_not_add_stdout_records (__main__.ProtocolRound11.test_default_empty_result_and_startup_do_not_add_stdout_records) ... ok\ntest_eof_restart_rolls_back_only_uncommitted_changes (__main__.ProtocolRound11.test_eof_restart_rolls_back_only_uncommitted_changes) ... ok\ntest_local_control_z_in_comment_is_not_transport_eof (__main__.ProtocolRound11.test_local_control_z_in_comment_is_not_transport_eof) ... ok\ntest_local_input_preserves_raw_crlf_inside_string_literal (__main__.ProtocolRound11.test_local_input_preserves_raw_crlf_inside_string_literal) ... ok\ntest_local_raw_output_preserves_literal_lf_besides_record_terminator (__main__.ProtocolRound11.test_local_raw_output_preserves_literal_lf_besides_record_terminator) ... ok\ntest_ready_marker_frames_empty_result_and_error_then_continues (__main__.ProtocolRound11.test_ready_marker_frames_empty_result_and_error_then_continues) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 1.900s\n\nOK\n"
+    },
+    {
+      "label": "scalar/test_selection_retention.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_selection_retention.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.9743166999978712,
+      "output": "PASS selection retention: 2048 base rows, 128 dimensions, 34 exact-field queries, cache=1 MiB\n"
+    },
+    {
+      "label": "scalar/test_large_results.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_large_results.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 1.22367760000634,
+      "output": "test_disk_backed_raw_output_and_limit_offset (__main__.LargeResults.test_disk_backed_raw_output_and_limit_offset) ... ok\ntest_empty_headers_and_markers_after_large_query (__main__.LargeResults.test_empty_headers_and_markers_after_large_query) ... ok\ntest_explicit_transaction_read_own_writes_and_rollback_restart (__main__.LargeResults.test_explicit_transaction_read_own_writes_and_rollback_restart) ... ok\ntest_single_long_value_commit_and_repeated_select_restart (__main__.LargeResults.test_single_long_value_commit_and_repeated_select_restart) ... ok\ntest_sorted_and_topk_output_with_cache_resident_rows (__main__.LargeResults.test_sorted_and_topk_output_with_cache_resident_rows) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 1.061s\n\nOK\n"
+    },
+    {
+      "label": "scalar/test_json_protocol.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_json_protocol.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.7761482999922009,
+      "output": "Mandatory: official valid protocol and requested SQL/text regressions. Optional robustness: disabled.\ntest_affected_rows_are_integer_counts (__main__.JsonProtocolContract.test_affected_rows_are_integer_counts) ... ok\ntest_bigint_boundaries_are_exact_json_integers (__main__.JsonProtocolContract.test_bigint_boundaries_are_exact_json_integers) ... ok\ntest_empty_results_retain_column_names_and_order (__main__.JsonProtocolContract.test_empty_results_retain_column_names_and_order) ... ok\ntest_ids_preserve_all_json_types_and_huge_signed_integers (__main__.JsonProtocolContract.test_ids_preserve_all_json_types_and_huge_signed_integers) ... ok\ntest_json_wrapper_executes_sql_without_a_semicolon (__main__.JsonProtocolContract.test_json_wrapper_executes_sql_without_a_semicolon) ... ok\ntest_ready_is_exact_and_flushed_before_any_input (__main__.JsonProtocolContract.test_ready_is_exact_and_flushed_before_any_input) ... ok\ntest_search_mode_switches_per_request (__main__.JsonProtocolContract.test_search_mode_switches_per_request) ... ok\ntest_semicolon_comments_and_multi_statement_atomic_rejection (__main__.JsonProtocolContract.test_semicolon_comments_and_multi_statement_atomic_rejection) ... ok\ntest_shutdown_response_precedes_large_pending_overlay_release (__main__.JsonProtocolContract.test_shutdown_response_precedes_large_pending_overlay_release) ... ok\ntest_shutdown_rolls_back_and_restart_preserves_committed_data (__main__.JsonProtocolContract.test_shutdown_rolls_back_and_restart_preserves_committed_data) ... ok\ntest_spooled_response_over_one_mib_preserves_escaping_and_row_boundaries (__main__.JsonProtocolContract.test_spooled_response_over_one_mib_preserves_escaping_and_row_boundaries) ... ok\ntest_sql_errors_and_unsupported_null_do_not_end_session (__main__.JsonProtocolContract.test_sql_errors_and_unsupported_null_do_not_end_session) ... ok\ntest_strings_are_escaped_once_in_one_physical_response_line (__main__.JsonProtocolContract.test_strings_are_escaped_once_in_one_physical_response_line) ... ok\ntest_vectors_are_arrays_and_distances_are_finite_numbers (__main__.JsonProtocolContract.test_vectors_are_arrays_and_distances_are_finite_numbers) ... ok\ntest_explicit_stdio_text_retains_legacy_output (__main__.LegacyTextCompatibility.test_explicit_stdio_text_retains_legacy_output) ... ok\n\n----------------------------------------------------------------------\nRan 15 tests in 0.624s\n\nOK\n"
+    },
+    {
+      "label": "scalar/test_official_json_public.py",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_official_json_public.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 2.529870899990783,
+      "output": "binary=D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe\nbinary_sha256=3fe487fb1c3c9e553faf0c199ca1821a9f8108580e2889db237beb59e978056d\nsql_crud: PASS (7/7 SQL) \nsql_comparisons: PASS (4/4 SQL) \nsql_ordering: PASS (4/4 SQL) \nsql_empty: PASS (3/3 SQL) \nsql_primary_key: PASS (4/4 SQL) \nsql_unicode: PASS (3/3 SQL) \nsql_bigint: PASS (3/3 SQL) \nsql_unsupported: PASS (3/3 SQL) \nstorage_restart: PASS (3/3 SQL) \nvector_euclidean: PASS (3/3 SQL) \ntransaction_commit: PASS (6/6 SQL) \ntransaction_rollback: PASS (6/6 SQL) \nstorage_mutations: PASS (6/6 SQL) \nstorage_multiple_tables: PASS (6/6 SQL) \nvector_ties_and_filter: PASS (5/5 SQL) \nvector_float32: PASS (3/3 SQL) \nvector_index_maintenance: PASS (9/9 SQL) \ntransaction_failed_insert: PASS (8/8 SQL) \ntransaction_autocommit_atomic: PASS (4/4 SQL) \ntransaction_shutdown_rollback: PASS (5/5 SQL) \nPASS: 20/20 published groups; 95/95 SQL responses (local JSONL)\n"
+    },
+    {
+      "label": "public-adapter-regressions",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_public_harness.py"
+      ],
+      "returncode": 0,
+      "seconds": 0.3849175999930594,
+      "output": "test_affected_rows_and_rows_are_not_ignored (__main__.PublicHarnessTests.test_affected_rows_and_rows_are_not_ignored) ... ok\ntest_bigint_unicode_and_float_tolerance_are_preserved (__main__.PublicHarnessTests.test_bigint_unicode_and_float_tolerance_are_preserved) ... ok\ntest_column_names_are_compared_even_for_empty_results (__main__.PublicHarnessTests.test_column_names_are_compared_even_for_empty_results) ... ok\ntest_column_order_and_actual_row_width_are_checked (__main__.PublicHarnessTests.test_column_order_and_actual_row_width_are_checked) ... ok\ntest_empty_expectation_does_not_hide_control_error (__main__.PublicHarnessTests.test_empty_expectation_does_not_hide_control_error) ... ok\ntest_empty_expectation_requires_success_for_queries_and_dml (__main__.PublicHarnessTests.test_empty_expectation_requires_success_for_queries_and_dml) ... ok\ntest_empty_query_is_framed_separately_from_following_status_and_rows (__main__.PublicHarnessTests.test_empty_query_is_framed_separately_from_following_status_and_rows) ... ok\ntest_empty_string_cell_is_not_confused_with_empty_result (__main__.PublicHarnessTests.test_empty_string_cell_is_not_confused_with_empty_result) ... ok\ntest_expected_error_does_not_stop_following_sql (__main__.PublicHarnessTests.test_expected_error_does_not_stop_following_sql) ... ok\ntest_expected_errors_accept_nonempty_unfrozen_codes (__main__.PublicHarnessTests.test_expected_errors_accept_nonempty_unfrozen_codes) ... ok\ntest_expected_errors_reject_success_empty_code_and_malformed_records (__main__.PublicHarnessTests.test_expected_errors_reject_success_empty_code_and_malformed_records) ... ok\ntest_extra_missing_and_empty_frames_are_failures (__main__.PublicHarnessTests.test_extra_missing_and_empty_frames_are_failures) ... ok\ntest_extra_or_missing_rows_do_not_shift_following_assertion (__main__.PublicHarnessTests.test_extra_or_missing_rows_do_not_shift_following_assertion) ... ok\ntest_leading_consecutive_and_trailing_restarts (__main__.PublicHarnessTests.test_leading_consecutive_and_trailing_restarts) ... ok\ntest_main_runs_remaining_cases_after_crash_or_timeout (__main__.PublicHarnessTests.test_main_runs_remaining_cases_after_crash_or_timeout) ... ok\ntest_missing_marker_and_unframed_output_are_failures (__main__.PublicHarnessTests.test_missing_marker_and_unframed_output_are_failures) ... ok\ntest_mode_directives_do_not_consume_assertions_and_survive_restart (__main__.PublicHarnessTests.test_mode_directives_do_not_consume_assertions_and_survive_restart) ... ok\ntest_mode_failure_is_checked_without_consuming_sql_assertion (__main__.PublicHarnessTests.test_mode_failure_is_checked_without_consuming_sql_assertion) ... ok\ntest_restart_does_not_ignore_failed_shutdown (__main__.PublicHarnessTests.test_restart_does_not_ignore_failed_shutdown) ... ok\ntest_restart_sends_eof_and_reuses_one_directory (__main__.PublicHarnessTests.test_restart_sends_eof_and_reuses_one_directory) ... ok\ntest_sql_and_manifest_assertion_counts_are_checked (__main__.PublicHarnessTests.test_sql_and_manifest_assertion_counts_are_checked) ... ok\ntest_unexpected_error_is_reported_without_desynchronizing_next_sql (__main__.PublicHarnessTests.test_unexpected_error_is_reported_without_desynchronizing_next_sql) ... ok\ntest_unknown_directive_is_rejected (__main__.PublicHarnessTests.test_unknown_directive_is_rejected) ... ok\ntest_unordered_comparison_preserves_duplicate_rows (__main__.PublicHarnessTests.test_unordered_comparison_preserves_duplicate_rows) ... ok\n\n----------------------------------------------------------------------\nRan 24 tests in 0.186s\n\nOK\n"
+    },
+    {
+      "label": "commit-failure-regressions",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_commit_publication.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-fault\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.4060026000079233,
+      "output": "PASS injected-publication-failure: writer exit=1; both tables' complete fields verified through two normal-binary restarts\nPASS fault-build-without-env: writer exit=0; both tables' complete fields verified through two normal-binary restarts\nPASS rollback-with-fault-env: writer exit=0; both tables' complete fields verified through two normal-binary restarts\nPASS normal-build-ignores-fault-env: writer exit=0; both tables' complete fields verified through two normal-binary restarts\nPASS torn-wal-failure: writer exit=1; both tables' complete fields verified through two normal-binary restarts\nPASS noop mutations: no WAL growth, no fault activation, two restarts\nPASS commit publication: 6 cases, 19 child processes, 0.295s total\n"
+    },
+    {
+      "label": "catalog-failure-regressions",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_catalog_publication.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-fault\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.8948530000052415,
+      "output": "PASS table-torn-fail-stop: writer exit=1; complete transcript, catalog, and rows checked through two normal restarts\nPASS table-full-fail-stop: writer exit=1; complete transcript, catalog, and rows checked through two normal restarts\nPASS table-normal-without-env: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts\nPASS table-fault-build-without-env: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts\nPASS table-normal-ignores-torn: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts\nPASS table-normal-ignores-full: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts\nPASS index-torn-fail-stop: writer exit=1; complete transcript, catalog, and rows checked through two normal restarts\nPASS index-full-fail-stop: writer exit=1; complete transcript, catalog, and rows checked through two normal restarts\nPASS index-normal-without-env: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts\nPASS index-fault-build-without-env: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts\nPASS index-normal-ignores-torn: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts\nPASS index-normal-ignores-full: writer exit=0; complete transcript, catalog, and rows checked through two normal restarts\nPASS catalog publication: 12 cases, 48 child processes, 0.777s total\n"
+    },
+    {
+      "label": "result-replay-failure-regressions",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_result_spool_io.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-fault\\minivectordb.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.36285630000929814,
+      "output": "PASS replay failure after 0 bytes closes partial response\nPASS production isolation, full retry and committed-data recovery\nPASS replay failure after 65536 bytes closes partial response\nPASS production isolation, full retry and committed-data recovery\nPASS JSON replay failure after 0 bytes, production retry and isolation\nPASS JSON replay failure after 65536 bytes, production retry and isolation\n"
+    },
+    {
+      "label": "normal/long-random",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_differential.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe",
+        "--case",
+        "random",
+        "--steps",
+        "4000",
+        "--seed",
+        "13",
+        "--seed",
+        "2147483647",
+        "--seed",
+        "20261129"
+      ],
+      "returncode": 0,
+      "seconds": 9.112237299996195,
+      "output": "PASS exact distance oracle: 1D large-probe order and Fraction boundaries\nPASS case=random seed=13 dim=8 statements=9027\nPASS case=random seed=2147483647 dim=8 statements=8995\nPASS case=random seed=20261129 dim=33 statements=9012\nPASS differential: 3/3 cases, 27034 SQL statements, 0 query mismatches\n"
+    },
+    {
+      "label": "allocation-normal",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_statement_allocation.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_statement_allocation_normal.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.32818050000059884,
+      "output": "PASS INSERT: 25 allocation failures; COMMIT/ROLLBACK/restart and success verified\nPASS UPDATE: 22 allocation failures; COMMIT/ROLLBACK/restart and success verified\nPASS DELETE: 11 allocation failures; COMMIT/ROLLBACK/restart and success verified\n"
+    },
+    {
+      "label": "allocation-scalar",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_statement_allocation.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_statement_allocation_scalar.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.3014197000011336,
+      "output": "PASS INSERT: 25 allocation failures; COMMIT/ROLLBACK/restart and success verified\nPASS UPDATE: 22 allocation failures; COMMIT/ROLLBACK/restart and success verified\nPASS DELETE: 11 allocation failures; COMMIT/ROLLBACK/restart and success verified\n"
+    },
+    {
+      "label": "commit-allocation-normal",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_statement_allocation.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_commit_allocation_normal.exe"
+      ],
+      "returncode": 0,
+      "seconds": 1.6843701000034343,
+      "output": "PASS COMMIT tables=1 retry=COMMIT: 14 retryable failures, 23 recovery-required failures; retry and reload verified\nPASS COMMIT tables=1 retry=ROLLBACK: 14 retryable failures, 23 recovery-required failures; retry and reload verified\nPASS COMMIT tables=2 retry=COMMIT: 16 retryable failures, 44 recovery-required failures; retry and reload verified\nPASS COMMIT tables=2 retry=ROLLBACK: 16 retryable failures, 44 recovery-required failures; retry and reload verified\n"
+    },
+    {
+      "label": "commit-allocation-scalar",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_statement_allocation.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_commit_allocation_scalar.exe"
+      ],
+      "returncode": 0,
+      "seconds": 1.561040199987474,
+      "output": "PASS COMMIT tables=1 retry=COMMIT: 14 retryable failures, 23 recovery-required failures; retry and reload verified\nPASS COMMIT tables=1 retry=ROLLBACK: 14 retryable failures, 23 recovery-required failures; retry and reload verified\nPASS COMMIT tables=2 retry=COMMIT: 16 retryable failures, 44 recovery-required failures; retry and reload verified\nPASS COMMIT tables=2 retry=ROLLBACK: 16 retryable failures, 44 recovery-required failures; retry and reload verified\n"
+    },
+    {
+      "label": "catalog-allocation-normal",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_statement_allocation.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_catalog_allocation_normal.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.5206271999923047,
+      "output": "SUMMARY CREATE_TABLE failures=71 violations=0 first_success_budget=71\nSUMMARY CREATE_INDEX failures=51 violations=0 first_success_budget=51\n"
+    },
+    {
+      "label": "catalog-allocation-scalar",
+      "command": [
+        "C:\\Users\\11946\\anaconda3\\python.exe",
+        "-X",
+        "utf8",
+        "-B",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_statement_allocation.py",
+        "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_catalog_allocation_scalar.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.8652723999985028,
+      "output": "SUMMARY CREATE_TABLE failures=71 violations=0 first_success_budget=71\nSUMMARY CREATE_INDEX failures=51 violations=0 first_success_budget=51\n"
+    }
+  ],
+  "finished_at_utc": "2026-11-10T10:51:51.076093+00:00",
+  "files_after": {
+    "src\\minivectordb.cpp": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\src\\minivectordb.cpp",
+      "sha256": "a904e68f931287839f89d9732027ef3df4a5e5fd36408b529460ea6f95f3d46f",
+      "size_bytes": 146059
+    },
+    "CMakeLists.txt": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\CMakeLists.txt",
+      "sha256": "1ef43344a83e2e968522087f221f7fa7ef5f027ef540861b8c6a86d494854189",
+      "size_bytes": 535
+    },
+    "Dockerfile": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\Dockerfile",
+      "sha256": "55b84045ddfe9a9f99e68e913382d59716a40941f1de37e0fa972d8a90953438",
+      "size_bytes": 566
+    },
+    "STDIO_PROTOCOL.md": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\STDIO_PROTOCOL.md",
+      "sha256": "b71bb1dc4ff34a519653e1406926f6ba9860c275c910627285480b24b8070f3f",
+      "size_bytes": 12552
+    },
+    "protocol_check\\_assertions.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\protocol_check\\_assertions.py",
+      "sha256": "df3d680d0d03b5f5bfa838eeca7e1ed8d8e2c0cc49d69fd216af3073968b5037",
+      "size_bytes": 2133
+    },
+    "protocol_check\\_transport.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\protocol_check\\_transport.py",
+      "sha256": "8dbca9b48141e81952749ecef9e68af66ebbdcb1cf051e04870d2b78ed81f44d",
+      "size_bytes": 7980
+    },
+    "protocol_check\\example_stdio.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\protocol_check\\example_stdio.py",
+      "sha256": "9710936d417b95d9f09812392d98eac0e91fe771d016a1b8ff09fe54d761b558",
+      "size_bytes": 1637
+    },
+    "protocol_check\\run.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\protocol_check\\run.py",
+      "sha256": "fee9f469d59afb764b6ce31f73df8cdd6ffa2f51dba87e7e17c13fc9408deaf7",
+      "size_bytes": 5847
+    },
+    "protocol_check\\config.json": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\protocol_check\\config.json",
+      "sha256": "22d6504994020264281a3e6770ad2855bf4ffcea8f62386ad18f7bd936fb5441",
+      "size_bytes": 238
+    },
+    "tests\\jsonl_client.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\jsonl_client.py",
+      "sha256": "8823cbb9e8db3c1170c8272eacf1b140bc91a61ffa6d64de957dc5ae0b05ae69",
+      "size_bytes": 8950
+    },
+    "tests\\run_public.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\run_public.py",
+      "sha256": "b4ed25453cb4194b89cf46e23be3e6fd8c97478a2acb89e53c106675390c8262",
+      "size_bytes": 9068
+    },
+    "tests\\test_catalog_publication.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_catalog_publication.py",
+      "sha256": "cd001236e5fdbb5fa1f71cebdbbc9cfe611ea632c74fe7ce136247db4798404c",
+      "size_bytes": 11125
+    },
+    "tests\\test_commit_publication.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_commit_publication.py",
+      "sha256": "773fcec37e0a641f98a9756e95796ccd742da4c98af85e47bc514ffe67e93bc7",
+      "size_bytes": 11189
+    },
+    "tests\\test_container_resources.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_container_resources.py",
+      "sha256": "59593a2cef06f71b9572b499f9d12de436f97b45cf48d6dac4eaced7355b45b5",
+      "size_bytes": 22250
+    },
+    "tests\\test_differential.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_differential.py",
+      "sha256": "bea23e1d05a2d1d59b40045e9f8e958734966e6cbaccdb877599923728381e03",
+      "size_bytes": 31687
+    },
+    "tests\\test_disk_scan.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_disk_scan.py",
+      "sha256": "bfad305fd9faeeb0b40f2cf869c341aad131ef82ca1200d3edef38eb7f56e971",
+      "size_bytes": 4980
+    },
+    "tests\\test_exact_distance.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_exact_distance.py",
+      "sha256": "94a6d52fc5ea843f11f2e26af0ac212a1d4880ca193c0de3a90fb27e74a56eaf",
+      "size_bytes": 19247
+    },
+    "tests\\test_extended.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_extended.py",
+      "sha256": "ee6eb2d72550c751cc7bbe736095c3ed9b9a5a7dbabae9bc3ac6238bdb06914c",
+      "size_bytes": 10191
+    },
+    "tests\\test_float32_literals.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_float32_literals.py",
+      "sha256": "083170847d4639b61d8038923ac44da63135260d856746dbc37cba6117e703c8",
+      "size_bytes": 10233
+    },
+    "tests\\test_formal_sql_edges.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_formal_sql_edges.py",
+      "sha256": "3754ebe9dea108c05cce2ac132afeb68205d99ce592028636d9e804502c7b1fd",
+      "size_bytes": 12403
+    },
+    "tests\\test_hidden_edges.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_hidden_edges.py",
+      "sha256": "1dee60223cd20891c7bfe1013748557d97c0f19ff2fe2ae8a21b6852ede3a960",
+      "size_bytes": 36597
+    },
+    "tests\\test_json_protocol.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_json_protocol.py",
+      "sha256": "064335607dbacc20ddf0174f1ee114545eb12cf91de439deb70a92d2ba417293",
+      "size_bytes": 21224
+    },
+    "tests\\test_large_results.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_large_results.py",
+      "sha256": "afaf36413759dc731d5ed0ea5844b6ec9b592b083da5115ae3a4931d814b0165",
+      "size_bytes": 14049
+    },
+    "tests\\test_official_json_public.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_official_json_public.py",
+      "sha256": "8248ec9ec8b0fd0420c5489e365317ac432cb58d315ad83e359f0ba6b94a518e",
+      "size_bytes": 15253
+    },
+    "tests\\test_protocol_round11.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_protocol_round11.py",
+      "sha256": "c26a6a9d75575569e73a3d5a34e39cf49cc4f87c502a5158226c5af1820c5f2d",
+      "size_bytes": 10986
+    },
+    "tests\\test_public_harness.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_public_harness.py",
+      "sha256": "a03bbaf2019d1462e9d2800f27d9b8b57b9889469d3c187eb6ab13cef61e4a6f",
+      "size_bytes": 14140
+    },
+    "tests\\test_result_spool_io.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_result_spool_io.py",
+      "sha256": "18e36455d6fd83b0ffdd95e990b63a552fe09d573cea8dcf83a4de4c917f4776",
+      "size_bytes": 4856
+    },
+    "tests\\test_round6_sql_contract.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_round6_sql_contract.py",
+      "sha256": "2852135f3550e64226a4699c550efba4b1a631b62fd2e0b1b4451889c48aca1b",
+      "size_bytes": 7931
+    },
+    "tests\\test_round6_stream_contract.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_round6_stream_contract.py",
+      "sha256": "3e54f9583c2a3d4625ddd8b7ee3dd515e549668bb62a316881ee6c0c04f896ee",
+      "size_bytes": 10599
+    },
+    "tests\\test_selection_paths.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_selection_paths.py",
+      "sha256": "b821478ca331a2c0c09b8f774a003d39d48768aaf9b007110b186feb2db58504",
+      "size_bytes": 15172
+    },
+    "tests\\test_selection_retention.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_selection_retention.py",
+      "sha256": "d78b859bc1b77e5f89066584d1167facdcd4433b0a6ed8b82a4d07cf2c1e0b5c",
+      "size_bytes": 8725
+    },
+    "tests\\test_semantics.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_semantics.py",
+      "sha256": "e58412660bf53a329aabf0de04ac383a5780fc1cc4a1ed0eaf25ccab44d79884",
+      "size_bytes": 5196
+    },
+    "tests\\test_sql_round11.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_sql_round11.py",
+      "sha256": "6b54ebd6bf5edd96cb2c87b8a623df4841cebb34f882186eb0ed3878d010ab62",
+      "size_bytes": 4271
+    },
+    "tests\\test_statement_allocation.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_statement_allocation.py",
+      "sha256": "439750de65892742c3d3178f595de570a88ff53b33d9d80c92f4d2e7df92ad54",
+      "size_bytes": 907
+    },
+    "tests\\test_stdio_contract.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_stdio_contract.py",
+      "sha256": "99215f18bb9ab581e52780ff463a72172872ac1289659905a7b2ee5c46892aca",
+      "size_bytes": 9371
+    },
+    "tests\\test_stream_followup.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_stream_followup.py",
+      "sha256": "f1640f33b182168346c4e0655ad861532c007d87e446f75d589f3f58338a97b9",
+      "size_bytes": 7210
+    },
+    "tests\\validate_all.py": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\validate_all.py",
+      "sha256": "8173f82f7f07651349647b2dde3ba5208766b2ce64a4659b7e21bd5d8cebb91a",
+      "size_bytes": 7519
+    },
+    "tests\\test_catalog_allocation.cpp": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_catalog_allocation.cpp",
+      "sha256": "64f1db9694042665750ea9fd99a24073608648ec736ac566c0087b93147864fc",
+      "size_bytes": 7315
+    },
+    "tests\\test_commit_allocation.cpp": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_commit_allocation.cpp",
+      "sha256": "0daf20efb412ed2308e5f516c87f4434ca886c94726fc89c5336e796b585607f",
+      "size_bytes": 5226
+    },
+    "tests\\test_statement_allocation.cpp": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\tests\\test_statement_allocation.cpp",
+      "sha256": "05170e816016f6e0e7c656216134898a09458abbba0ff9b038591eae53f55f00",
+      "size_bytes": 5128
+    },
+    "mysqltest\\manifest.json": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\mysqltest\\manifest.json",
+      "sha256": "549079acfed240abb41b8f62af03e94b6081659483d145ee739f7ecb9feb3949",
+      "size_bytes": 4039
+    }
+  },
+  "binaries_after": {
+    "normal": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-normal\\minivectordb.exe",
+      "sha256": "f9f31341ae95bd599a0a9d2a63ec40270fab02f32b91680c9137f058791be6e1",
+      "size_bytes": 3885225
+    },
+    "scalar": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-scalar\\minivectordb.exe",
+      "sha256": "3fe487fb1c3c9e553faf0c199ca1821a9f8108580e2889db237beb59e978056d",
+      "size_bytes": 3805298
+    },
+    "fault": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-fault\\minivectordb.exe",
+      "sha256": "9333ec55c6ac4c5f0b3dcd3a6d36a22af8bf2372b0d7c10270c32ff512731b6d",
+      "size_bytes": 3887557
+    },
+    "allocation-normal": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_statement_allocation_normal.exe",
+      "sha256": "c3dae10e95b606969ea2404120040d68c60972e7598466272513de75d5088339",
+      "size_bytes": 3939458
+    },
+    "allocation-scalar": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_statement_allocation_scalar.exe",
+      "sha256": "13ef5c2adacf1ac0040b89a5245864c87527ed0be516703455a77884c95ffa9c",
+      "size_bytes": 3858563
+    },
+    "commit-allocation-normal": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_commit_allocation_normal.exe",
+      "sha256": "18deba6b95fbad5dc5b49c32a340112a7ecd87da8b0d8c6c3f0c0309a0cbb3c2",
+      "size_bytes": 3935503
+    },
+    "commit-allocation-scalar": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_commit_allocation_scalar.exe",
+      "sha256": "21ea1c01d2e4d16ae0bca99c6db1b754d06bc1fdb7abba94cc3dd1ffbb5fbdc5",
+      "size_bytes": 3856144
+    },
+    "catalog-allocation-normal": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_catalog_allocation_normal.exe",
+      "sha256": "03abf7c99c0306120214c2a674300ed07ebefab09fa8bcf3719fb26fdf27844d",
+      "size_bytes": 3938805
+    },
+    "catalog-allocation-scalar": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round16-test_catalog_allocation_scalar.exe",
+      "sha256": "89586448cd04fe413caa6ab564bce1296b23ae4164e85a48a16a527af4d6576a",
+      "size_bytes": 3858934
+    }
+  }
+}

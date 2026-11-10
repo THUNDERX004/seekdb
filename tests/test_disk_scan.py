@@ -109,6 +109,16 @@ def run(executable: Path):
         result = client.execute("SELECT id FROM big")
         ids = sorted(int(value) for value in result)
         assert ids == list(range(1, row_count + 1)), ids[:20]
+        result = client.execute("SELECT * FROM big ORDER BY id")
+        assert len(result) == row_count
+        assert result[0].split("\t", 1)[0] == "1"
+        assert result[-1].split("\t", 1)[0] == str(row_count)
+        assert client.execute(
+            f"INSERT INTO big VALUES({row_count + 1},'odd','{make_vector(1)}')"
+        ) == ["OK 1"]
+        result = client.execute("SELECT id FROM big")
+        ids = sorted(int(value) for value in result)
+        assert ids == list(range(1, row_count + 2)), ids[-20:]
     finally:
         client.close()
         if os.name != "nt":

@@ -117,6 +117,13 @@ class Float32Literals(unittest.TestCase):
     def expect(self, sql, expected):
         self.assertEqual(self.session.execute(sql), expected, sql)
 
+    def test_vector_literal_whitespace_and_terminator(self):
+        self.expect("CREATE TABLE t(id BIGINT PRIMARY KEY,v VECTOR(3))", ["OK"])
+        self.expect(
+            "INSERT INTO t VALUES(1,'[ 1 , -2e-1, 3. ] ;')", ["OK 1"]
+        )
+        self.expect("SELECT v FROM t WHERE id=1", ["[1,-0.200000003,3]"])
+
     def test_insert_rounds_exact_decimal_directly_to_float32(self):
         self.expect("CREATE TABLE t(id BIGINT PRIMARY KEY,v VECTOR(1))", ["OK"])
         literals = boundary_literals()
