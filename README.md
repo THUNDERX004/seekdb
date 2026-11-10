@@ -97,8 +97,8 @@ transactions, ALTER TABLE, and other unsupported syntax return an error.
 Filtering is evaluated before distance calculation. Exact TopK uses a
 size-bounded max heap, then sorts by `(distance, primary key)`. The required
 `L2_DISTANCE` output is Euclidean distance. Distances are accumulated with an
-AVX2/FMA runtime-dispatched kernel when supported and a scalar fallback
-otherwise.
+AVX-512, AVX2/FMA, or scalar runtime-dispatched kernel according to CPU support.
+The exact integer comparison remains the tie-break path for every kernel.
 
 ## Tests
 

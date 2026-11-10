@@ -203,6 +203,22 @@ std::string lower(std::string value) {
   return value;
 }
 
+bool equalAsciiIgnoreCase(std::string_view left, std::string_view right) {
+  if (left.size() != right.size()) {
+    return false;
+  }
+  for (size_t i = 0; i < left.size(); ++i) {
+    const auto fold = [](char value) {
+      return value >= 'A' && value <= 'Z'
+                 ? static_cast<char>(value - 'A' + 'a') : value;
+    };
+    if (fold(left[i]) != fold(right[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 uint32_t crc32(const uint8_t *data, size_t size) {
   static constexpr auto table = [] {
     std::array<uint32_t, 256> values{};
@@ -336,9 +352,8 @@ struct TableDef {
   bool vector_index = false;
 
   size_t columnIndex(std::string_view requested) const {
-    const std::string wanted = lower(std::string(requested));
     for (size_t i = 0; i < columns.size(); ++i) {
-      if (lower(columns[i].name) == wanted) {
+      if (equalAsciiIgnoreCase(columns[i].name, requested)) {
         return i;
       }
     }
@@ -376,12 +391,15 @@ size_t cachedRowBytes(const Row &row) {
   return size;
 }
 
-std::vector<uint8_t> serializeRow(const Row &row) {
+void serializeRowInto(const Row &row, std::vector<uint8_t> &out) {
   if (row.size() > std::numeric_limits<uint32_t>::max()) {
     fail("VALUE_TOO_LARGE", "row has too many columns");
   }
-  std::vector<uint8_t> out;
-  out.reserve(serializedRowSize(row));
+  out.clear();
+  const size_t expected = serializedRowSize(row);
+  if (out.capacity() < expected) {
+    out.reserve(expected);
+  }
   appendScalar<uint32_t>(out, static_cast<uint32_t>(row.size()));
   for (const Value &value : row) {
     appendScalar<int64_t>(out, value.integer);
@@ -395,6 +413,11 @@ std::vector<uint8_t> serializeRow(const Row &row) {
       }
     }
   }
+}
+
+std::vector<uint8_t> serializeRow(const Row &row) {
+  std::vector<uint8_t> out;
+  serializeRowInto(row, out);
   return out;
 }
 
@@ -475,6 +498,20 @@ std::string formatFloat(float value, int precision = 9) {
     }
   }
   return result.empty() || result == "-0" ? "0" : result;
+}
+
+std::string formatFixed(double value, int precision = 6) {
+  std::array<char, 128> buffer{};
+  auto [end, error] = std::to_chars(
+      buffer.data(), buffer.data() + buffer.size(), value,
+      std::chars_format::fixed, precision);
+  if (error == std::errc() && end != buffer.data()) {
+    return std::string(buffer.data(), end);
+  }
+  std::ostringstream out;
+  out.imbue(std::locale::classic());
+  out << std::fixed << std::setprecision(precision) << value;
+  return out.str();
 }
 
 void appendFloat(std::string &out, float value, int precision = 9) {
@@ -827,7 +864,7 @@ struct Token {
 
 bool tokenIsKeyword(const Token &token, std::string_view keyword) {
   return token.kind == TokenKind::Identifier &&
-         lower(token.text) == lower(std::string(keyword));
+         equalAsciiIgnoreCase(token.text, keyword);
 }
 
 class Lexer {
@@ -1067,7 +1104,7 @@ using Statement =
 class Parser {
  public:
   Parser(std::string_view sql,
-         const std::unordered_map<std::string, TableDef> &tables)
+         const std::unordered_map<std::string, const TableDef *> &tables)
       : tokens_(Lexer(sql).tokenize()), tables_(tables) {}
 
   bool empty() const { return tokens_.front().kind == TokenKind::End; }
@@ -1183,7 +1220,7 @@ class Parser {
     if (found == tables_.end()) {
       fail("UNKNOWN_TABLE", "unknown table '" + std::string(name) + "'");
     }
-    return found->second;
+    return *found->second;
   }
 
   int64_t parseNonNegativeInteger() {
@@ -1817,7 +1854,7 @@ class Parser {
 
   std::vector<Token> tokens_;
   size_t pos_ = 0;
-  const std::unordered_map<std::string, TableDef> &tables_;
+  const std::unordered_map<std::string, const TableDef *> &tables_;
 };
 
 struct DecodedRecord {
@@ -1826,10 +1863,13 @@ struct DecodedRecord {
   std::vector<uint8_t> payload;
 };
 
-std::vector<uint8_t> encodeRowHeader(uint64_t txid, uint16_t op,
-                                     const std::vector<uint8_t> &payload) {
-  std::vector<uint8_t> out;
-  out.reserve(32);
+void encodeRowHeader(uint64_t txid, uint16_t op,
+                     const std::vector<uint8_t> &payload,
+                     std::vector<uint8_t> &out) {
+  out.clear();
+  if (out.capacity() < 32) {
+    out.reserve(32);
+  }
   appendScalar<uint32_t>(out, kRowMagic);
   appendScalar<uint16_t>(out, kFormatVersion);
   appendScalar<uint16_t>(out, op);
@@ -1837,7 +1877,6 @@ std::vector<uint8_t> encodeRowHeader(uint64_t txid, uint16_t op,
   appendScalar<uint64_t>(out, static_cast<uint64_t>(payload.size()));
   appendScalar<uint32_t>(out, crc32(payload));
   appendScalar<uint32_t>(out, 0);
-  return out;
 }
 
 bool decodeRowHeader(const std::array<uint8_t, 32> &bytes, DecodedRecord &record,
@@ -2265,18 +2304,20 @@ class Table {
                                                &changes) {
     std::vector<PendingRecord> pending;
     pending.reserve(changes.size());
+    std::vector<uint8_t> payload;
+    std::vector<uint8_t> header;
     for (const auto &[primary, row] : changes) {
-      std::vector<uint8_t> payload;
+      payload.clear();
       uint16_t op = 0;
       if (row.has_value()) {
         op = containsBase(primary) ? static_cast<uint16_t>(2)
                                    : static_cast<uint16_t>(1);
-        payload = serializeRow(*row);
+        serializeRowInto(*row, payload);
       } else {
         op = 3;
         appendScalar<int64_t>(payload, primary);
       }
-      const std::vector<uint8_t> header = encodeRowHeader(txid, op, payload);
+      encodeRowHeader(txid, op, payload, header);
       const uint64_t offset = writer.append(header);
       writer.append(payload);
       // The transaction overlay remains alive until every table is published.
@@ -2335,6 +2376,18 @@ class Table {
   }
 
   size_t rowCount() const { return versions_.size(); }
+
+  bool fullyCached() const noexcept { return cache_enabled_; }
+
+  template <typename Callback>
+  bool forEachCached(Callback &&callback) const {
+    for (const auto &[primary, version] : versions_) {
+      if (!callback(primary, version.row, true)) {
+        return false;
+      }
+    }
+    return true;
+  }
 
  private:
   void applyRecord(const DecodedRecord &record,
@@ -2644,6 +2697,8 @@ class Database {
     for (auto &[name, table] : tables_) {
       (void)name;
       table->load(wal.committed, next_txid_);
+      definitions_.emplace(lower(table->definition().name),
+                           &table->definition());
     }
     if (fs::exists(data_dir_ / "mvd.wal") &&
         fs::file_size(data_dir_ / "mvd.wal") != wal.valid_bytes) {
@@ -2657,8 +2712,7 @@ class Database {
   std::optional<ExecResult> execute(std::string_view sql) {
     MVD_PROFILE_SCOPE(execute_profile, Execute, 0);
     MVD_PROFILE_SCOPE(parse_profile, Parse, 0);
-    auto definitions = tableDefinitions();
-    Parser parser(sql, definitions);
+    Parser parser(sql, definitions_);
     // A comment-only tail is not a request and must not emit a response frame.
     // Reuse the parsed token stream instead of lexing every request twice.
     if (parser.empty()) {
@@ -2771,14 +2825,6 @@ class Database {
     bool descending = false;
   };
 
-  std::unordered_map<std::string, TableDef> tableDefinitions() const {
-    std::unordered_map<std::string, TableDef> result;
-    for (const auto &[name, table] : tables_) {
-      result.emplace(name, table->definition());
-    }
-    return result;
-  }
-
   Table &requireTable(std::string_view name) {
     auto found = tables_.find(lower(std::string(name)));
     if (found == tables_.end()) {
@@ -2869,9 +2915,12 @@ class Database {
     // Prepare the table and map node before the catalog becomes durable.
     // Requests are serialized, so this staged entry cannot be observed here.
     auto entry = tables_.emplace(key, std::move(table)).first;
+    auto definition_entry = definitions_.emplace(
+        key, &entry->second->definition()).first;
     try {
       appendCatalog(definition);
     } catch (...) {
+      definitions_.erase(definition_entry);
       tables_.erase(entry);
       throw;
     }
@@ -3088,6 +3137,13 @@ class Database {
   template <typename Callback>
   bool forEachCandidateView(Table &table, const std::vector<Condition> &conditions,
                             Callback &&callback, bool ordered = false) {
+    if (conditions.empty()) {
+      const auto changed = overlay_.find(table.definition().oid);
+      if ((changed == overlay_.end() || changed->second.empty()) &&
+          table.fullyCached()) {
+        return table.forEachCached(std::forward<Callback>(callback));
+      }
+    }
     for (const Condition &condition : conditions) {
       if (condition.column == table.definition().primary_key &&
           condition.op == CompareOp::Eq) {
@@ -3280,11 +3336,8 @@ class Database {
                 ? jsonString(row[column].text) : valueToString(row[column], type));
           }
         } else if (item.distance) {
-          std::ostringstream distance;
-          distance.imbue(std::locale::classic());
-          distance << std::fixed << std::setprecision(6)
-                   << l2Distance(row[item.column].vector, item.probe);
-          output.push_back(distance.str());
+          output.push_back(formatFixed(
+              l2Distance(row[item.column].vector, item.probe), 6));
         } else {
           const ColumnType type = definition.columns[item.column].type;
           output.push_back(json_output_ && type == ColumnType::VarChar
@@ -3361,7 +3414,10 @@ class Database {
       DistanceKernel distance_kernel = &squaredDistanceScalar<double>;
 #if !defined(MVD_FORCE_SCALAR) && (defined(__GNUC__) || defined(__clang__)) && \
     (defined(__x86_64__) || defined(__i386__))
-      if (__builtin_cpu_supports("avx2") && __builtin_cpu_supports("fma")) {
+      if (__builtin_cpu_supports("avx512f")) {
+        distance_kernel = &squaredDistanceAvx512<double>;
+      } else if (__builtin_cpu_supports("avx2") &&
+                 __builtin_cpu_supports("fma")) {
         distance_kernel = &squaredDistanceAvx2<double>;
       }
 #endif
@@ -3736,6 +3792,9 @@ class Database {
     }
 #if !defined(MVD_FORCE_SCALAR) && (defined(__GNUC__) || defined(__clang__)) && \
     (defined(__x86_64__) || defined(__i386__))
+    if (__builtin_cpu_supports("avx512f")) {
+      return squaredDistanceAvx512(left.data(), right.data(), left.size());
+    }
     if (__builtin_cpu_supports("avx2") && __builtin_cpu_supports("fma")) {
       return squaredDistanceAvx2(left.data(), right.data(), left.size());
     }
@@ -3745,6 +3804,62 @@ class Database {
 
 #if (defined(__GNUC__) || defined(__clang__)) && \
     (defined(__x86_64__) || defined(__i386__))
+  __attribute__((target("avx512f"))) static __m512d loadProbe8(
+      const float *probe) {
+    return _mm512_cvtps_pd(_mm256_loadu_ps(probe));
+  }
+
+  __attribute__((target("avx512f"))) static __m512d loadProbe8(
+      const double *probe) {
+    return _mm512_loadu_pd(probe);
+  }
+
+  template <typename Probe>
+  __attribute__((target("avx512f"))) static double squaredDistanceAvx512(
+      const float *left, const Probe *right, size_t size) {
+    __m512d sum0 = _mm512_setzero_pd();
+    __m512d sum1 = _mm512_setzero_pd();
+    __m512d sum2 = _mm512_setzero_pd();
+    __m512d sum3 = _mm512_setzero_pd();
+    size_t i = 0;
+    for (; i + 32 <= size; i += 32) {
+      const __m512d d0 = _mm512_sub_pd(
+          _mm512_cvtps_pd(_mm256_loadu_ps(left + i)),
+          loadProbe8(right + i));
+      const __m512d d1 = _mm512_sub_pd(
+          _mm512_cvtps_pd(_mm256_loadu_ps(left + i + 8)),
+          loadProbe8(right + i + 8));
+      const __m512d d2 = _mm512_sub_pd(
+          _mm512_cvtps_pd(_mm256_loadu_ps(left + i + 16)),
+          loadProbe8(right + i + 16));
+      const __m512d d3 = _mm512_sub_pd(
+          _mm512_cvtps_pd(_mm256_loadu_ps(left + i + 24)),
+          loadProbe8(right + i + 24));
+      sum0 = _mm512_fmadd_pd(d0, d0, sum0);
+      sum1 = _mm512_fmadd_pd(d1, d1, sum1);
+      sum2 = _mm512_fmadd_pd(d2, d2, sum2);
+      sum3 = _mm512_fmadd_pd(d3, d3, sum3);
+    }
+    sum0 = _mm512_add_pd(sum0, sum1);
+    sum2 = _mm512_add_pd(sum2, sum3);
+    sum0 = _mm512_add_pd(sum0, sum2);
+    for (; i + 8 <= size; i += 8) {
+      const __m512d d = _mm512_sub_pd(
+          _mm512_cvtps_pd(_mm256_loadu_ps(left + i)),
+          loadProbe8(right + i));
+      sum0 = _mm512_fmadd_pd(d, d, sum0);
+    }
+    alignas(64) double lanes[8];
+    _mm512_store_pd(lanes, sum0);
+    double sum = lanes[0] + lanes[1] + lanes[2] + lanes[3] +
+                 lanes[4] + lanes[5] + lanes[6] + lanes[7];
+    for (; i < size; ++i) {
+      const double difference = static_cast<double>(left[i]) - right[i];
+      sum += difference * difference;
+    }
+    return sum;
+  }
+
   __attribute__((target("avx2,fma"))) static __m256d loadProbe4(
       const float *probe) {
     return _mm256_cvtps_pd(_mm_loadu_ps(probe));
@@ -3853,6 +3968,7 @@ class Database {
   uint32_t next_oid_ = 1;
   uint64_t next_txid_ = 1;
   std::unordered_map<std::string, std::unique_ptr<Table>> tables_;
+  std::unordered_map<std::string, const TableDef *> definitions_;
   std::unordered_map<uint32_t, std::map<int64_t, std::optional<Row>>> overlay_;
   std::unordered_map<uint32_t, std::map<int64_t, std::optional<Row>>>
       shutdown_overlay_;
