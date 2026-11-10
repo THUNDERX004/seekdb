@@ -1,0 +1,117 @@
+{
+  "scope": "paired Windows development measurements; not official cgroup E or ranking",
+  "parent": "35f4c78d57d2de13d1b79ed5c4cc39b23d05ea7c",
+  "candidate_source_sha256": "ace97da27fa9d1ac0cd810ba0cdb06baa2fa29b3c8bb58a38cc3b304eeaf33c3",
+  "candidate_binary_sha256": "f57e1941fe20c1c3569442f341e8d95f617213a3246b413e11889a12346e7b70",
+  "workloads": [
+    {
+      "cache_limit_mib": null,
+      "rows": 10000,
+      "dimensions": 128,
+      "queries": 1000,
+      "k": 10,
+      "batch": 100,
+      "runs": [
+        {
+          "seed": 20261109,
+          "parent_write_seconds": 0.2259523,
+          "candidate_write_seconds": 0.2221763,
+          "parent_query_seconds": 0.162173,
+          "candidate_query_seconds": 0.179434,
+          "parent_filtered_query_seconds": 0.0464339,
+          "candidate_filtered_query_seconds": 0.0566088,
+          "parent_unfiltered_query_seconds": 0.1157391,
+          "candidate_unfiltered_query_seconds": 0.1228252
+        },
+        {
+          "seed": 20261110,
+          "parent_write_seconds": 0.2268207,
+          "candidate_write_seconds": 0.2203277,
+          "parent_query_seconds": 0.1610738,
+          "candidate_query_seconds": 0.1595842,
+          "parent_filtered_query_seconds": 0.0474589,
+          "candidate_filtered_query_seconds": 0.0461862,
+          "parent_unfiltered_query_seconds": 0.1136149,
+          "candidate_unfiltered_query_seconds": 0.113398
+        },
+        {
+          "seed": 20261111,
+          "parent_write_seconds": 0.2244235,
+          "candidate_write_seconds": 0.2314866,
+          "parent_query_seconds": 0.1680691,
+          "candidate_query_seconds": 0.1552357,
+          "parent_filtered_query_seconds": 0.0485802,
+          "candidate_filtered_query_seconds": 0.044105,
+          "parent_unfiltered_query_seconds": 0.1194889,
+          "candidate_unfiltered_query_seconds": 0.1111307
+        }
+      ],
+      "write_median_seconds": {
+        "parent": 0.2259523,
+        "candidate": 0.2221763
+      },
+      "query_median_seconds": {
+        "parent": 0.162173,
+        "candidate": 0.1595842
+      },
+      "paired_query_speedup_median": 1.009334257401422
+    },
+    {
+      "cache_limit_mib": 1,
+      "rows": 3000,
+      "dimensions": 128,
+      "queries": 200,
+      "k": 10,
+      "batch": 100,
+      "runs": [
+        {
+          "seed": 20261109,
+          "parent_write_seconds": 0.5389424,
+          "candidate_write_seconds": 0.481198,
+          "parent_query_seconds": 0.8297624,
+          "candidate_query_seconds": 0.4975279,
+          "parent_filtered_query_seconds": 0.4109476,
+          "candidate_filtered_query_seconds": 0.1072463,
+          "parent_unfiltered_query_seconds": 0.4188148,
+          "candidate_unfiltered_query_seconds": 0.3902816
+        },
+        {
+          "seed": 20261110,
+          "parent_write_seconds": 0.0750181,
+          "candidate_write_seconds": 0.0737806,
+          "parent_query_seconds": 0.8355452,
+          "candidate_query_seconds": 0.5008836,
+          "parent_filtered_query_seconds": 0.413037,
+          "candidate_filtered_query_seconds": 0.1078394,
+          "parent_unfiltered_query_seconds": 0.4225082,
+          "candidate_unfiltered_query_seconds": 0.3930442
+        },
+        {
+          "seed": 20261111,
+          "parent_write_seconds": 0.0720037,
+          "candidate_write_seconds": 0.0737118,
+          "parent_query_seconds": 0.829864,
+          "candidate_query_seconds": 0.4991619,
+          "parent_filtered_query_seconds": 0.4123116,
+          "candidate_filtered_query_seconds": 0.1069955,
+          "parent_unfiltered_query_seconds": 0.4175524,
+          "candidate_unfiltered_query_seconds": 0.3921664
+        }
+      ],
+      "write_median_seconds": {
+        "parent": 0.0750181,
+        "candidate": 0.0737806
+      },
+      "query_median_seconds": {
+        "parent": 0.829864,
+        "candidate": 0.4991619
+      },
+      "filtered_query_median_seconds": {
+        "parent": 0.4123116,
+        "candidate": 0.1072463
+      },
+      "paired_query_speedup_median": 1.6677705913577912,
+      "paired_filtered_query_speedup_median": 3.8318114471081985
+    }
+  ]
+}

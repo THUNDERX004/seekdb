@@ -280,6 +280,16 @@ T readScalar(const std::vector<uint8_t> &data, size_t &pos) {
   return static_cast<T>(value);
 }
 
+template <typename T>
+T readScalar(const uint8_t *data) {
+  using U = std::make_unsigned_t<T>;
+  U value = 0;
+  for (size_t i = 0; i < sizeof(T); ++i) {
+    value |= static_cast<U>(data[i]) << (i * 8U);
+  }
+  return static_cast<T>(value);
+}
+
 std::string readString(const std::vector<uint8_t> &data, size_t &pos) {
   uint32_t size = readScalar<uint32_t>(data, pos);
   if (pos + size > data.size()) {
@@ -1881,22 +1891,18 @@ void encodeRowHeader(uint64_t txid, uint16_t op,
 
 bool decodeRowHeader(const std::array<uint8_t, 32> &bytes, DecodedRecord &record,
                      uint64_t &payload_size) {
-  std::vector<uint8_t> header(bytes.begin(), bytes.end());
-  size_t pos = 0;
-  if (readScalar<uint32_t>(header, pos) != kRowMagic ||
-      readScalar<uint16_t>(header, pos) != kFormatVersion) {
+  if (readScalar<uint32_t>(bytes.data()) != kRowMagic ||
+      readScalar<uint16_t>(bytes.data() + 4) != kFormatVersion) {
     return false;
   }
-  record.op = readScalar<uint16_t>(header, pos);
-  record.txid = readScalar<uint64_t>(header, pos);
-  payload_size = readScalar<uint64_t>(header, pos);
+  record.op = readScalar<uint16_t>(bytes.data() + 6);
+  record.txid = readScalar<uint64_t>(bytes.data() + 8);
+  payload_size = readScalar<uint64_t>(bytes.data() + 16);
   return true;
 }
 
 uint32_t rowPayloadChecksum(const std::array<uint8_t, 32> &bytes) {
-  std::vector<uint8_t> header(bytes.begin(), bytes.end());
-  size_t pos = 24;
-  return readScalar<uint32_t>(header, pos);
+  return readScalar<uint32_t>(bytes.data() + 24);
 }
 
 std::vector<uint8_t> encodeCommitRecord(uint64_t txid, uint64_t entries) {
@@ -2003,27 +2009,25 @@ ScanStats scanCommitLog(const fs::path &path) {
   if (!input) {
     return stats;
   }
+  std::vector<uint8_t> payload;
   while (true) {
     std::array<uint8_t, 32> header{};
     if (!readExact(input, header.data(), header.size())) {
       break;
     }
-    std::vector<uint8_t> bytes(header.begin(), header.end());
-    size_t pos = 0;
-    if (readScalar<uint32_t>(bytes, pos) != kCommitMagic ||
-        readScalar<uint16_t>(bytes, pos) != kFormatVersion) {
+    if (readScalar<uint32_t>(header.data()) != kCommitMagic ||
+        readScalar<uint16_t>(header.data() + 4) != kFormatVersion) {
       break;
     }
-    pos = 8;
-    uint64_t txid = readScalar<uint64_t>(bytes, pos);
-    uint64_t payload_size = readScalar<uint64_t>(bytes, pos);
-    uint32_t checksum = readScalar<uint32_t>(bytes, pos);
+    const uint64_t txid = readScalar<uint64_t>(header.data() + 8);
+    const uint64_t payload_size = readScalar<uint64_t>(header.data() + 16);
+    const uint32_t checksum = readScalar<uint32_t>(header.data() + 24);
     if (payload_size > (1ULL << 20ULL)) {
       break;
     }
-    std::vector<uint8_t> payload(payload_size);
+    payload.resize(static_cast<size_t>(payload_size));
     if (!payload.empty() &&
-        !readExact(input, payload.data(), static_cast<size_t>(payload_size))) {
+        !readExact(input, payload.data(), payload.size())) {
       break;
     }
     if (crc32(payload) != checksum) {
@@ -2137,6 +2141,7 @@ class Table {
     std::ifstream input(data_path_, std::ios::binary);
     uint64_t offset = 0;
     uint64_t valid_bytes = 0;
+    std::vector<uint8_t> payload;
     if (input) {
       while (true) {
         const uint64_t record_offset = offset;
@@ -2151,7 +2156,7 @@ class Table {
             payload_size > file_bytes - record_offset - header.size()) {
           break;
         }
-        std::vector<uint8_t> payload(static_cast<size_t>(payload_size));
+        payload.resize(static_cast<size_t>(payload_size));
         if (!payload.empty() &&
             !readExact(input, payload.data(), payload.size())) {
           break;
@@ -2203,10 +2208,15 @@ class Table {
     return versions_.contains(primary);
   }
 
-  using IndexedRows = std::vector<std::pair<int64_t, const Row *>>;
+  struct IndexedRow {
+    int64_t primary = 0;
+    uint64_t offset = 0;
+    const Row *cached = nullptr;
+  };
+  using IndexedRows = std::vector<IndexedRow>;
 
   const IndexedRows *equalityCandidates(const Condition &condition) {
-    if (!cache_enabled_) {
+    if (equality_column_ == condition.column && equality_disabled_) {
       return nullptr;
     }
     const size_t column = condition.column;
@@ -2219,12 +2229,14 @@ class Table {
       // Build off to the side: an allocation failure must never publish a
       // partially populated candidate index to a later successful query.
       decltype(equality_index_) staged;
-      const size_t available = cache_limit_bytes_ > cache_bytes_
-                                   ? cache_limit_bytes_ - cache_bytes_
-                                   : 0;
+      const size_t available = cache_enabled_
+          ? (cache_limit_bytes_ > cache_bytes_
+                 ? cache_limit_bytes_ - cache_bytes_ : 0)
+          : equalityMetadataLimitBytes();
       size_t allocated = 0;
-      for (const auto &[primary, version] : versions_) {
-        std::string key = keyFor(version.row[column]);
+      const auto append = [&](int64_t primary, const Version &version,
+                              const Row &row) {
+        std::string key = keyFor(row[column]);
         auto [entry, inserted] = staged.try_emplace(std::move(key));
         if (inserted) {
           allocated += sizeof(decltype(equality_index_)::value_type) + 64 +
@@ -2232,12 +2244,43 @@ class Table {
         }
         IndexedRows &rows = entry->second;
         const size_t old_capacity = rows.capacity();
-        rows.emplace_back(primary, &version.row);
+        rows.push_back({primary, version.offset,
+                        version.cached ? &version.row : nullptr});
         allocated += (rows.capacity() - old_capacity) * sizeof(IndexedRows::value_type);
         if (allocated + staged.bucket_count() * sizeof(void *) > available) {
           equality_column_ = column;
           equality_disabled_ = true;
-          return nullptr;
+          return false;
+        }
+        return true;
+      };
+      if (cache_enabled_) {
+        // The fully cached path already has every payload and can avoid a
+        // second physical-order lookup for each table row.
+        for (const auto &[primary, version] : versions_) {
+          if (!append(primary, version, version.row)) {
+            return nullptr;
+          }
+        }
+      } else {
+        // Non-cached rows are read sequentially while building the lightweight
+        // index. Each key's candidate list therefore remains in file order.
+        std::ifstream input;
+        uint64_t input_position = std::numeric_limits<uint64_t>::max();
+        std::vector<uint8_t> payload;
+        for (const auto &[offset, primary] : physicalOrder()) {
+          const auto found = versions_.find(primary);
+          if (found == versions_.end() || found->second.offset != offset) {
+            continue;
+          }
+          const Version &version = found->second;
+          if (!input.is_open()) {
+            input.open(data_path_, std::ios::binary);
+          }
+          Row row = readRow(version.offset, input, &input_position, payload);
+          if (!append(primary, version, row)) {
+            return nullptr;
+          }
         }
       }
       equality_index_.swap(staged);
@@ -2252,11 +2295,41 @@ class Table {
   }
 
   template <typename Callback>
+  bool forEachIndexedBase(
+      const IndexedRows &rows,
+      const std::map<int64_t, std::optional<Row>> *overlay,
+      Callback &&callback) const {
+    std::ifstream input;
+    uint64_t input_position = std::numeric_limits<uint64_t>::max();
+    std::vector<uint8_t> payload;
+    for (const IndexedRow &indexed : rows) {
+      if (overlay != nullptr && overlay->contains(indexed.primary)) {
+        continue;
+      }
+      if (indexed.cached != nullptr) {
+        if (!callback(indexed.primary, *indexed.cached, true)) {
+          return false;
+        }
+        continue;
+      }
+      if (!input.is_open()) {
+        input.open(data_path_, std::ios::binary);
+      }
+      Row row = readRow(indexed.offset, input, &input_position, payload);
+      if (!callback(indexed.primary, row, false)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  template <typename Callback>
   bool forEachBase(Callback &&callback,
                    const std::map<int64_t, std::optional<Row>> *overlay,
                    bool ordered = false) const {
     std::ifstream input;
     uint64_t input_position = std::numeric_limits<uint64_t>::max();
+    std::vector<uint8_t> payload;
     const auto visit = [&](int64_t primary, const Version &version) {
       // An overlay replacement/deletion makes the disk payload unnecessary.
       if (overlay != nullptr) {
@@ -2272,7 +2345,7 @@ class Table {
       if (!input.is_open()) {
         input.open(data_path_, std::ios::binary);
       }
-      Row row = readRow(version.offset, input, &input_position);
+      Row row = readRow(version.offset, input, &input_position, payload);
       return callback(primary, row, false);
     };
     if (!cache_enabled_ && ordered) {
@@ -2413,7 +2486,7 @@ class Table {
     version.offset = offset;
     version.cached = cache_enabled_;
     if (version.cached) {
-      version.row = row;
+      version.row = std::move(row);
       auto existing = versions_.find(primary);
       if (existing != versions_.end() && existing->second.cached) {
         const size_t bytes = cachedRowBytes(existing->second.row);
@@ -2448,6 +2521,12 @@ class Table {
 
   Row readRow(uint64_t offset, std::ifstream &input,
               uint64_t *input_position = nullptr) const {
+    std::vector<uint8_t> payload;
+    return readRow(offset, input, input_position, payload);
+  }
+
+  Row readRow(uint64_t offset, std::ifstream &input, uint64_t *input_position,
+              std::vector<uint8_t> &payload) const {
     if (offset > next_offset_ || next_offset_ - offset < 32) {
       fail("CORRUPT_DATA", "row offset exceeds committed file bounds");
     }
@@ -2466,7 +2545,7 @@ class Table {
         payload_size > next_offset_ - offset - header.size()) {
       fail("CORRUPT_DATA", "invalid row record");
     }
-    std::vector<uint8_t> payload(static_cast<size_t>(payload_size));
+    payload.resize(static_cast<size_t>(payload_size));
     if (!payload.empty() && !readExact(input, payload.data(), payload.size())) {
       fail("CORRUPT_DATA", "row payload is truncated");
     }
@@ -2502,6 +2581,12 @@ class Table {
   size_t equality_column_ = std::numeric_limits<size_t>::max();
   bool equality_disabled_ = false;
   std::unordered_map<std::string, IndexedRows> equality_index_;
+
+  size_t equalityMetadataLimitBytes() const noexcept {
+    constexpr size_t minimum = 256ULL * 1024ULL;
+    constexpr size_t maximum = 16ULL * 1024ULL * 1024ULL;
+    return std::clamp(cache_limit_bytes_ / 16, minimum, maximum);
+  }
 
   void clearEqualityIndex() noexcept {
     decltype(equality_index_){}.swap(equality_index_);
@@ -3163,13 +3248,10 @@ class Database {
         continue;
       }
       const auto changed_table = overlay_.find(table.definition().oid);
-      for (const auto &[primary, row] : *indexed) {
-        if (changed_table == overlay_.end() ||
-            !changed_table->second.contains(primary)) {
-          if (!callback(primary, *row, true)) {
-            return false;
-          }
-        }
+      const std::map<int64_t, std::optional<Row>> *overlay =
+          changed_table == overlay_.end() ? nullptr : &changed_table->second;
+      if (!table.forEachIndexedBase(*indexed, overlay, callback)) {
+        return false;
       }
       if (changed_table != overlay_.end()) {
         for (const auto &[primary, row] : changed_table->second) {

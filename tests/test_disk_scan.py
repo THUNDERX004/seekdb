@@ -103,6 +103,12 @@ def run(executable: Path):
         )
         ids = [int(value.split("\t", 1)[0]) for value in result]
         assert ids == list(range(2, 21, 2)), ids
+        # Reuse the disk candidate index across a different indexed key.
+        result = client.execute(
+            "SELECT id FROM big WHERE cat = 'odd' ORDER BY id LIMIT 10"
+        )
+        ids = [int(value) for value in result]
+        assert ids == list(range(1, 20, 2)), ids
         # Hash traversal previously issued random seeks whenever a query had no
         # ORDER BY. Disk scans now follow current row offsets even though SQL
         # result ordering remains unspecified.
@@ -116,9 +122,50 @@ def run(executable: Path):
         assert client.execute(
             f"INSERT INTO big VALUES({row_count + 1},'odd','{make_vector(1)}')"
         ) == ["OK 1"]
+        result = client.execute(
+            "SELECT id FROM big WHERE cat = 'odd' ORDER BY "
+            "L2_DISTANCE(emb,'" + make_vector(0) + "') LIMIT 2"
+        )
+        ids = [int(value) for value in result]
+        assert ids == [1, row_count + 1], ids
+
+        # The base index must coexist with matching inserts, replacements and
+        # deletes in the transaction overlay.
+        assert client.execute("BEGIN") == ["OK"]
+        assert client.execute("UPDATE big SET cat='odd' WHERE id=2") == ["OK 1"]
+        assert client.execute("DELETE FROM big WHERE id=3") == ["OK 1"]
+        result = client.execute(
+            "SELECT id FROM big WHERE cat='odd' ORDER BY id LIMIT 3"
+        )
+        ids = [int(value) for value in result]
+        assert ids == [1, 2, 5], ids
+        assert client.execute("ROLLBACK") == ["OK"]
+        result = client.execute(
+            "SELECT id FROM big WHERE cat='odd' ORDER BY id LIMIT 3"
+        )
+        ids = [int(value) for value in result]
+        assert ids == [1, 3, 5], ids
+
+        # A commit invalidates the base index; the next query must rebuild it
+        # from the newly committed versions while preserving the same results.
+        assert client.execute("BEGIN") == ["OK"]
+        assert client.execute("UPDATE big SET cat='odd' WHERE id=2") == ["OK 1"]
+        assert client.execute("DELETE FROM big WHERE id=3") == ["OK 1"]
+        assert client.execute(
+            f"INSERT INTO big VALUES({row_count + 2},'odd','{make_vector(2)}')"
+        ) == ["OK 1"]
+        assert client.execute("COMMIT") == ["OK"]
+        result = client.execute(
+            "SELECT id FROM big WHERE cat='odd' ORDER BY id LIMIT 3"
+        )
+        ids = [int(value) for value in result]
+        assert ids == [1, 2, 5], ids
         result = client.execute("SELECT id FROM big")
         ids = sorted(int(value) for value in result)
-        assert ids == list(range(1, row_count + 2)), ids[-20:]
+        assert ids == [
+            index for index in range(1, row_count + 3)
+            if index != 3
+        ], ids[-20:]
     finally:
         client.close()
         if os.name != "nt":

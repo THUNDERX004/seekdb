@@ -176,8 +176,10 @@ the unpublished official performance baseline.
 The optimized implementation uses checked float32 parsing, bulk little-endian
 serialization, an equivalent table-driven CRC32, untied stdin/stdout, a reused
 file stream for disk scans, PK point lookup, and a budgeted ordinary-column
-equality candidate index. The candidate index is invalidated on committed
-changes and combined with the current transaction overlay. Row cache accounting
+equality candidate index. The index holds cached row pointers when available
+and lightweight primary-key/physical-offset entries otherwise. It is
+invalidated on committed changes and combined with the current transaction
+overlay. Row cache accounting
 uses actual value capacities, is divided across tables, and releases row storage
 when disabled. Set MVD_CACHE_LIMIT_MB to a positive integer to change the
 default 192 MiB row-cache budget. This is not a process/cgroup memory limit:
