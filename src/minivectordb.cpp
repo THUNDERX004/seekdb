@@ -40,6 +40,8 @@
 #ifdef _WIN32
 #include <fcntl.h>
 #include <io.h>
+#include <process.h>
+#include <sys/stat.h>
 #else
 #include <fcntl.h>
 #include <unistd.h>
@@ -1984,11 +1986,145 @@ class Table {
   }
 };
 
+// Keep large responses on the measured data filesystem until the SELECT has
+// completed. The file is unlinked/delete-on-close so process termination cannot
+// leave query scratch files behind. Small TopK responses never create a file.
+class ResultSpool {
+ public:
+  explicit ResultSpool(const fs::path &directory) {
+    int descriptor = -1;
+#ifdef _WIN32
+    static uint64_t sequence = 0;
+    for (unsigned attempt = 0; attempt < 64; ++attempt) {
+      const fs::path path = directory /
+          (".mvd-result-" + std::to_string(_getpid()) + "-" +
+           std::to_string(++sequence) + ".tmp");
+      descriptor = _wopen(path.c_str(), _O_RDWR | _O_CREAT | _O_EXCL |
+                         _O_BINARY | _O_TEMPORARY | _O_NOINHERIT,
+                         _S_IREAD | _S_IWRITE);
+      if (descriptor >= 0 || errno != EEXIST) {
+        break;
+      }
+    }
+#else
+    std::string pattern = (directory / ".mvd-result-XXXXXX").string();
+    descriptor = mkstemp(pattern.data());
+    if (descriptor >= 0 && unlink(pattern.c_str()) != 0) {
+      close(descriptor);
+      fail("IO_ERROR", "cannot unlink query result temporary file");
+    }
+#endif
+    if (descriptor < 0) {
+      fail("IO_ERROR", "cannot create query result temporary file");
+    }
+#ifdef _WIN32
+    FILE *stream = _fdopen(descriptor, "w+b");
+#else
+    FILE *stream = fdopen(descriptor, "w+b");
+#endif
+    if (stream == nullptr) {
+#ifdef _WIN32
+      _close(descriptor);
+#else
+      close(descriptor);
+#endif
+      fail("IO_ERROR", "cannot open query result temporary stream");
+    }
+    file_.reset(stream);
+  }
+
+  void append(const std::vector<std::string> &row) {
+    for (size_t column = 0; column < row.size(); ++column) {
+      if (column != 0) {
+        write("\t", 1);
+      }
+      write(row[column].data(), row[column].size());
+    }
+    write("\n", 1);
+  }
+
+  void prepare() {
+    if (std::fflush(file_.get()) != 0 ||
+        std::fseek(file_.get(), 0, SEEK_SET) != 0) {
+      fail("IO_ERROR", "cannot prepare query result temporary stream");
+    }
+  }
+
+  void print(std::ostream &output) const {
+    std::array<char, 65536> buffer;
+#ifdef MVD_TEST_FAULTS
+    const char *read_fault = std::getenv("MVD_TEST_FAIL_RESULT_READ");
+    size_t blocks = 0;
+#endif
+    for (;;) {
+#ifdef MVD_TEST_FAULTS
+      if (read_fault != nullptr && (read_fault[0] == '0' || blocks != 0)) {
+        fail("IO_ERROR", "injected query result temporary read failure");
+      }
+#endif
+      const size_t bytes =
+          std::fread(buffer.data(), 1, buffer.size(), file_.get());
+      if (bytes == 0) {
+        break;
+      }
+      output.write(buffer.data(), static_cast<std::streamsize>(bytes));
+#ifdef MVD_TEST_FAULTS
+      ++blocks;
+#endif
+    }
+    if (std::ferror(file_.get())) {
+      fail("IO_ERROR", "cannot read query result temporary stream");
+    }
+  }
+
+ private:
+  void write(const char *bytes, size_t size) {
+    if (size != 0 && std::fwrite(bytes, 1, size, file_.get()) != size) {
+      fail("IO_ERROR", "cannot write query result temporary stream");
+    }
+  }
+
+  std::unique_ptr<FILE, decltype(&std::fclose)> file_{nullptr, &std::fclose};
+};
+
 struct ExecResult {
   bool select = false;
   std::optional<uint64_t> affected;
   std::vector<std::vector<std::string>> rows;
   std::vector<std::string> columns{};
+  std::unique_ptr<ResultSpool> spool{};
+  size_t buffered_bytes = 0;
+  uint64_t row_count = 0;
+
+  void reserveRows(size_t count) { rows.reserve(std::min<size_t>(count, 4096)); }
+
+  void appendRow(std::vector<std::string> row, const fs::path &directory) {
+    constexpr size_t budget = 1024 * 1024;
+    if (!spool) {
+      size_t bytes = sizeof(row);
+      const auto account = [&](size_t size) {
+        bytes += std::min(size, budget - bytes);
+      };
+      for (const std::string &field : row) {
+        account(sizeof(field));
+        account(field.capacity());
+      }
+      if (bytes < budget - buffered_bytes) {
+        rows.push_back(std::move(row));
+        buffered_bytes += bytes;
+        ++row_count;
+        return;
+      }
+      spool = std::make_unique<ResultSpool>(directory);
+      for (const auto &buffered : rows) {
+        spool->append(buffered);
+      }
+      decltype(rows){}.swap(rows);
+      buffered_bytes = 0;
+    }
+    spool->append(row);
+    ++row_count;
+  }
 };
 
 bool valuesCompare(const Value &left, const Value &right, CompareOp op,
@@ -2096,6 +2232,9 @@ class Database {
     }
     const SelectStatement &select = std::get<SelectStatement>(statement);
     ExecResult result = executeSelect(select);
+    if (result.spool) {
+      result.spool->prepare();
+    }
     const TableDef &definition = requireTable(select.table).definition();
     for (const SelectItem &item : select.items) {
       if (item.star) {
@@ -2676,9 +2815,9 @@ class Database {
               ++skipped;
               return true;
             }
-            result.rows.push_back(makeOutput(row));
+            result.appendRow(makeOutput(row), data_dir_);
             return statement.limit < 0 ||
-                   result.rows.size() < static_cast<uint64_t>(statement.limit);
+                   result.row_count < static_cast<uint64_t>(statement.limit);
           });
       return result;
     }
@@ -2789,9 +2928,9 @@ class Database {
         const size_t begin = static_cast<size_t>(statement.offset);
         const size_t end = begin + std::min(
             heap.size() - begin, static_cast<size_t>(statement.limit));
-        result.rows.reserve(end - begin);
+        result.reserveRows(end - begin);
         for (size_t i = begin; i < end; ++i) {
-          result.rows.push_back(makeOutput(heap[i].row.get()));
+          result.appendRow(makeOutput(heap[i].row.get()), data_dir_);
         }
       }
       return result;
@@ -2907,9 +3046,9 @@ class Database {
         selected.size() - begin, static_cast<size_t>(statement.limit));
     ExecResult result;
     result.select = true;
-    result.rows.reserve(end - begin);
+    result.reserveRows(end - begin);
     for (size_t i = begin; i < end; ++i) {
-      result.rows.push_back(makeOutput(selected[i].source.get()));
+      result.appendRow(makeOutput(selected[i].source.get()), data_dir_);
     }
     return result;
   }
@@ -3218,14 +3357,18 @@ void printResult(const ExecResult &result, const std::optional<std::string> &mar
       }
       std::cout << '\n';
     }
-    for (const auto &row : result.rows) {
-      for (size_t i = 0; i < row.size(); ++i) {
-        if (i != 0) {
-          std::cout << '\t';
+    if (result.spool) {
+      result.spool->print(std::cout);
+    } else {
+      for (const auto &row : result.rows) {
+        for (size_t i = 0; i < row.size(); ++i) {
+          if (i != 0) {
+            std::cout << '\t';
+          }
+          std::cout << row[i];
         }
-        std::cout << row[i];
+        std::cout << '\n';
       }
-      std::cout << '\n';
     }
   } else {
     std::cout << "OK";
@@ -3364,10 +3507,9 @@ int run(int argc, char **argv) {
     if (!nonspace) {
       return;
     }
+    std::optional<ExecResult> result;
     try {
-      if (auto result = database.execute(sql)) {
-        printResult(*result, options.marker, options.column_header);
-      }
+      result = database.execute(sql);
     } catch (const RecoveryRequired &) {
       throw;
     } catch (const DBError &error) {
@@ -3375,6 +3517,11 @@ int run(int argc, char **argv) {
     } catch (const std::exception &error) {
       printError(DBError("INTERNAL_ERROR", error.what()), options.numeric_errors,
                  options.marker);
+    }
+    // Once a response has started, a spool read failure must close the stream.
+    // An ordinary ERROR appended to partial rows would corrupt its framing.
+    if (result) {
+      printResult(*result, options.marker, options.column_header);
     }
   };
 

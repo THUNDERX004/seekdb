@@ -1,0 +1,105 @@
+{
+  "scope": "Windows process peaks; not cgroup metrics or an official score",
+  "parameters": {
+    "rows": 7500,
+    "width": 8192,
+    "cache_mib": 8
+  },
+  "binaries": {
+    "baseline": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\minivectordb.exe",
+      "sha256": "da87738c6f484ae80abccbbf9ce4afffdc4e0d4fb69c0d28cedc6a7baed44e72",
+      "size_bytes": 3611560,
+      "mtime_ns": 1794271719253949700
+    },
+    "candidate": {
+      "path": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\round13-normal\\minivectordb.exe",
+      "sha256": "18ff30fbc3a877469c979335cce107857ccfe0d5462655a18450ae554f23df2e",
+      "size_bytes": 3618285,
+      "mtime_ns": 1794273515861257700
+    }
+  },
+  "runs": {
+    "baseline": {
+      "rows_verified": 7500,
+      "output_bytes": 61483893,
+      "after_write": {
+        "available": true,
+        "pid": 13532,
+        "cpu_kernel_seconds": 0.25,
+        "cpu_user_seconds": 0.375,
+        "cpu_total_seconds": 0.625,
+        "PeakWorkingSetSize_bytes": 18448384,
+        "PeakPagefileUsage_bytes": 15155200,
+        "WorkingSetSize_bytes": 10391552,
+        "io_counters": {
+          "ReadOperationCount": 15078,
+          "WriteOperationCount": 15158,
+          "OtherOperationCount": 1071,
+          "ReadTransferCount": 61571108,
+          "WriteTransferCount": 61957165,
+          "OtherTransferCount": 184766
+        }
+      },
+      "after_select": {
+        "available": true,
+        "pid": 13532,
+        "cpu_kernel_seconds": 0.328125,
+        "cpu_user_seconds": 0.484375,
+        "cpu_total_seconds": 0.8125,
+        "PeakWorkingSetSize_bytes": 71471104,
+        "PeakPagefileUsage_bytes": 69017600,
+        "WorkingSetSize_bytes": 6754304,
+        "io_counters": {
+          "ReadOperationCount": 30079,
+          "WriteOperationCount": 30159,
+          "OtherOperationCount": 1080,
+          "ReadTransferCount": 123521128,
+          "WriteTransferCount": 123441103,
+          "OtherTransferCount": 217062
+        }
+      }
+    },
+    "candidate": {
+      "rows_verified": 7500,
+      "output_bytes": 61483893,
+      "after_write": {
+        "available": true,
+        "pid": 34556,
+        "cpu_kernel_seconds": 0.265625,
+        "cpu_user_seconds": 0.484375,
+        "cpu_total_seconds": 0.75,
+        "PeakWorkingSetSize_bytes": 18558976,
+        "PeakPagefileUsage_bytes": 15085568,
+        "WorkingSetSize_bytes": 10452992,
+        "io_counters": {
+          "ReadOperationCount": 15077,
+          "WriteOperationCount": 15158,
+          "OtherOperationCount": 1062,
+          "ReadTransferCount": 61515523,
+          "WriteTransferCount": 61957165,
+          "OtherTransferCount": 184728
+        }
+      },
+      "after_select": {
+        "available": true,
+        "pid": 34556,
+        "cpu_kernel_seconds": 0.421875,
+        "cpu_user_seconds": 0.578125,
+        "cpu_total_seconds": 1.0,
+        "PeakWorkingSetSize_bytes": 18558976,
+        "PeakPagefileUsage_bytes": 15085568,
+        "WorkingSetSize_bytes": 10633216,
+        "io_counters": {
+          "ReadOperationCount": 31019,
+          "WriteOperationCount": 31108,
+          "OtherOperationCount": 1080,
+          "ReadTransferCount": 184949436,
+          "WriteTransferCount": 184924996,
+          "OtherTransferCount": 217032
+        }
+      }
+    }
+  },
+  "status": "passed"
+}

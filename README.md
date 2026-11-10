@@ -81,6 +81,11 @@ transactions, ALTER TABLE, and other unsupported syntax return an error.
 - The hot row cache is capped. When its budget is exceeded, payloads are read
   from disk by offset so correctness does not depend on fitting the whole table
   in memory.
+- SELECT response buffers have a 1 MiB budget. Larger results are staged in an
+  automatically deleted temporary file under the data directory, then emitted
+  using the same text protocol after query execution succeeds. Small TopK
+  responses stay in memory. Sorting buffers are separate; this is not an
+  external sort implementation.
 
 ## Vector search
 
@@ -207,9 +212,10 @@ compiler definition, not an environment switch or a promise that dependencies
 contain no AVX instructions. The normal build performs runtime CPU detection.
 
 The Dockerfile pins GCC 14.3.0/bookworm and Debian bookworm-slim by digest and
-builds from source, statically linking libstdc++/libgcc. Docker build and Linux
-cgroup validation remain unexecuted on this host. The local query-preparation
-experiment is documented in the report.
+builds from source, statically linking libstdc++/libgcc. Linux CI has built the
+actual image and validated its entrypoint, mounted persistence, EOF rollback
+and data larger than hard memory limits with swap disabled. These are
+development checks; official platform acceptance is still unverified.
 
 ## Empty-directory usage and restart
 

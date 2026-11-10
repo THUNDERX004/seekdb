@@ -46,7 +46,7 @@ def main():
               "test_round6_sql_contract.py", "test_round6_stream_contract.py",
               "test_stream_followup.py", "test_float32_literals.py",
               "test_sql_round11.py", "test_protocol_round11.py",
-              "test_selection_retention.py")
+              "test_selection_retention.py", "test_large_results.py")
     commands = []
     for label in ("normal", "scalar"):
         commands.extend((f"{label}/{suite}",
@@ -61,6 +61,9 @@ def main():
         ("catalog-failure-regressions", [sys.executable, "-X", "utf8", "-B",
                                          str(root / "tests/test_catalog_publication.py"),
                                          str(binaries["normal"]), str(binaries["fault"])]),
+        ("result-replay-failure-regressions", [sys.executable, "-X", "utf8", "-B",
+                                              str(root / "tests/test_result_spool_io.py"),
+                                              str(binaries["normal"]), str(binaries["fault"])]),
         ("normal/long-random", [sys.executable, "-X", "utf8", "-B",
                                str(root / "tests/test_differential.py"),
                                str(binaries["normal"]), "--case", "random",
@@ -86,7 +89,7 @@ def main():
     environment = os.environ.copy()
     for key in ("MVD_TEST_FAIL_COMMIT_PUBLICATION", "MVD_TEST_FAIL_WAL_APPEND",
                 "MVD_TEST_FAIL_CATALOG_APPEND", "MVD_TEST_FAIL_CATALOG_PUBLICATION",
-                "MVD_CACHE_LIMIT_MB"):
+                "MVD_TEST_FAIL_RESULT_READ", "MVD_CACHE_LIMIT_MB"):
         environment.pop(key, None)
     transcript = []
     passed = True

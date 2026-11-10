@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check bounded-memory Docker writes, TopK, ordered projection and EOF restart.
+"""Check Docker writes, TopK, large unordered output and EOF restart under limits.
 
 Build the image separately, then run this standard-library-only test:
   python -B tests/test_container_resources.py --image minivectordb:validation
@@ -82,12 +82,58 @@ def query_cases(args):
     expected = "".join(f"{row}\t{row % 7}\n" for row in range(1, args.rows + 1))
     cases.append(("ordinary full ordered query", "SELECT id,tag FROM t ORDER BY id;",
                   expected.encode("ascii") + END))
+    # Two copies make even the text output exceed rows * dim * 4 bytes, hence
+    # the configured hard limit, despite zero components formatting as "0".
+    # No ORDER BY: retaining/sorting projected vectors is a separate limitation.
+    cases.append(("large unordered vector projection", "SELECT id,tag,v,v FROM t;",
+                  lambda stream: vector_output_problem(stream, args)))
     return cases
+
+
+def vector_output_problem(stream, args):
+    """Check an unordered ID multiset and regenerate just one expected row."""
+    seen = bytearray(args.rows + 1)
+    # Generate the oracle independently of the SQL vector() input helper.
+    suffix = b",0" * (args.dim - 1) + b"]"
+    line_limit = 4 * args.dim + 3 * len(str(args.rows)) + 32
+    for index in range(args.rows):
+        position = stream.tell()
+        actual = stream.readline(line_limit + 1)
+        identifier, separator, _ = actual.partition(b"\t")
+        try:
+            row = int(identifier) if separator else 0
+        except ValueError:
+            row = 0
+        if not 1 <= row <= args.rows:
+            return (f"missing or invalid row ID at row {index + 1}, byte {position}: "
+                    f"{actual[:100]!r}")
+        if seen[row]:
+            return f"duplicate row ID {row} at row {index + 1}, byte {position}"
+        vector_text = b"[" + str(row).encode("ascii") + suffix
+        expected = (f"{row}\t{row % 7}\t".encode("ascii") + vector_text
+                    + b"\t" + vector_text + b"\n")
+        if actual != expected:
+            offset = next((i for i, pair in enumerate(zip(actual, expected))
+                           if pair[0] != pair[1]), min(len(actual), len(expected)))
+            return (f"row ID {row} mismatch at byte {position + offset}: "
+                    f"expected {expected[offset:offset + 100]!r}, "
+                    f"received {actual[offset:offset + 100]!r}")
+        seen[row] = 1
+    # Exactly rows unique IDs in [1, rows] prove that every ID occurred once.
+    actual = stream.read(len(END))
+    if actual != END:
+        return f"expected ready marker after all vector rows; received {actual[:100]!r}"
+    return None
 
 
 def output_problem(stream, phases):
     stream.seek(0)
     for phase, expected in phases:
+        if callable(expected):
+            problem = expected(stream)
+            if problem:
+                return phase, problem
+            continue
         actual = stream.read(len(expected))
         if actual != expected:
             offset = next((i for i, pair in enumerate(zip(actual, expected))
@@ -257,7 +303,7 @@ def main():
                 print(f"FAIL cleanup of owned directory {directory}: {error}", file=sys.stderr)
                 status = 1
     if status == 0:
-        print("PASS container resource limits, TopK, ordered projection and EOF restart")
+        print("PASS container resource limits, TopK, ordered/unordered projection and EOF restart")
     return status
 
 
