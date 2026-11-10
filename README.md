@@ -182,7 +182,9 @@ BIGINT equality probes use integer keys while VARCHAR probes retain exact
 string keys. The index is invalidated on committed changes and combined with
 the current transaction overlay. Unfiltered non-cached distance TopK scans can
 extract only the primary key and vector from validated row payloads, then fully
-deserialize only the selected output window. Row cache accounting
+deserialize a row only when it enters the bounded TopK heap. A single equality
+filter can use the same serialized-payload path and validates the indexed
+predicate before computing distance. Row cache accounting
 uses actual value capacities, is divided across tables, and releases row storage
 when disabled. The cache budget follows detected cgroup memory limits when
 available; MVD_CACHE_LIMIT_MB can override it with a positive integer. This is

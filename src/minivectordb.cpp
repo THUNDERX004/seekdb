@@ -504,7 +504,8 @@ Row deserializeRow(const std::vector<uint8_t> &data) {
 
 void extractPrimaryAndVector(
     const std::vector<uint8_t> &data, const TableDef &definition,
-    size_t vector_column, int64_t &primary,
+    size_t predicate_column, size_t vector_column, int64_t &primary,
+    int64_t &predicate_integer, std::string_view &predicate_text,
     std::vector<float> &components) {
   size_t pos = 0;
   const uint32_t count = readScalar<uint32_t>(data, pos);
@@ -512,6 +513,7 @@ void extractPrimaryAndVector(
     fail("CORRUPT_DATA", "stored row does not match the catalog schema");
   }
   bool found_primary = false;
+  bool found_predicate = predicate_column == std::numeric_limits<size_t>::max();
   bool found_vector = false;
   for (uint32_t i = 0; i < count; ++i) {
     const int64_t integer = readScalar<int64_t>(data, pos);
@@ -523,6 +525,18 @@ void extractPrimaryAndVector(
     const uint32_t text_size = readScalar<uint32_t>(data, pos);
     if (text_size > data.size() - pos) {
       fail("CORRUPT_DATA", "truncated string value");
+    }
+    if (i == predicate_column) {
+      if (definition.columns[predicate_column].type == ColumnType::VarChar) {
+        predicate_text = std::string_view(
+            reinterpret_cast<const char *>(data.data() + pos), text_size);
+      } else if (definition.columns[predicate_column].type ==
+                 ColumnType::BigInt) {
+        predicate_integer = integer;
+      } else {
+        fail("CORRUPT_DATA", "scan predicate targets a non-scalar column");
+      }
+      found_predicate = true;
     }
     pos += text_size;
 
@@ -554,7 +568,8 @@ void extractPrimaryAndVector(
       pos += vector_bytes;
     }
   }
-  if (pos != data.size() || !found_primary || !found_vector) {
+  if (pos != data.size() || !found_primary || !found_predicate ||
+      !found_vector) {
     fail("CORRUPT_DATA", "invalid serialized row for exact vector scan");
   }
 }
@@ -2570,6 +2585,21 @@ class Table {
         vector_column, std::forward<Callback>(callback));
   }
 
+  template <typename Callback>
+  bool forEachDiskEqualityDistanceBase(
+      const Condition &condition, size_t vector_column,
+      Callback &&callback) {
+    if (cache_enabled_ || condition.op != CompareOp::Eq) {
+      return false;
+    }
+    const IndexedRows *rows = equalityCandidates(condition);
+    if (rows == nullptr) {
+      return false;
+    }
+    return forEachDiskEqualityDistanceBaseImpl(
+        condition, vector_column, *rows, std::forward<Callback>(callback));
+  }
+
  private:
   void applyRecord(const DecodedRecord &record,
                    const std::vector<uint8_t> &payload, uint64_t offset) {
@@ -2698,12 +2728,58 @@ class Table {
         fail("CORRUPT_DATA", "current row points to a delete record");
       }
       int64_t stored_primary = 0;
-      extractPrimaryAndVector(payload, definition_, vector_column,
-                              stored_primary, components);
+      int64_t predicate_integer = 0;
+      std::string_view predicate_text;
+      extractPrimaryAndVector(
+          payload, definition_, std::numeric_limits<size_t>::max(),
+          vector_column, stored_primary, predicate_integer, predicate_text,
+          components);
       if (stored_primary != primary) {
         fail("CORRUPT_DATA", "stored primary key does not match row metadata");
       }
-      if (!callback(stored_primary, components)) {
+      if (!callback(stored_primary, components, payload)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  template <typename Callback>
+  bool forEachDiskEqualityDistanceBaseImpl(
+      const Condition &condition, size_t vector_column,
+      const IndexedRows &rows, Callback &&callback) const {
+    std::ifstream input(data_path_, std::ios::binary);
+    uint64_t input_position = std::numeric_limits<uint64_t>::max();
+    std::vector<uint8_t> payload;
+    std::vector<float> components;
+    const ColumnType predicate_type =
+        definition_.columns[condition.column].type;
+    for (const IndexedRow &indexed : rows) {
+      const auto found = versions_.find(indexed.primary);
+      if (found == versions_.end() ||
+          found->second.offset != indexed.offset) {
+        fail("CORRUPT_DATA", "equality index references a stale row version");
+      }
+      const DecodedRecord record = readRecordPayload(
+          indexed.offset, input, &input_position, payload);
+      if (record.op == 3) {
+        fail("CORRUPT_DATA", "equality index references a delete record");
+      }
+      int64_t stored_primary = 0;
+      int64_t predicate_integer = 0;
+      std::string_view predicate_text;
+      extractPrimaryAndVector(
+          payload, definition_, condition.column, vector_column,
+          stored_primary, predicate_integer, predicate_text, components);
+      const bool predicate_matches =
+          predicate_type == ColumnType::BigInt
+              ? predicate_integer == condition.value.integer
+              : predicate_text == condition.value.text;
+      if (stored_primary != indexed.primary || !predicate_matches) {
+        fail("CORRUPT_DATA",
+             "equality index does not match the stored row payload");
+      }
+      if (!callback(stored_primary, components, payload)) {
         return false;
       }
     }
@@ -3667,8 +3743,12 @@ class Database {
       const size_t vector_bytes =
           static_cast<size_t>(definition.columns[distance_spec.column].length) *
           sizeof(float);
+      const bool compact_condition_shape =
+          statement.conditions.empty() ||
+          (statement.conditions.size() == 1 &&
+           statement.conditions.front().op == CompareOp::Eq);
       const bool compact_disk_scan =
-          !table.fullyCached() && statement.conditions.empty() &&
+          !table.fullyCached() && compact_condition_shape &&
           (overlay_table == overlay_.end() || overlay_table->second.empty()) &&
           capacity <= 256 &&
           vector_bytes <= compact_candidate_budget / capacity;
@@ -3676,20 +3756,22 @@ class Database {
         struct PayloadCandidate {
           double squared_distance = 0;
           int64_t primary = 0;
-          std::vector<float> vector;
+          Row row;
         };
         struct PayloadWorseFirst {
+          size_t column;
           const std::vector<float> *probe;
           bool operator()(const PayloadCandidate &left,
                           const PayloadCandidate &right) const {
             const int comparison = compareDistances(
-                left.squared_distance, left.vector,
-                right.squared_distance, right.vector, *probe);
+                left.squared_distance, left.row[column].vector,
+                right.squared_distance, right.row[column].vector, *probe);
             return comparison != 0 ? comparison < 0
                                    : left.primary < right.primary;
           }
         };
-        const PayloadWorseFirst payload_less{&distance_spec.probe};
+        const PayloadWorseFirst payload_less{
+            distance_spec.column, &distance_spec.probe};
         std::vector<PayloadCandidate> payload_heap;
         payload_heap.reserve(capacity);
         const double rejection_multiplier =
@@ -3701,9 +3783,9 @@ class Database {
               payload_heap.front().squared_distance * rejection_multiplier,
               std::numeric_limits<double>::infinity());
         };
-        if (!table.forEachDiskDistanceBase(
-                distance_spec.column,
-                [&](int64_t primary, const std::vector<float> &vector) {
+        const auto consumeCandidate =
+            [&](int64_t primary, const std::vector<float> &vector,
+                const std::vector<uint8_t> &payload) {
           if (vector.size() != prepared_probe.size()) {
             fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
           }
@@ -3713,49 +3795,55 @@ class Database {
           MVD_PROFILE_END(distance_profile);
           if (payload_heap.size() < capacity) {
             MVD_PROFILE_SCOPE(heap_profile, Heap, 31);
-            payload_heap.push_back({squared, primary, vector});
+            payload_heap.push_back(
+                {squared, primary, deserializeRow(payload)});
             std::push_heap(payload_heap.begin(), payload_heap.end(),
                            payload_less);
             updateRejectionBoundary();
           } else if (squared <= reject_above) {
             const PayloadCandidate &worst = payload_heap.front();
             const int comparison = compareDistances(
-                squared, vector, worst.squared_distance, worst.vector,
+                squared, vector, worst.squared_distance,
+                worst.row[distance_spec.column].vector,
                 distance_spec.probe);
             if (comparison < 0 ||
                 (comparison == 0 && primary < worst.primary)) {
               MVD_PROFILE_SCOPE(heap_profile, Heap, 31);
               std::pop_heap(payload_heap.begin(), payload_heap.end(),
                             payload_less);
-              payload_heap.back() = PayloadCandidate{squared, primary, vector};
+              payload_heap.back() = PayloadCandidate{
+                  squared, primary, deserializeRow(payload)};
               std::push_heap(payload_heap.begin(), payload_heap.end(),
                              payload_less);
               updateRejectionBoundary();
             }
           }
           return true;
-        })) {
-          fail("CORRUPT_DATA", "cannot complete compact disk vector scan");
-        }
-        std::sort_heap(payload_heap.begin(), payload_heap.end(), payload_less);
-        ExecResult result;
-        result.select = true;
-        if (static_cast<uint64_t>(statement.offset) < payload_heap.size()) {
-          const size_t begin = static_cast<size_t>(statement.offset);
-          const size_t end = begin + std::min(
-              payload_heap.size() - begin,
-              static_cast<size_t>(statement.limit));
-          result.reserveRows(end - begin);
-          for (size_t i = begin; i < end; ++i) {
-            Row row;
-            if (!currentRow(table, payload_heap[i].primary, row)) {
-              fail("CORRUPT_DATA",
-                   "selected disk row disappeared during output");
+        };
+        const bool scanned =
+            statement.conditions.empty()
+                ? table.forEachDiskDistanceBase(
+                      distance_spec.column, consumeCandidate)
+                : table.forEachDiskEqualityDistanceBase(
+                      statement.conditions.front(), distance_spec.column,
+                      consumeCandidate);
+        if (scanned) {
+          std::sort_heap(payload_heap.begin(), payload_heap.end(), payload_less);
+          ExecResult result;
+          result.select = true;
+          if (static_cast<uint64_t>(statement.offset) < payload_heap.size()) {
+            const size_t begin = static_cast<size_t>(statement.offset);
+            const size_t end = begin + std::min(
+                payload_heap.size() - begin,
+                static_cast<size_t>(statement.limit));
+            result.reserveRows(end - begin);
+            for (size_t i = begin; i < end; ++i) {
+              result.appendRow(makeOutput(payload_heap[i].row),
+                               data_dir_, json_output_);
             }
-            result.appendRow(makeOutput(row), data_dir_, json_output_);
           }
+          return result;
         }
-        return result;
       }
       const WorseFirst candidateLess{distance_spec.column, &distance_spec.probe};
       std::vector<Candidate> heap;

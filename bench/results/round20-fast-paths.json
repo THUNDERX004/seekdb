@@ -1,0 +1,50 @@
+{
+  "scope": "paired Windows development measurements; not official cgroup E or ranking",
+  "parent": "724c0589f1f5e9b1eef1e03b11530d72d9bc99ce",
+  "candidate_source_sha256": "4530ee87173fd8bf1d5ae8a29a9e542fabf919071399bdd04d4b548a58e3519c",
+  "candidate_binary_sha256": "d284f87625db3568a4e3fc15945312efb70737be3b8b467e5251602dfafc33dd",
+  "workloads": [
+    {
+      "cache_limit_mib": null,
+      "rows": 10000,
+      "dimensions": 128,
+      "queries": 1000,
+      "k": 10,
+      "parent_query_median_seconds": 0.1563234,
+      "candidate_query_median_seconds": 0.1520835,
+      "paired_query_speedup_median": 1.0174230096053989
+    },
+    {
+      "cache_limit_mib": 1,
+      "rows": 3000,
+      "dimensions": 128,
+      "queries": 200,
+      "k": 10,
+      "parent_query_median_seconds": 0.3023659,
+      "candidate_query_median_seconds": 0.2466731,
+      "parent_filtered_query_median_seconds": 0.0848431,
+      "candidate_filtered_query_median_seconds": 0.0821002,
+      "parent_unfiltered_query_median_seconds": 0.2179517,
+      "candidate_unfiltered_query_median_seconds": 0.1647963,
+      "paired_query_speedup_median": 1.2257757331464194,
+      "paired_filtered_query_speedup_median": 1.0334091756171118,
+      "paired_unfiltered_query_speedup_median": 1.3225521446780055
+    },
+    {
+      "cache_limit_mib": 1,
+      "rows": 1000,
+      "dimensions": 4096,
+      "queries": 8,
+      "k": 10,
+      "parent_query_median_seconds": 0.0712913,
+      "candidate_query_median_seconds": 0.067845,
+      "parent_filtered_query_median_seconds": 0.0182587,
+      "candidate_filtered_query_median_seconds": 0.0178476,
+      "parent_unfiltered_query_median_seconds": 0.0530326,
+      "candidate_unfiltered_query_median_seconds": 0.0503618,
+      "paired_query_speedup_median": 1.04036955727413,
+      "paired_filtered_query_speedup_median": 0.9867040946681905,
+      "paired_unfiltered_query_speedup_median": 1.0534929251933014
+    }
+  ]
+}
