@@ -8,6 +8,8 @@ columns, projected vectors unused by ordering, and complete SELECT * payloads.
 The VARCHAR payload alone exceeds twice the explicitly configured 1 MiB cache.
 Integer vectors give an independent exact distance-ordering oracle; scalar and
 string fields are checked exactly, distance text with the public SQL tolerance.
+A separate 9 MiB fixture makes every disk row improve a ten-slot scalar heap;
+its live projected winners fit well below the 8 MiB retention budget.
 """
 
 from __future__ import annotations
@@ -26,6 +28,8 @@ from test_differential import TimedSession
 
 DIM, ROW_COUNT = 128, 2048
 COLUMNS = ("payload", "score", "emb", "id", "tag")
+REPLACEMENT_ROWS, REPLACEMENT_PAYLOAD_BYTES = 192, 48 * 1024
+REPLACEMENT_LIMIT, REPLACEMENT_OFFSET = 7, 3
 
 
 @dataclass(frozen=True)
@@ -158,6 +162,58 @@ def change_overlay(h):
     del h.rows[-1020]
 
 
+def replacement_fixture():
+    # Primary and physical scan order both see decreasing scores, so every
+    # row enters the heap. The final ten winners retain only about 0.5 MiB.
+    rows = [Row(f"{key:04d}|" + "r" * (REPLACEMENT_PAYLOAD_BYTES - 5),
+                REPLACEMENT_ROWS - key,
+                tuple((key + axis) % 11 - 5 for axis in range(DIM)),
+                key, f"r{key % 5}") for key in range(REPLACEMENT_ROWS)]
+    budget = 8 * 1024**2
+    cumulative = sum(len(row.payload.encode("utf-8")) for row in rows)
+    live_upper = ((REPLACEMENT_LIMIT + REPLACEMENT_OFFSET) *
+                  (REPLACEMENT_PAYLOAD_BYTES + DIM * 4 + 1024))
+    if cumulative <= budget or live_upper >= budget:
+        raise AssertionError("replacement fixture must exceed cumulative but fit live retention")
+    return rows
+
+
+def check_replacement_budget(executable):
+    rows = replacement_fixture()
+
+    def queries(h):
+        # Duplicate projections must preserve both outputs while retaining a
+        # column once. The sort key is absent, and the vector is output-only.
+        h.query("id,payload,payload AS repeated,emb", ("id", "payload", "payload", "emb"),
+                "score ASC", (("score", False),),
+                limit=REPLACEMENT_LIMIT, offset=REPLACEMENT_OFFSET)
+        h.query("*", COLUMNS, "score ASC", (("score", False),),
+                limit=REPLACEMENT_LIMIT, offset=REPLACEMENT_OFFSET)
+
+    with tempfile.TemporaryDirectory(prefix="mvd-retention-replacements-") as directory:
+        with patch.dict(os.environ, {"MVD_CACHE_LIMIT_MB": "1"}):
+            session = TimedSession(executable, Path(directory), 8)
+        try:
+            h = Checks(session)
+            h.phase = "improving disk replacements"
+            h.expect("CREATE TABLE items(payload VARCHAR(65535),score BIGINT,"
+                     "emb VECTOR(128),id BIGINT PRIMARY KEY,tag VARCHAR(8))", ["OK"])
+            for start in range(0, len(rows), 8):
+                h.insert(rows[start:start + 8])
+            queries(h)
+        finally:
+            session.shutdown()
+        with patch.dict(os.environ, {"MVD_CACHE_LIMIT_MB": "1"}):
+            session = TimedSession(executable, Path(directory), 8)
+        try:
+            h.session, h.phase = session, "improving disk replacements after restart"
+            queries(h)
+        finally:
+            session.shutdown()
+    print(f"PASS selection replacement retention: {REPLACEMENT_ROWS} improving rows, "
+          f"9 MiB cumulative payload, {h.queries} exact-field queries, cache=1 MiB")
+
+
 def run(executable):
     with tempfile.TemporaryDirectory(prefix="mvd-selection-retention-") as directory:
         # Only the spawn sees the environment patch; the child keeps its budget.
@@ -189,6 +245,7 @@ def run(executable):
             session.shutdown()
     print(f"PASS selection retention: {ROW_COUNT} base rows, {DIM} dimensions, "
           f"{h.queries} exact-field queries, cache=1 MiB")
+    check_replacement_budget(executable)
 
 
 def main():

@@ -1001,7 +1001,7 @@ enum class TokenKind { Identifier, Number, String, Symbol, End };
 
 struct Token {
   TokenKind kind = TokenKind::End;
-  std::string text;
+  std::string_view text;
   size_t position = 0;
 };
 
@@ -1012,7 +1012,9 @@ bool tokenIsKeyword(const Token &token, std::string_view keyword) {
 
 class Lexer {
  public:
-  explicit Lexer(std::string_view input) : input_(input) {}
+  Lexer(std::string_view input,
+        std::vector<std::unique_ptr<std::string>> &decoded_literals)
+      : input_(input), decoded_literals_(decoded_literals) {}
 
   std::vector<Token> tokenize() {
     std::vector<Token> tokens;
@@ -1035,7 +1037,7 @@ class Lexer {
           ++pos_;
         }
         tokens.push_back({TokenKind::Identifier,
-                          std::string(input_.substr(start, pos_ - start)), start});
+                          input_.substr(start, pos_ - start), start});
         continue;
       }
       if (std::isdigit(c) ||
@@ -1071,7 +1073,7 @@ class Lexer {
           }
         }
         tokens.push_back({TokenKind::Number,
-                          std::string(input_.substr(start, pos_ - start)), start});
+                          input_.substr(start, pos_ - start), start});
         continue;
       }
       if (c == '\'' || c == '"') {
@@ -1082,7 +1084,15 @@ class Lexer {
                input_[pos_] != '\\') {
           ++pos_;
         }
-        // Keep the existing decoder for doubled quotes and backslash escapes.
+        if (pos_ < input_.size() && input_[pos_] == quote &&
+            (pos_ + 1 == input_.size() || input_[pos_ + 1] != quote)) {
+          tokens.push_back({TokenKind::String,
+                            input_.substr(text_start, pos_ - text_start), start});
+          ++pos_;
+          continue;
+        }
+        // Only escaped literals need owned text. The pointee stays in place
+        // when the Parser-owned directory grows, including for SSO strings.
         std::string value(input_.substr(text_start, pos_ - text_start));
         bool closed = false;
         while (pos_ < input_.size()) {
@@ -1114,19 +1124,22 @@ class Lexer {
         if (!closed) {
           fail("SQL_SYNTAX", "unterminated string literal");
         }
-        tokens.push_back({TokenKind::String, std::move(value), start});
+        auto decoded = std::make_unique<std::string>(std::move(value));
+        const std::string_view text = *decoded;
+        decoded_literals_.push_back(std::move(decoded));
+        tokens.push_back({TokenKind::String, text, start});
         continue;
       }
       if (pos_ + 1 < input_.size()) {
         std::string_view two = input_.substr(pos_, 2);
         if (two == "<=" || two == ">=" || two == "!=" || two == "<>") {
           pos_ += 2;
-          tokens.push_back({TokenKind::Symbol, std::string(two), start});
+          tokens.push_back({TokenKind::Symbol, two, start});
           continue;
         }
       }
       ++pos_;
-      tokens.push_back({TokenKind::Symbol, std::string(1, static_cast<char>(c)),
+      tokens.push_back({TokenKind::Symbol, input_.substr(start, 1),
                         start});
     }
   }
@@ -1170,6 +1183,7 @@ class Lexer {
   }
 
   std::string_view input_;
+  std::vector<std::unique_ptr<std::string>> &decoded_literals_;
   size_t pos_ = 0;
 };
 
@@ -1255,7 +1269,7 @@ class Parser {
  public:
   Parser(std::string_view sql,
          const std::unordered_map<std::string, const TableDef *> &tables)
-      : tokens_(Lexer(sql).tokenize()), tables_(tables) {}
+      : tokens_(Lexer(sql, decoded_literals_).tokenize()), tables_(tables) {}
 
   bool empty() const { return tokens_.front().kind == TokenKind::End; }
 
@@ -1311,7 +1325,7 @@ class Parser {
   }
 
   std::string firstKeyword() const {
-    return tokens_.empty() ? "" : lower(tokens_.front().text);
+    return tokens_.empty() ? "" : lower(std::string(tokens_.front().text));
   }
 
  private:
@@ -1352,7 +1366,7 @@ class Parser {
     if (peek().kind != TokenKind::Identifier) {
       fail("SQL_SYNTAX", "expected identifier");
     }
-    return tokens_[pos_++].text;
+    return std::string(tokens_[pos_++].text);
   }
 
   void expectEnd() {
@@ -1361,7 +1375,7 @@ class Parser {
     // and multiple statements cannot partially execute inside one request.
     consumeSymbol(";");
     if (peek().kind != TokenKind::End) {
-      fail("UNSUPPORTED", "unexpected token '" + peek().text + "'");
+      fail("UNSUPPORTED", "unexpected token '" + std::string(peek().text) + "'");
     }
   }
 
@@ -1378,9 +1392,9 @@ class Parser {
         peek().text.find_first_of(".eE") != std::string::npos) {
       fail("SQL_SYNTAX", "expected non-negative integer");
     }
-    std::string text = peek().text;
+    std::string_view text = peek().text;
     if (!text.empty() && text.front() == '+') {
-      text.erase(text.begin());
+      text.remove_prefix(1);
     }
     int64_t value = 0;
     auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
@@ -1396,9 +1410,9 @@ class Parser {
         peek().text.find_first_of(".eE") != std::string::npos) {
       fail("TYPE_MISMATCH", "BIGINT requires an integer literal");
     }
-    std::string text = peek().text;
+    std::string_view text = peek().text;
     if (!text.empty() && text.front() == '+') {
-      text.erase(text.begin());
+      text.remove_prefix(1);
     }
     int64_t value = 0;
     auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
@@ -1584,7 +1598,7 @@ class Parser {
           peek().kind != TokenKind::Number) {
         fail("TYPE_MISMATCH", "VARCHAR requires a string literal");
       }
-      value.setText(tokens_[pos_++].text);
+      value.setText(std::string(tokens_[pos_++].text));
       if (countCodepointsStrict(value.text()) > length) {
         fail("VALUE_TOO_LONG", "VARCHAR value exceeds declared length");
       }
@@ -2004,6 +2018,9 @@ class Parser {
     return SetModeStatement{mode == "ann"};
   }
 
+  // Tokens borrow the execute() input only during parsing. Statement fields
+  // take their own copies; decoded string pointees are also stable until then.
+  std::vector<std::unique_ptr<std::string>> decoded_literals_;
   std::vector<Token> tokens_;
   size_t pos_ = 0;
   const std::unordered_map<std::string, const TableDef *> &tables_;
@@ -4818,6 +4835,7 @@ class Database {
           }
           if (quantized) {
             int64_t query_correction = 0;
+            int64_t query_norm = 0;
             double squared_query_error = 0;
             size_t axis = 0;
             for (double value : prepared_probe) {
@@ -4829,6 +4847,7 @@ class Database {
                   static_cast<int>(scaled + std::copysign(0.5, scaled)), -127, 127);
               quantized_probe[axis++] = static_cast<int8_t>(code);
               query_correction += code * code + 256 * code;
+              query_norm += code * code;
               const double error = scaled - code;
               squared_query_error += error * error;
             }
@@ -4859,12 +4878,15 @@ class Database {
                 i += count;
               }
             } else {
+              const int64_t row_correction =
+                  quantized_kernel == &quantizedDistanceBatchAvx2
+                      ? query_norm : query_correction;
               for (; cached_candidates->size() - i >= 4; i += 4) {
                 uint32_t scores[4];
                 quantized_kernel(code_rows->codes.data() +
                         (code_first + i) * prepared_probe.size(), quantized_probe.data(),
                     prepared_probe.size(), scores,
-                    code_rows->code_norms.data() + code_first + i, query_correction);
+                    code_rows->code_norms.data() + code_first + i, row_correction);
                 for (size_t j = 0; j < 4; ++j) {
                   if (heap.size() == capacity && scores[j] > quantized_above) {
                     continue;
@@ -4936,48 +4958,79 @@ class Database {
     if (scalar_order) {
       struct ScalarCandidate {
         int64_t primary = 0;
+        const Row *stable_row = nullptr;
         std::vector<Value> keys;
         std::optional<Row> output;
+        size_t output_bytes = 0;
       };
       std::vector<ScalarCandidate> selected;
       constexpr size_t output_budget = 8ULL * 1024ULL * 1024ULL;
       size_t output_bytes = 0;
-      bool retain_output = true;
-      bool outputs_cleared = false;
-      const auto keepOutput = [&](const Row &row)
-          -> std::optional<Row> {
-        if (!retain_output) {
-          return std::nullopt;
+      std::vector<size_t> output_columns;
+      std::vector<bool> needs_output(definition.columns.size(), false);
+      for (const Projection &projection : projections) {
+        if (!needs_output[projection.column]) {
+          needs_output[projection.column] = true;
+          output_columns.push_back(projection.column);
         }
-        const size_t bytes = cachedRowBytes(row);
-        if (bytes > output_budget - std::min(output_bytes, output_budget)) {
-          retain_output = false;
-          output_bytes = 0;
-          return std::nullopt;
+      }
+      const auto keepOutput = [&](ScalarCandidate &candidate, const Row &row) {
+        const size_t remaining = output_budget - output_bytes;
+        size_t bytes = sizeof(Row) + row.size() * sizeof(Value);
+        const size_t inline_text_capacity = std::string{}.capacity();
+        for (size_t column : output_columns) {
+          const Value &value = row[column];
+          if (value.text().capacity() > inline_text_capacity) {
+            bytes += value.text().capacity() + 1;
+          }
+          bytes += value.vector().capacity() * sizeof(float);
         }
-        output_bytes += bytes;
-        return row;
-      };
-      const auto clearOutputs = [&] {
-        if (retain_output || outputs_cleared) {
+        if (bytes > remaining) {
           return;
         }
-        for (ScalarCandidate &retained : selected) {
-          retained.output.reset();
+        // Transient scan rows cannot be borrowed. Keep just the projected
+        // columns, at their schema positions for makeOutput(), within a live
+        // budget that is returned whenever a heap candidate is evicted.
+        Row projected(row.size());
+        for (size_t column : output_columns) {
+          projected[column] = row[column];
         }
-        outputs_cleared = true;
+        const size_t actual_bytes = cachedRowBytes(projected);
+        if (actual_bytes <= remaining) {
+          candidate.output.emplace(std::move(projected));
+          candidate.output_bytes = actual_bytes;
+          output_bytes += actual_bytes;
+        }
+      };
+      const auto sortValue = [&](const ScalarCandidate &candidate, size_t index)
+          -> const Value & {
+        return candidate.stable_row != nullptr
+            ? (*candidate.stable_row)[resolved_order[index].column]
+            : candidate.keys[index];
       };
       const auto worseFirst = [&](const ScalarCandidate &left,
                                   const ScalarCandidate &right) {
         for (size_t index = 0; index < resolved_order.size(); ++index) {
           const ResolvedOrder &key = resolved_order[index];
           const int comparison = compareValues(
-              left.keys[index], right.keys[index], key.column_type);
+              sortValue(left, index), sortValue(right, index), key.column_type);
           if (comparison != 0) {
             return key.descending ? comparison > 0 : comparison < 0;
           }
         }
         return left.primary < right.primary;
+      };
+      const auto rowBefore = [&](int64_t primary, const Row &row,
+                                  const ScalarCandidate &right) {
+        for (size_t index = 0; index < resolved_order.size(); ++index) {
+          const ResolvedOrder &key = resolved_order[index];
+          const int comparison = compareValues(
+              row[key.column], sortValue(right, index), key.column_type);
+          if (comparison != 0) {
+            return key.descending ? comparison > 0 : comparison < 0;
+          }
+        }
+        return primary < right.primary;
       };
       const bool unlimited = statement.limit < 0 ||
           statement.offset > std::numeric_limits<int64_t>::max() - statement.limit;
@@ -4986,28 +5039,34 @@ class Database {
       const size_t capacity = std::min(static_cast<size_t>(wanted), visible_upper);
       selected.reserve(std::min<size_t>(capacity, 64));
       forEachCandidateView(table, statement.conditions,
-          [&](int64_t primary, const Row &row, bool) {
+          [&](int64_t primary, const Row &row, bool stable) {
         if (!matches(definition, row, statement.conditions)) {
           return true;
         }
+        if (statement.limit >= 0 && selected.size() == capacity) {
+          // Reject losers before allocating keys or copying any row payload.
+          if (!rowBefore(primary, row, selected.front())) {
+            return true;
+          }
+          std::pop_heap(selected.begin(), selected.end(), worseFirst);
+          output_bytes -= selected.back().output_bytes;
+          selected.pop_back();
+        }
         ScalarCandidate candidate;
         candidate.primary = primary;
-        candidate.keys.reserve(resolved_order.size());
-        for (const ResolvedOrder &key : resolved_order) {
-          candidate.keys.push_back(row[key.column]);
-        }
-        if (statement.limit < 0 || selected.size() < capacity) {
-          selected.push_back(std::move(candidate));
-          selected.back().output = keepOutput(row);
-          clearOutputs();
-          if (statement.limit >= 0) {
-            std::push_heap(selected.begin(), selected.end(), worseFirst);
+        if (stable) {
+          // Cache and overlay references remain valid for this read-only
+          // SELECT, including the sort keys and any projected vector.
+          candidate.stable_row = &row;
+        } else {
+          candidate.keys.reserve(resolved_order.size());
+          for (const ResolvedOrder &key : resolved_order) {
+            candidate.keys.push_back(row[key.column]);
           }
-        } else if (worseFirst(candidate, selected.front())) {
-          std::pop_heap(selected.begin(), selected.end(), worseFirst);
-          selected.back() = std::move(candidate);
-          selected.back().output = keepOutput(row);
-          clearOutputs();
+          keepOutput(candidate, row);
+        }
+        selected.push_back(std::move(candidate));
+        if (statement.limit >= 0) {
           std::push_heap(selected.begin(), selected.end(), worseFirst);
         }
         return true;
@@ -5025,7 +5084,10 @@ class Database {
       result.select = true;
       result.reserveRows(end - begin);
       for (size_t index = begin; index < end; ++index) {
-        if (selected[index].output) {
+        if (selected[index].stable_row != nullptr) {
+          result.appendRow(makeOutput(*selected[index].stable_row),
+                           data_dir_, json_output_);
+        } else if (selected[index].output) {
           result.appendRow(makeOutput(*selected[index].output),
                            data_dir_, json_output_);
         } else {
@@ -5322,27 +5384,37 @@ class Database {
 
   __attribute__((target("avx2"))) static void quantizedDistanceBatchAvx2(
       const int8_t *rows, const int8_t *probe, size_t size, uint32_t *scores,
-      const uint32_t *, int64_t) {
+      const uint32_t *norms, int64_t query_norm) {
     __m256i sum0 = _mm256_setzero_si256();
     __m256i sum1 = _mm256_setzero_si256();
     __m256i sum2 = _mm256_setzero_si256();
     __m256i sum3 = _mm256_setzero_si256();
+    const __m256i ones = _mm256_set1_epi16(1);
     size_t i = 0;
-    for (; i + 16 <= size; i += 16) {
-      const __m256i p = _mm256_cvtepi8_epi16(_mm_loadu_si128(
-          reinterpret_cast<const __m128i *>(probe + i)));
-      const __m256i d0 = _mm256_sub_epi16(_mm256_cvtepi8_epi16(_mm_loadu_si128(
-          reinterpret_cast<const __m128i *>(rows + i))), p);
-      const __m256i d1 = _mm256_sub_epi16(_mm256_cvtepi8_epi16(_mm_loadu_si128(
-          reinterpret_cast<const __m128i *>(rows + size + i))), p);
-      const __m256i d2 = _mm256_sub_epi16(_mm256_cvtepi8_epi16(_mm_loadu_si128(
-          reinterpret_cast<const __m128i *>(rows + 2 * size + i))), p);
-      const __m256i d3 = _mm256_sub_epi16(_mm256_cvtepi8_epi16(_mm_loadu_si128(
-          reinterpret_cast<const __m128i *>(rows + 3 * size + i))), p);
-      sum0 = _mm256_add_epi32(sum0, _mm256_madd_epi16(d0, d0));
-      sum1 = _mm256_add_epi32(sum1, _mm256_madd_epi16(d1, d1));
-      sum2 = _mm256_add_epi32(sum2, _mm256_madd_epi16(d2, d2));
-      sum3 = _mm256_add_epi32(sum3, _mm256_madd_epi16(d3, d3));
+    for (; i + 32 <= size; i += 32) {
+      const __m256i p = _mm256_loadu_si256(
+          reinterpret_cast<const __m256i *>(probe + i));
+      // Rows exclude -128, so abs(query) * sign(row, query) has exact
+      // signed-byte operands even for query == -128. Each maddubs pair is
+      // bounded by 2*128*127 = 32512: its saturating add never saturates.
+      // Precomputed norms turn these 32-axis dots into exact code distances.
+      const __m256i magnitude = _mm256_abs_epi8(p);
+      const __m256i r0 = _mm256_sign_epi8(_mm256_loadu_si256(
+          reinterpret_cast<const __m256i *>(rows + i)), p);
+      const __m256i r1 = _mm256_sign_epi8(_mm256_loadu_si256(
+          reinterpret_cast<const __m256i *>(rows + size + i)), p);
+      const __m256i r2 = _mm256_sign_epi8(_mm256_loadu_si256(
+          reinterpret_cast<const __m256i *>(rows + 2 * size + i)), p);
+      const __m256i r3 = _mm256_sign_epi8(_mm256_loadu_si256(
+          reinterpret_cast<const __m256i *>(rows + 3 * size + i)), p);
+      sum0 = _mm256_add_epi32(sum0, _mm256_madd_epi16(
+          _mm256_maddubs_epi16(magnitude, r0), ones));
+      sum1 = _mm256_add_epi32(sum1, _mm256_madd_epi16(
+          _mm256_maddubs_epi16(magnitude, r1), ones));
+      sum2 = _mm256_add_epi32(sum2, _mm256_madd_epi16(
+          _mm256_maddubs_epi16(magnitude, r2), ones));
+      sum3 = _mm256_add_epi32(sum3, _mm256_madd_epi16(
+          _mm256_maddubs_epi16(magnitude, r3), ones));
     }
     const __m256i sums[] = {sum0, sum1, sum2, sum3};
     for (size_t j = 0; j < 4; ++j) {
@@ -5350,12 +5422,13 @@ class Database {
                                   _mm256_extracti128_si256(sums[j], 1));
       sum = _mm_hadd_epi32(sum, sum);
       sum = _mm_hadd_epi32(sum, sum);
-      scores[j] = static_cast<uint32_t>(_mm_cvtsi128_si32(sum));
+      int64_t dot = _mm_cvtsi128_si32(sum);
       for (size_t tail = i; tail < size; ++tail) {
-        const int difference = static_cast<int>(rows[j * size + tail]) -
-                               static_cast<int>(probe[tail]);
-        scores[j] += static_cast<uint32_t>(difference * difference);
+        dot += static_cast<int>(rows[j * size + tail]) *
+               static_cast<int>(probe[tail]);
       }
+      scores[j] = static_cast<uint32_t>(
+          static_cast<int64_t>(norms[j]) + query_norm - 2 * dot);
     }
   }
 

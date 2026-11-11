@@ -113,6 +113,8 @@ struct QuantizedKernelTest {
         shifted_norm += shifted * shifted;
       }
       const int64_t correction = shifted_norm - static_cast<int64_t>(dimension) * 16384;
+      const int64_t query_norm = static_cast<int64_t>(
+          squaredDifference(query, zero.data(), dimension));
       for (auto &entry : kernels) {
         if (!entry.supported) {
           continue;
@@ -122,7 +124,8 @@ struct QuantizedKernelTest {
         std::array<uint32_t, 6> output{{guard, unwritten, unwritten,
                                       unwritten, unwritten, guard}};
         entry.kernel(rows, query, dimension, output.data() + 1,
-                     norms.data(), correction);
+                     norms.data(), std::string_view(entry.name) == "AVX2"
+                         ? query_norm : correction);
         if (output.front() != guard || output.back() != guard) {
           throw std::runtime_error(std::string(entry.name) + " overwrote score guards: " +
                                    label + ", dimension=" + std::to_string(dimension));
@@ -145,10 +148,11 @@ struct QuantizedKernelTest {
 
     constexpr std::array<size_t, 12> dimensions{{
         16, 17, 31, 32, 63, 64, 65, 127, 128, 129, 16383, 16384}};
-    constexpr std::array<const char *, 9> patterns{{
+    constexpr std::array<const char *, 11> patterns{{
         "zeros", "positive-versus-negative", "negative-versus-positive",
         "equal-positive", "equal-negative", "distinct-rows-zero-query",
-        "alternating", "last-axis-only", "block-boundaries"}};
+        "alternating", "last-axis-only", "block-boundaries",
+        "minimum-query-code", "alternating-minimum-query-code"}};
     constexpr std::array<int, 4> row_values{{-127, -1, 1, 127}};
     std::mt19937 random(0x51A7C0DEU);
     const auto random_code = [&]() {
@@ -168,6 +172,8 @@ struct QuantizedKernelTest {
           if (pattern == 6) q = axis % 2 ? -127 : 127;
           if (pattern == 7 && axis + 1 == dimension) q = 7;
           if (pattern == 8) q = (axis / 32) % 2 ? -126 : 127;
+          if (pattern == 9) q = -128;
+          if (pattern == 10) q = axis % 2 ? -128 : 127;
           query[axis] = static_cast<int8_t>(q);
           for (size_t row = 0; row < 4; ++row) {
             int value = 0;
@@ -181,6 +187,9 @@ struct QuantizedKernelTest {
             if (pattern == 7 && axis + 1 == dimension) value = row_values[row];
             if (pattern == 8) {
               value = ((axis + row * 17) / (row + 1)) % 2 ? -127 : 127;
+            }
+            if (pattern == 9 || pattern == 10) {
+              value = (axis + row) % 2 ? -127 : 127;
             }
             rows[row * dimension + axis] = static_cast<int8_t>(value);
           }

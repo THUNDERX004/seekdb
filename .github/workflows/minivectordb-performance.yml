@@ -2,11 +2,12 @@ name: MiniVectorDB paired Linux benchmark
 
 on:
   push:
-    branches: [codex/performance-round6-20261111]
+    branches: [codex/performance-round7-20261111]
     paths:
       - src/minivectordb.cpp
       - src/*.hpp
       - bench/evaluate.py
+      - bench/evaluate_ordinary.py
       - .github/workflows/minivectordb-performance.yml
   workflow_dispatch:
 
@@ -24,11 +25,11 @@ jobs:
           fetch-depth: 1
       - name: Fetch the fixed comparison source
         run: |
-          git fetch --no-tags --depth=1 origin 4b5dc4ab189d0fc761b29831eba20a8f0be6013d
+          git fetch --no-tags --depth=1 origin a2567da882fd314237f71a6cb4abcc5a3f51f43e
           mkdir -p build/paired-linux
-          git show 4b5dc4ab189d0fc761b29831eba20a8f0be6013d:src/minivectordb.cpp > build/paired-linux/baseline.cpp
-          git show 4b5dc4ab189d0fc761b29831eba20a8f0be6013d:src/compact_value.hpp > build/paired-linux/compact_value.hpp
-          git show 4b5dc4ab189d0fc761b29831eba20a8f0be6013d:src/quantized_block_scan.hpp > build/paired-linux/quantized_block_scan.hpp
+          git show a2567da882fd314237f71a6cb4abcc5a3f51f43e:src/minivectordb.cpp > build/paired-linux/baseline.cpp
+          git show a2567da882fd314237f71a6cb4abcc5a3f51f43e:src/compact_value.hpp > build/paired-linux/compact_value.hpp
+          git show a2567da882fd314237f71a6cb4abcc5a3f51f43e:src/quantized_block_scan.hpp > build/paired-linux/quantized_block_scan.hpp
       - name: Build both versions with the submission compiler
         run: |
           docker run --rm --network=none --mount type=bind,src="$PWD",dst=/work --workdir /work \
@@ -46,22 +47,26 @@ jobs:
             --baseline build/paired-linux/baseline --candidate build/paired-linux/candidate \
             --baseline-protocol json --candidate-protocol json \
             --runs 3 --rows 10000 --dim 128 --queries 1000 --batch 100 --k 10 \
-            --seed 20261510 --report build/paired-linux/result.json > build/paired-linux/stdout.txt
+            --seed 20261610 --report build/paired-linux/result.json > build/paired-linux/stdout.txt
           python3 -X utf8 -B bench/evaluate.py \
             --baseline build/paired-linux/baseline --candidate build/paired-linux/candidate \
             --baseline-protocol json --candidate-protocol json \
             --runs 3 --rows 10000 --dim 512 --queries 1000 --batch 100 --k 10 \
-            --seed 20261520 --report build/paired-linux/dim512.json > build/paired-linux/dim512.stdout.txt
+            --seed 20261620 --report build/paired-linux/dim512.json > build/paired-linux/dim512.stdout.txt
           python3 -X utf8 -B bench/evaluate.py \
             --baseline build/paired-linux/baseline --candidate build/paired-linux/candidate \
             --baseline-protocol json --candidate-protocol json \
             --runs 3 --rows 1000 --dim 128 --queries 1000 --batch 100 --k 10 \
-            --seed 20261530 --report build/paired-linux/small.json > build/paired-linux/small.stdout.txt
+            --seed 20261630 --report build/paired-linux/small.json > build/paired-linux/small.stdout.txt
           python3 -X utf8 -B bench/evaluate.py \
             --baseline build/paired-linux/candidate --candidate build/paired-linux/candidate \
             --baseline-protocol json --candidate-protocol json \
             --runs 3 --rows 1000 --dim 128 --queries 1000 --batch 100 --k 10 \
-            --seed 20261530 --report build/paired-linux/small-aa.json > build/paired-linux/small-aa.stdout.txt
+            --seed 20261630 --report build/paired-linux/small-aa.json > build/paired-linux/small-aa.stdout.txt
+          python3 -X utf8 -B bench/evaluate_ordinary.py \
+            --baseline build/paired-linux/baseline --candidate build/paired-linux/candidate \
+            --runs 3 --rows 10000 --dim 128 --queries 1000 --batch 100 --k 10 \
+            --seed 20261660 --report build/paired-linux/ordinary.json > build/paired-linux/ordinary.stdout.txt
       - name: Print comparison evidence
         if: always()
         run: |
@@ -89,4 +94,11 @@ jobs:
                       result.pop('write_batch_ns', None)
                       result.pop('queries_raw', None)
               print('VARIANT_' + name.upper() + '_EVIDENCE ' + json.dumps(report, separators=(',', ':')))
+          report = json.loads(Path('build/paired-linux/ordinary.json').read_text())
+          report['workload'].pop('queries', None)
+          for run in report['runs']:
+              for result in run['results'].values():
+                  result.pop('write_batch_ns', None)
+                  result.pop('queries_raw', None)
+          print('ORDINARY_LINUX_EVIDENCE ' + json.dumps(report, separators=(',', ':')))
           PY
