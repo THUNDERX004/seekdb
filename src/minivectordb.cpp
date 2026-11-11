@@ -2303,6 +2303,9 @@ class FileWriter {
 struct Version {
   uint64_t offset = 0;
   bool cached = false;
+  // Fits the existing alignment padding on 64-bit builds. Valid only while
+  // cached_distance_ready_ is true, never a persisted row identity.
+  uint32_t screening_index = 0;
   Row row;
 };
 
@@ -2504,14 +2507,19 @@ class Table {
     const size_t column = condition.column;
     const bool text = definition_.columns[column].type == ColumnType::VarChar;
     if (equality_column_ != column) {
-      clearEqualityIndex();
+      // Changing a predicate does not change committed rows. Keep an already
+      // prepared full-table directory and its codes across equality columns.
+      clearEqualityIndex(true);
       // Build off to the side: an allocation failure must never publish a
       // partially populated candidate index to a later successful query.
       decltype(integer_equality_index_) staged_integer;
       decltype(text_equality_index_) staged_text;
+      const size_t unused = cache_limit_bytes_ > cache_bytes_
+          ? cache_limit_bytes_ - cache_bytes_ : 0;
+      const size_t retained = quantized_bytes_ +
+          cached_distance_rows_.capacity() * sizeof(IndexedRow);
       const size_t available = cache_enabled_
-          ? (cache_limit_bytes_ > cache_bytes_
-                 ? cache_limit_bytes_ - cache_bytes_ : 0)
+          ? (unused > retained ? unused - retained : 0)
           : equalityMetadataLimitBytes();
       size_t vector_column = std::numeric_limits<size_t>::max();
       for (size_t i = 0; i < definition_.columns.size(); ++i) {
@@ -2602,6 +2610,7 @@ class Table {
       equality_bytes_ = allocated +
           integer_equality_index_.bucket_count() * sizeof(void *) +
           text_equality_index_.bucket_count() * sizeof(void *);
+      alignCachedDistanceRows();
     }
     if (equality_disabled_) {
       return nullptr;
@@ -2614,6 +2623,119 @@ class Table {
     const auto found =
         integer_equality_index_.find(condition.value.integer());
     return found == integer_equality_index_.end() ? &empty : &found->second;
+  }
+
+  void recordScreeningPositions() noexcept {
+    if (cached_distance_rows_.size() > std::numeric_limits<uint32_t>::max()) {
+      return;
+    }
+    uint32_t index = 0;
+    for (const IndexedRow &row : cached_distance_rows_) {
+      const auto found = versions_.find(row.primary);
+      if (found != versions_.end()) {
+        found->second.screening_index = index;
+      }
+      ++index;
+    }
+  }
+
+  void bindCachedDistanceRows() noexcept {
+    size_t first = 0;
+    const auto bind = [&](auto &index) {
+      for (auto &[key, bucket] : index) {
+        (void)key;
+        bucket.code_source = &cached_distance_rows_;
+        bucket.code_first = first;
+        first += bucket.size();
+      }
+    };
+    bind(integer_equality_index_);
+    bind(text_equality_index_);
+  }
+
+  // A new predicate may split a warm full matrix into noncontiguous buckets.
+  // Permute rows, norms and their existing codes together rather than round
+  // every vector again. Only the small permutation is temporary heap storage;
+  // failure leaves the full cache usable and the new buckets unbound.
+  void alignCachedDistanceRows() {
+    if (!cache_enabled_ || !cached_distance_ready_ ||
+        cached_distance_rows_.size() > std::numeric_limits<uint32_t>::max()) {
+      return;
+    }
+    IndexedRows &full = cached_distance_rows_;
+    const size_t unused = cache_limit_bytes_ > cache_bytes_
+        ? cache_limit_bytes_ - cache_bytes_ : 0;
+    const size_t retained = equality_bytes_ + quantized_bytes_ +
+        full.capacity() * sizeof(IndexedRow);
+    const size_t available = unused > retained ? unused - retained : 0;
+    if (full.size() > available / sizeof(uint32_t)) {
+      return;
+    }
+    std::vector<uint32_t> target;
+    try {
+      target.resize(full.size());
+    } catch (const std::bad_alloc &) {
+      return;
+    }
+    if (target.capacity() > available / sizeof(uint32_t)) {
+      return;
+    }
+    size_t next = 0;
+    const auto append = [&](const auto &index) {
+      for (const auto &[key, bucket] : index) {
+        (void)key;
+        for (const IndexedRow &row : bucket) {
+          const auto found = versions_.find(row.primary);
+          if (found == versions_.end()) { return false; }
+          const size_t old = found->second.screening_index;
+          if (next >= full.size() || old >= full.size() ||
+              full[old].primary != row.primary) {
+            return false;
+          }
+          target[old] = static_cast<uint32_t>(next++);
+        }
+      }
+      return true;
+    };
+    if (!append(integer_equality_index_) || !append(text_equality_index_) ||
+        next != full.size()) {
+      return;
+    }
+    // All validation/allocation precedes the first mutation. The permutation
+    // cycles below cannot throw, including a partial final packed block.
+    for (size_t first = 0; first < target.size(); ++first) {
+      while (target[first] != first) {
+        const size_t other = target[first];
+        std::swap(full.rows[first], full.rows[other]);
+        if (!full.codes.empty()) {
+          std::swap(full.code_norms[first], full.code_norms[other]);
+          if (full.codes_blocked) {
+            const size_t left = first / quantized_block::kBlockRows *
+                quantized_block::kBlockRows * full.code_stride +
+                first % quantized_block::kBlockRows * 4;
+            const size_t right = other / quantized_block::kBlockRows *
+                quantized_block::kBlockRows * full.code_stride +
+                other % quantized_block::kBlockRows * 4;
+            for (size_t axis = 0; axis < full.code_stride; axis += 4) {
+              const size_t group = axis * quantized_block::kBlockRows;
+              uint32_t a, b;
+              std::memcpy(&a, full.codes.data() + left + group, sizeof(a));
+              std::memcpy(&b, full.codes.data() + right + group, sizeof(b));
+              std::memcpy(full.codes.data() + left + group, &b, sizeof(b));
+              std::memcpy(full.codes.data() + right + group, &a, sizeof(a));
+            }
+          } else {
+            for (size_t axis = 0; axis < full.code_stride; ++axis) {
+              std::swap(full.codes[first * full.code_stride + axis],
+                        full.codes[other * full.code_stride + axis]);
+            }
+          }
+        }
+        std::swap(target[first], target[other]);
+      }
+    }
+    recordScreeningPositions();
+    bindCachedDistanceRows();
   }
 
   // Keep vector addresses beside row identities so exact TopK scans do not
@@ -2663,17 +2785,8 @@ class Table {
       }
       cached_distance_rows_.swap(staged);
       cached_distance_ready_ = true;
-      size_t first = 0;
-      const auto bind = [&](auto &index) {
-        for (auto &[key, bucket] : index) {
-          (void)key;
-          bucket.code_source = &cached_distance_rows_;
-          bucket.code_first = first;
-          first += bucket.size();
-        }
-      };
-      bind(integer_equality_index_);
-      bind(text_equality_index_);
+      recordScreeningPositions();
+      bindCachedDistanceRows();
     }
     return &cached_distance_rows_;
   }
@@ -3391,11 +3504,16 @@ class Table {
     return std::clamp(cache_limit_bytes_ / 16, minimum, maximum);
   }
 
-  void clearEqualityIndex() noexcept {
-    IndexedRows{}.swap(cached_distance_rows_);
-    cached_distance_ready_ = false;
+  void clearEqualityIndex(bool preserve_distance = false) noexcept {
+    if (!preserve_distance) {
+      IndexedRows{}.swap(cached_distance_rows_);
+      cached_distance_ready_ = false;
+    }
     equality_bytes_ = 0;
-    quantized_bytes_ = 0;
+    // Bucket-owned matrices disappear with the equality index; the full
+    // directory owns its matrix independently of any bucket that borrowed it.
+    quantized_bytes_ = cached_distance_rows_.codes.capacity() +
+        cached_distance_rows_.code_norms.capacity() * sizeof(uint32_t);
     decltype(integer_equality_index_){}.swap(integer_equality_index_);
     decltype(text_equality_index_){}.swap(text_equality_index_);
     equality_column_ = std::numeric_limits<size_t>::max();
@@ -4578,7 +4696,7 @@ class Database {
       const WorseFirst candidateLess{distance_spec.column, &distance_spec.probe};
       std::vector<Candidate> heap;
       heap.reserve(std::min<size_t>(capacity, 64));
-      double quantized_step = 0;
+      double quantized_scale = 0;
       std::vector<int8_t> quantized_probe;
       uint32_t quantized_above = std::numeric_limits<uint32_t>::max();
       double quantized_error = std::sqrt(
@@ -4594,12 +4712,12 @@ class Database {
             std::numeric_limits<double>::infinity());
         screening_above =
             reject_above * screening_multiplier + screening_absolute;
-        if (quantized_step > 0) {
+        if (quantized_scale > 0) {
           // The triangle inequality bounds code-distance by true-distance /
           // step plus the measured row/query residual norms. The extra whole
           // unit covers floating evaluation roundoff (useful radii <32768);
           // ceil rounds the integer squared-distance threshold outward.
-          const double radius = std::sqrt(reject_above) / quantized_step +
+          const double radius = std::sqrt(reject_above) * quantized_scale +
                                 quantized_error;
           quantized_above = radius < 32768
               ? static_cast<uint32_t>(std::ceil(radius * radius))
@@ -4663,11 +4781,14 @@ class Database {
             quantized_kernel = &quantizedDistanceBatchVnni;
           }
         }
-        // Medium equality lists borrow the full matrix rather than allocating
-        // a second set of codes. Tiny lists retain the direct float scan.
+        // Medium lists only borrow codes that are already prepared and bound
+        // to this bucket. A cold selective query should not quantize the full
+        // table, and an existing full matrix need not be reordered for it.
         const bool quantized_worthwhile = statement.conditions.empty() ||
             cached_candidates->size() >= 2048 ||
-            (cached_candidates->size() >= 256 && table.rowCount() >= 2048);
+            (cached_candidates->size() >= 256 &&
+             cached_candidates->code_source != nullptr &&
+             !cached_candidates->code_source->codes.empty());
         // VNNI can accumulate sixteen independent rows without horizontal
         // reductions. Retain the existing layout on other CPUs and for small
         // scans, where packing/setup does not reliably amortize its cost.
@@ -4683,9 +4804,11 @@ class Database {
         if (code_rows != nullptr) {
           const size_t code_first = code_rows == cached_candidates
               ? 0 : cached_candidates->code_first;
-          const double step = code_rows->code_step;
+          // The reciprocal is also an exact power of two in double for every
+          // finite binary32 row value, including a wholly subnormal table.
+          const double scale = 1.0 / code_rows->code_step;
           quantized = std::all_of(prepared_probe.begin(), prepared_probe.end(),
-              [&](double value) { return std::abs(value / step) < 128; });
+              [&](double value) { return std::abs(value * scale) < 128; });
           if (quantized) {
             try {
               quantized_probe.resize(code_rows->code_stride, 0);
@@ -4698,15 +4821,18 @@ class Database {
             double squared_query_error = 0;
             size_t axis = 0;
             for (double value : prepared_probe) {
-              const double scaled = value / step;
-              const int code = static_cast<int>(
-                  std::clamp(std::round(scaled), -127.0, 127.0));
+              const double scaled = value * scale;
+              // The strict range gate makes truncation safe. A binary32
+              // scaled by a power of two has no values within a double ULP of
+              // a nonexact half-integer, so this also rounds ties away from 0.
+              const int code = std::clamp(
+                  static_cast<int>(scaled + std::copysign(0.5, scaled)), -127, 127);
               quantized_probe[axis++] = static_cast<int8_t>(code);
               query_correction += code * code + 256 * code;
               const double error = scaled - code;
               squared_query_error += error * error;
             }
-            quantized_step = step;
+            quantized_scale = scale;
             quantized_error = code_rows->code_error +
                 std::sqrt(squared_query_error * rejection_multiplier) *
                     rejection_multiplier + 1;

@@ -107,6 +107,7 @@ void checkResidualBound(const mvd::Table::IndexedRows &rows) {
   double maximum = 0;
   for (size_t row = 0; row < rows.size(); ++row) {
     double residual = 0;
+    uint32_t norm = 0;
     for (size_t axis = 0; axis < dimension; ++axis) {
       int code;
       if (rows.codes_blocked) {
@@ -119,10 +120,13 @@ void checkResidualBound(const mvd::Table::IndexedRows &rows) {
         code = rows.codes[row * rows.code_stride + axis];
       }
       const double scaled = static_cast<double>(rows[row].vector_data[axis]) / rows.code_step;
+      norm += static_cast<uint32_t>(code * code);
       residual = std::hypot(residual, scaled - code);
     }
     require(std::isfinite(residual), "independent residual norm is not finite");
     maximum = std::max(maximum, residual);
+    require(rows.code_norms[row] == norm,
+            "quantized norm does not match its independently decoded row");
   }
   require(rows.code_error >= maximum,
           "quantized residual bound understates an independent double norm");
@@ -375,6 +379,164 @@ void checkSharedDirectoryFailure(bool blocked) {
   std::cout << "PASS shared-directory reserve failure, recovery and reuse blocked="
             << blocked << '\n';
 }
+void checkPreservedFullDirectory(bool blocked) {
+  struct PreviousVersion { uint64_t offset; bool cached; mvd::Row row; };
+  static_assert(sizeof(void *) != 8 || sizeof(mvd::Version) == sizeof(PreviousVersion));
+  constexpr size_t total = 2049;
+  mvd::TableDef definition;
+  definition.oid = 1;
+  definition.columns = {{"id", mvd::ColumnType::BigInt, 0},
+                        {"tag", mvd::ColumnType::BigInt, 0},
+                        {"category", mvd::ColumnType::BigInt, 0},
+                        {"v", mvd::ColumnType::Vector, dimension}};
+  definition.vector_column = 3;
+  mvd::Table table(std::move(definition), "unused-retained-quantized-cache.dat");
+  table.setCacheLimit(8 * 1024 * 1024);
+  size_t row_bytes = 0;
+  {
+    std::vector<mvd::Row> values(total, mvd::Row(4));
+    std::vector<mvd::PendingRecord> pending;
+    pending.reserve(total);
+    for (size_t i = 0; i < total; ++i) {
+      values[i][0].setInteger(static_cast<int64_t>(i));
+      values[i][1].setInteger(i < row_count ? 7 : 8);
+      values[i][2].setInteger(static_cast<int64_t>(i % 3));
+      values[i][3].setVector(std::vector<float>(dimension, float(i % 7 + 1)));
+      row_bytes += mvd::cachedRowBytes(values[i]);
+      pending.push_back({1, static_cast<int64_t>(i), 1, &values[i], i});
+    }
+    table.applyPending(pending);
+  }
+  const auto *full = table.cachedDistanceCandidates(3, nullptr);
+  require(full != nullptr && table.prepareQuantizedRows(*full, dimension, blocked),
+          "full-first fixture did not prepare its screening cache");
+  const auto *directory = full->data();
+  const auto *codes = full->codes.data();
+  const auto *norms = full->code_norms.data();
+  const auto verifyPreserved = [&] {
+    allocation_calls = 0;
+    allocation_injected = false;
+    allocation_budget = 0;
+    const auto *again = table.cachedDistanceCandidates(3, nullptr);
+    const bool ready = again != nullptr &&
+        table.prepareQuantizedRows(*again, dimension, blocked);
+    allocation_budget = -1;
+    require(ready && again == full && again->data() == directory &&
+                again->codes.data() == codes && again->code_norms.data() == norms &&
+                allocation_calls == 0 && !allocation_injected,
+            "predicate switch discarded or rebuilt an unchanged full matrix");
+    checkResidualBound(*again);
+  };
+  mvd::Condition condition;
+  condition.column = 1;
+  condition.op = mvd::CompareOp::Eq;
+  condition.value.setInteger(7);
+  allocation_calls = 0;
+  const auto *bucket = table.cachedDistanceCandidates(3, &condition);
+  const size_t first_build_allocations = allocation_calls;
+  require(bucket != nullptr && bucket->size() == row_count &&
+              bucket->code_source == full &&
+              bucket->code_first <= total - row_count,
+          "new equality bucket did not reuse the permuted full matrix");
+  for (size_t i = 0; i < bucket->size(); ++i) {
+    require((*full)[bucket->code_first + i].primary == (*bucket)[i].primary,
+            "permuted full-matrix range does not match its equality bucket");
+  }
+  verifyPreserved();
+
+  // Failure after dropping the old predicate must not drop the full cache or
+  // publish a partial new equality index. A subsequent request can rebuild it.
+  condition.column = 2;
+  condition.value.setInteger(1);
+  allocation_calls = 0;
+  allocation_injected = false;
+  allocation_budget = 0;
+  bool failed = false;
+  try {
+    (void)table.cachedDistanceCandidates(3, &condition);
+  } catch (const std::bad_alloc &) {
+    failed = true;
+  }
+  allocation_budget = -1;
+  require(failed && allocation_injected, "predicate failure was not injected");
+  verifyPreserved();
+  bucket = table.cachedDistanceCandidates(3, &condition);
+  require(bucket != nullptr && bucket->size() == total / 3,
+          "predicate switch did not recover a complete equality directory");
+  for (const auto &row : *bucket) {
+    require(row.cached != nullptr && (*row.cached)[2].integer() == 1,
+            "recovered predicate returned a row from another bucket");
+  }
+  verifyPreserved();
+
+  // The last allocation when rebuilding the original predicate is its small
+  // permutation. Failure is optional: the complete index still works, codes
+  // stay in their original order, and a later alignment may safely recover.
+  condition.column = 1;
+  condition.value.setInteger(7);
+  const auto saved_codes = full->codes;
+  const auto saved_norms = full->code_norms;
+  const auto saved_rows = full->rows;
+  allocation_calls = 0;
+  allocation_injected = false;
+  allocation_budget = static_cast<long long>(first_build_allocations) - 1;
+  bucket = table.cachedDistanceCandidates(3, &condition);
+  allocation_budget = -1;
+  require(allocation_injected && bucket != nullptr && bucket->size() == row_count &&
+              bucket->code_source == nullptr && full->codes == saved_codes &&
+              full->code_norms == saved_norms,
+          "optional permutation failure changed codes or dropped the equality index");
+  for (size_t i = 0; i < saved_rows.size(); ++i) {
+    require((*full)[i].primary == saved_rows[i].primary,
+            "failed permutation partially reordered the full directory");
+  }
+  verifyPreserved();
+  table.alignCachedDistanceRows();
+  require(bucket->code_source == full, "optional permutation did not recover");
+  verifyPreserved();
+
+  // Reserve enough for the rows, full directory and matrix, but not another
+  // complete index. Retained storage must be included in the shared budget.
+  const size_t full_bytes = full->capacity() * sizeof(mvd::Table::IndexedRow) +
+      full->codes.capacity() + full->code_norms.capacity() * sizeof(uint32_t);
+  table.setCacheLimit(row_bytes + full_bytes + 512);
+  full = table.cachedDistanceCandidates(3, nullptr);
+  require(full != nullptr && table.prepareQuantizedRows(*full, dimension, blocked),
+          "tight-budget fixture did not fit the full matrix");
+  directory = full->data();
+  codes = full->codes.data();
+  norms = full->code_norms.data();
+  require(table.cachedDistanceCandidates(3, &condition) == nullptr,
+          "equality construction ignored retained full-cache bytes");
+  verifyPreserved();
+
+  mvd::Row replacement(4);
+  replacement[0].setInteger(0);
+  replacement[1].setInteger(7);
+  replacement[2].setInteger(1);
+  replacement[3].setVector(std::vector<float>(dimension, 99.0f));
+  table.applyPending({{1, 0, 2, &replacement, 99999}});
+  full = table.cachedDistanceCandidates(3, nullptr);
+  require(full != nullptr && full->codes.empty() && !full->codes_attempted,
+          "committed replacement retained stale screening codes");
+  bool found = false;
+  for (const auto &row : *full) {
+    if (row.primary == 0) {
+      found = true;
+      require(row.cached != nullptr && row.vector_data[0] == 99.0f &&
+                  (*row.cached)[2].integer() == 1,
+              "rebuilt directory retained a replaced row address");
+    }
+  }
+  require(found && table.prepareQuantizedRows(*full, dimension, blocked),
+          "committed replacement did not rebuild a complete full matrix");
+  checkResidualBound(*full);
+  table.setCacheLimit(0);
+  require(!table.fullyCached() && table.cachedDistanceCandidates(3, nullptr) == nullptr,
+          "cache eviction retained row addresses or screening codes");
+  std::cout << "PASS full-first predicate reuse, failure, budget and commit blocked="
+            << blocked << '\n';
+}
 }  // namespace
 
 int main() {
@@ -385,6 +547,7 @@ int main() {
       checkSuccess(blocked);
       checkResidualFixtures(blocked);
       checkSharedDirectoryFailure(blocked);
+      checkPreservedFullDirectory(blocked);
     }
     checkPaddingBudget();
     return 0;

@@ -2,7 +2,7 @@ name: MiniVectorDB Linux validation
 
 on:
   push:
-    branches: [2026-competition-round2, codex/performance-round5-20261111]
+    branches: [2026-competition-round2, codex/performance-round6-20261111]
     paths:
       - src/minivectordb.cpp
       - src/*.hpp

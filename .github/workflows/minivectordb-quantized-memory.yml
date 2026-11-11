@@ -2,7 +2,7 @@ name: MiniVectorDB quantized cache memory comparison
 
 on:
   push:
-    branches: [codex/performance-round5-20261111]
+    branches: [codex/performance-round6-20261111]
     paths:
       - src/minivectordb.cpp
       - src/*.hpp
@@ -24,10 +24,11 @@ jobs:
           fetch-depth: 1
       - name: Fetch the fixed comparison source
         run: |
-          git fetch --no-tags --depth=1 origin 85502ab28912655fe7c8d550e942ca50eeb3e636
+          git fetch --no-tags --depth=1 origin 4b5dc4ab189d0fc761b29831eba20a8f0be6013d
           mkdir -p build/quantized-memory
-          git show 85502ab28912655fe7c8d550e942ca50eeb3e636:src/minivectordb.cpp > build/quantized-memory/baseline.cpp
-          git show 85502ab28912655fe7c8d550e942ca50eeb3e636:src/quantized_block_scan.hpp > build/quantized-memory/quantized_block_scan.hpp
+          git show 4b5dc4ab189d0fc761b29831eba20a8f0be6013d:src/minivectordb.cpp > build/quantized-memory/baseline.cpp
+          git show 4b5dc4ab189d0fc761b29831eba20a8f0be6013d:src/compact_value.hpp > build/quantized-memory/compact_value.hpp
+          git show 4b5dc4ab189d0fc761b29831eba20a8f0be6013d:src/quantized_block_scan.hpp > build/quantized-memory/quantized_block_scan.hpp
       - name: Build with the submission compiler
         run: |
           docker run --rm --network=none --mount type=bind,src="$PWD",dst=/work --workdir /work \
@@ -49,7 +50,9 @@ jobs:
         if: always()
         run: |
           git rev-parse HEAD
-          sha256sum src/minivectordb.cpp src/*.hpp build/quantized-memory/baseline build/quantized-memory/candidate
+          sha256sum src/minivectordb.cpp src/*.hpp \
+            build/quantized-memory/baseline.cpp build/quantized-memory/compact_value.hpp build/quantized-memory/quantized_block_scan.hpp \
+            build/quantized-memory/baseline build/quantized-memory/candidate
           python3 - <<'PY'
           import json
           from pathlib import Path

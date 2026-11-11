@@ -135,7 +135,9 @@ class QuantizedScreenTests(unittest.TestCase):
                 self.assertEqual(len(rows) % 4, count % 4)
                 table = f"boundaries_{dimension}"
                 self.create(client, table, dimension, rows)
-                for value in (0.5, 127.5, -127.5):
+                for value in (from_bits(0x3EFFFFFF), 0.5, from_bits(0x3F000001),
+                              -from_bits(0x3EFFFFFF), -0.5, -from_bits(0x3F000001),
+                              127.5, -127.5):
                     probe = alternating(value)
                     scores = exact_scores(rows, probe)
                     self.assertLess(len(set(scores.values())), len(rows),
@@ -223,9 +225,10 @@ class QuantizedScreenTests(unittest.TestCase):
         rows = list(rows.values())
         probe = (0.0,) * len(rows[0].vector)
         scores = exact_scores(rows, probe)
-        # Warm two real >=2048 buckets and the full view together, then switch
-        # equality columns to invalidate/rebuild their shared cache accounting.
+        # Start with a full view, warm two real >=2048 buckets, then switch
+        # equality columns while retaining the full view and its shared budget.
         for where, predicate in (
+            ("", None),
             ("tag=7", lambda row: row.tag == 7),
             ("tag=8", lambda row: row.tag == 8),
             ("", None),
