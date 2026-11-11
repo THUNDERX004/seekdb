@@ -1,0 +1,404 @@
+{
+  "date": "2026-11-11",
+  "scope": "Local Windows validation; Linux CI is separate. No official hidden-case acceptance claim.",
+  "reported_failing_commit": "e45ce3c25b52acaa25df496c9bff32592a56644d",
+  "integration_base": "0f88baeba3fbbe4f6164111c0a854cce0aaa5912",
+  "official_round2_baseline": "f4d4e26653af823a7601668802f80e374ad6643c",
+  "source_sha256": "fd3275d1e52d2dd9e6391eeb545beb5875973270e2c61059c675b6b36b778290",
+  "conversation_sha256_unchanged": "1ced4b41d1a30011ae7d5ad01717f9835611ce9f6faaf7875e1ff6cdb6f5316a",
+  "paging_before": {
+    "rows": 30000,
+    "dim": 768,
+    "cache_mib": 1,
+    "pages": 469,
+    "pagination_seconds": 27.290802300005453,
+    "probes": [
+      {
+        "sql": "SELECT id FROM t WHERE id=1;",
+        "seconds": 0.003562400001101196,
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      {
+        "sql": "SELECT id FROM t WHERE id>=1 AND id<2 ORDER BY id LIMIT 1;",
+        "seconds": 0.05743109999457374,
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      {
+        "sql": "SELECT id FROM t WHERE id>30000 ORDER BY id LIMIT 1;",
+        "seconds": 0.06251430002157576,
+        "rows": []
+      }
+    ]
+  },
+  "paging_after": {
+    "rows": 30000,
+    "dim": 768,
+    "cache_mib": 1,
+    "pages": 469,
+    "pagination_seconds": 0.18977840000297874,
+    "probes": [
+      {
+        "sql": "SELECT id FROM t WHERE id=1;",
+        "seconds": 0.002812699996866286,
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      {
+        "sql": "SELECT id FROM t WHERE id>=1 AND id<2 ORDER BY id LIMIT 1;",
+        "seconds": 0.001961800007848069,
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      {
+        "sql": "SELECT id FROM t WHERE id>30000 ORDER BY id LIMIT 1;",
+        "seconds": 0.00026710002566687763,
+        "rows": []
+      }
+    ]
+  },
+  "paging_speedup": 143.8035218948895,
+  "paging_comparison_scope": "Pre-repair local source including pending optimization vs final repair; same 30,000 rows, 768 dimensions, 1 MiB engine cache and 469 checked pages. No OS/cgroup cache limit or official score.",
+  "failed_commit_regression": {
+    "test": "test_disk_ranges_and_limit_skip_unrelated_payload_io",
+    "status": "failed on exact failed commit, passed after repair",
+    "unrelated_read_bytes": [
+      1788114,
+      1788119,
+      1788100,
+      1788105
+    ],
+    "max_allowed_read_bytes_per_query": 131072
+  },
+  "parser_timings": [
+    {
+      "binary": "failed.exe",
+      "binary_sha256": "0450a3bcc8bf953c699234e229472d862aee177f42624a61a2164c2280e69faa",
+      "columns": 5000,
+      "name_bytes": 60,
+      "request_seconds": 1.0323101000103634,
+      "partial_catalog": false
+    },
+    {
+      "binary": "failed.exe",
+      "binary_sha256": "0450a3bcc8bf953c699234e229472d862aee177f42624a61a2164c2280e69faa",
+      "columns": 10000,
+      "name_bytes": 60,
+      "request_seconds": 4.264517500007059,
+      "partial_catalog": false
+    },
+    {
+      "binary": "normal.exe",
+      "binary_sha256": "8b67b99e2d290aeabe101b0be5a9a4f3fd5f2642f0c3b565a56258707240e050",
+      "columns": 5000,
+      "name_bytes": 60,
+      "request_seconds": 0.004264999995939434,
+      "partial_catalog": false
+    },
+    {
+      "binary": "normal.exe",
+      "binary_sha256": "8b67b99e2d290aeabe101b0be5a9a4f3fd5f2642f0c3b565a56258707240e050",
+      "columns": 10000,
+      "name_bytes": 60,
+      "request_seconds": 0.008916500024497509,
+      "partial_catalog": false
+    },
+    {
+      "binary": "normal.exe",
+      "binary_sha256": "8b67b99e2d290aeabe101b0be5a9a4f3fd5f2642f0c3b565a56258707240e050",
+      "columns": 50000,
+      "name_bytes": 60,
+      "request_seconds": 0.05216839999775402,
+      "partial_catalog": false
+    }
+  ],
+  "validation_summary": {
+    "status": "passed",
+    "commands": 53,
+    "runs": [
+      {
+        "label": "normal/run_public.py",
+        "returncode": 0,
+        "seconds": 0.5544789000123274
+      },
+      {
+        "label": "normal/test_extended.py",
+        "returncode": 0,
+        "seconds": 0.16519240001798607
+      },
+      {
+        "label": "normal/test_semantics.py",
+        "returncode": 0,
+        "seconds": 0.11793040001066402
+      },
+      {
+        "label": "normal/test_disk_scan.py",
+        "returncode": 0,
+        "seconds": 0.20673840001109056
+      },
+      {
+        "label": "normal/test_hidden_edges.py",
+        "returncode": 0,
+        "seconds": 0.7500870000221767
+      },
+      {
+        "label": "normal/test_differential.py",
+        "returncode": 0,
+        "seconds": 1.8768312000029255
+      },
+      {
+        "label": "normal/test_exact_distance.py",
+        "returncode": 0,
+        "seconds": 0.38562019998789765
+      },
+      {
+        "label": "normal/test_selection_paths.py",
+        "returncode": 0,
+        "seconds": 1.7659834999940358
+      },
+      {
+        "label": "normal/test_stdio_contract.py",
+        "returncode": 0,
+        "seconds": 0.4355336000153329
+      },
+      {
+        "label": "normal/test_formal_sql_edges.py",
+        "returncode": 0,
+        "seconds": 0.3669629000069108
+      },
+      {
+        "label": "normal/test_round6_sql_contract.py",
+        "returncode": 0,
+        "seconds": 0.37099350002245046
+      },
+      {
+        "label": "normal/test_round6_stream_contract.py",
+        "returncode": 0,
+        "seconds": 6.802776099997573
+      },
+      {
+        "label": "normal/test_stream_followup.py",
+        "returncode": 0,
+        "seconds": 0.3496494999853894
+      },
+      {
+        "label": "normal/test_float32_literals.py",
+        "returncode": 0,
+        "seconds": 0.2610611999989487
+      },
+      {
+        "label": "normal/test_sql_round11.py",
+        "returncode": 0,
+        "seconds": 0.18972009999561124
+      },
+      {
+        "label": "normal/test_protocol_round11.py",
+        "returncode": 0,
+        "seconds": 2.002850499993656
+      },
+      {
+        "label": "normal/test_selection_retention.py",
+        "returncode": 0,
+        "seconds": 0.5596465999842621
+      },
+      {
+        "label": "normal/test_large_results.py",
+        "returncode": 0,
+        "seconds": 0.8356510000012349
+      },
+      {
+        "label": "normal/test_json_protocol.py",
+        "returncode": 0,
+        "seconds": 0.779335600003833
+      },
+      {
+        "label": "normal/test_official_json_public.py",
+        "returncode": 0,
+        "seconds": 2.430716400005622
+      },
+      {
+        "label": "normal/test_primary_ranges.py",
+        "returncode": 0,
+        "seconds": 0.42274800001177937
+      },
+      {
+        "label": "scalar/run_public.py",
+        "returncode": 0,
+        "seconds": 0.5638921000063419
+      },
+      {
+        "label": "scalar/test_extended.py",
+        "returncode": 0,
+        "seconds": 0.15448369999649003
+      },
+      {
+        "label": "scalar/test_semantics.py",
+        "returncode": 0,
+        "seconds": 0.1163218000147026
+      },
+      {
+        "label": "scalar/test_disk_scan.py",
+        "returncode": 0,
+        "seconds": 0.20806060000904836
+      },
+      {
+        "label": "scalar/test_hidden_edges.py",
+        "returncode": 0,
+        "seconds": 0.7640279000042938
+      },
+      {
+        "label": "scalar/test_differential.py",
+        "returncode": 0,
+        "seconds": 1.8570391999965068
+      },
+      {
+        "label": "scalar/test_exact_distance.py",
+        "returncode": 0,
+        "seconds": 0.3725789000163786
+      },
+      {
+        "label": "scalar/test_selection_paths.py",
+        "returncode": 0,
+        "seconds": 1.7659520999877714
+      },
+      {
+        "label": "scalar/test_stdio_contract.py",
+        "returncode": 0,
+        "seconds": 0.43155639999895357
+      },
+      {
+        "label": "scalar/test_formal_sql_edges.py",
+        "returncode": 0,
+        "seconds": 0.33347610000055283
+      },
+      {
+        "label": "scalar/test_round6_sql_contract.py",
+        "returncode": 0,
+        "seconds": 0.351547300000675
+      },
+      {
+        "label": "scalar/test_round6_stream_contract.py",
+        "returncode": 0,
+        "seconds": 6.812649100000272
+      },
+      {
+        "label": "scalar/test_stream_followup.py",
+        "returncode": 0,
+        "seconds": 0.3496492000122089
+      },
+      {
+        "label": "scalar/test_float32_literals.py",
+        "returncode": 0,
+        "seconds": 0.26689810000243597
+      },
+      {
+        "label": "scalar/test_sql_round11.py",
+        "returncode": 0,
+        "seconds": 0.1836621000256855
+      },
+      {
+        "label": "scalar/test_protocol_round11.py",
+        "returncode": 0,
+        "seconds": 1.9805148000014015
+      },
+      {
+        "label": "scalar/test_selection_retention.py",
+        "returncode": 0,
+        "seconds": 0.5586810999957379
+      },
+      {
+        "label": "scalar/test_large_results.py",
+        "returncode": 0,
+        "seconds": 0.8467852000030689
+      },
+      {
+        "label": "scalar/test_json_protocol.py",
+        "returncode": 0,
+        "seconds": 0.7461011999985203
+      },
+      {
+        "label": "scalar/test_official_json_public.py",
+        "returncode": 0,
+        "seconds": 2.439660499978345
+      },
+      {
+        "label": "scalar/test_primary_ranges.py",
+        "returncode": 0,
+        "seconds": 0.4714368000277318
+      },
+      {
+        "label": "public-adapter-regressions",
+        "returncode": 0,
+        "seconds": 0.4232845999940764
+      },
+      {
+        "label": "commit-failure-regressions",
+        "returncode": 0,
+        "seconds": 0.43769820002489723
+      },
+      {
+        "label": "catalog-failure-regressions",
+        "returncode": 0,
+        "seconds": 0.7149930000014137
+      },
+      {
+        "label": "result-replay-failure-regressions",
+        "returncode": 0,
+        "seconds": 0.30907160000060685
+      },
+      {
+        "label": "normal/long-random",
+        "returncode": 0,
+        "seconds": 7.747635200008517
+      },
+      {
+        "label": "allocation-normal",
+        "returncode": 0,
+        "seconds": 0.2674807999865152
+      },
+      {
+        "label": "allocation-scalar",
+        "returncode": 0,
+        "seconds": 0.2601837000111118
+      },
+      {
+        "label": "commit-allocation-normal",
+        "returncode": 0,
+        "seconds": 1.2285440000123344
+      },
+      {
+        "label": "commit-allocation-scalar",
+        "returncode": 0,
+        "seconds": 1.2204330999811646
+      },
+      {
+        "label": "catalog-allocation-normal",
+        "returncode": 0,
+        "seconds": 0.4636455999861937
+      },
+      {
+        "label": "catalog-allocation-scalar",
+        "returncode": 0,
+        "seconds": 0.4386090000043623
+      }
+    ]
+  },
+  "limits": [
+    "The platform did not disclose the failing input or timeout stage; these are reproduced defects, not proof of the platform failure root cause.",
+    "Transaction overlays and bulk UPDATE still retain pending row payloads in memory; arbitrary-size transaction spill is not implemented.",
+    "Recovery still scans append-only history; checkpoint/compaction is not part of this focused repair."
+  ]
+}

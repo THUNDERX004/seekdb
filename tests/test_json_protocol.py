@@ -86,6 +86,19 @@ class ExecutableCase(unittest.TestCase):
 
 
 class JsonProtocolContract(ExecutableCase):
+    def test_wide_duplicate_schema_responds_without_quadratic_name_scan(self):
+        client = self.client()
+        names = ['x' * 55 + f'{index:05d}' for index in range(50000)]
+        sql = ('CREATE TABLE wide(id BIGINT PRIMARY KEY,'
+               + ','.join(name + ' BIGINT' for name in names)
+               + ',' + names[-1].upper() + ' BIGINT);')
+        response = client.execute(sql)
+        self.failure(response)
+        self.assertEqual(response['error']['code'], 'SQL_SYNTAX')
+        # The failed statement must not leave a partial catalog entry.
+        self.success(client.execute('CREATE TABLE wide(id BIGINT PRIMARY KEY);'))
+        client.shutdown()
+
     def test_ready_is_exact_and_flushed_before_any_input(self):
         client = self.client()  # Constructor waits for ready before any write.
         client.assert_quiet(timeout=0.05)

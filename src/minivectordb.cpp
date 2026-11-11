@@ -1835,6 +1835,7 @@ class Parser {
     table.name = expectIdentifier();
     expectSymbol("(");
     bool saw_primary = false;
+    std::unordered_set<std::string> column_names;
     while (true) {
       if (tokenIsKeyword(peek(), "primary")) {
         if (saw_primary) {
@@ -1860,10 +1861,8 @@ class Parser {
       } else {
         Column column;
         column.name = expectIdentifier();
-        for (const Column &existing : table.columns) {
-          if (lower(existing.name) == lower(column.name)) {
-            fail("SQL_SYNTAX", "duplicate column name '" + column.name + "'");
-          }
+        if (!column_names.insert(lower(column.name)).second) {
+          fail("SQL_SYNTAX", "duplicate column name '" + column.name + "'");
         }
         std::string type = lower(expectIdentifier());
         if (type == "bigint") {
@@ -2232,6 +2231,54 @@ struct PendingRecord {
   uint64_t offset = 0;
 };
 
+// Inclusive bounds avoid arithmetic at the signed BIGINT endpoints.
+struct PrimaryKeyRange {
+  int64_t minimum = std::numeric_limits<int64_t>::min();
+  int64_t maximum = std::numeric_limits<int64_t>::max();
+  bool constrained = false;
+  bool empty = false;
+};
+
+PrimaryKeyRange primaryKeyRange(const TableDef &definition,
+                               const std::vector<Condition> &conditions) {
+  PrimaryKeyRange range;
+  for (const Condition &condition : conditions) {
+    if (condition.column != definition.primary_key) {
+      continue;
+    }
+    range.constrained = true;
+    const int64_t key = condition.value.integer;
+    switch (condition.op) {
+      case CompareOp::Eq:
+        range.minimum = std::max(range.minimum, key);
+        range.maximum = std::min(range.maximum, key);
+        break;
+      case CompareOp::Ge:
+        range.minimum = std::max(range.minimum, key);
+        break;
+      case CompareOp::Gt:
+        if (key == std::numeric_limits<int64_t>::max()) {
+          range.empty = true;
+        } else {
+          range.minimum = std::max(range.minimum, key + 1);
+        }
+        break;
+      case CompareOp::Le:
+        range.maximum = std::min(range.maximum, key);
+        break;
+      case CompareOp::Lt:
+        if (key == std::numeric_limits<int64_t>::min()) {
+          range.empty = true;
+        } else {
+          range.maximum = std::min(range.maximum, key - 1);
+        }
+        break;
+    }
+  }
+  range.empty = range.empty || range.minimum > range.maximum;
+  return range;
+}
+
 class Table {
  public:
   Table(TableDef definition, fs::path data_path)
@@ -2504,6 +2551,74 @@ class Table {
     return true;
   }
 
+  // Seek by key before reading payloads. Merge the transaction's ordered
+  // changes with committed keys so LIMIT can stop in either direction.
+  template <typename Callback>
+  bool forEachPrimaryRange(
+      const PrimaryKeyRange &range,
+      const std::map<int64_t, std::optional<Row>> *overlay,
+      Callback &&callback, bool descending = false) const {
+    if (range.empty) {
+      return true;
+    }
+    const auto &keys = primaryOrder();
+    size_t begin = static_cast<size_t>(
+        std::lower_bound(keys.begin(), keys.end(), range.minimum) - keys.begin());
+    size_t end = static_cast<size_t>(
+        std::upper_bound(keys.begin(), keys.end(), range.maximum) - keys.begin());
+    using Changes = std::map<int64_t, std::optional<Row>>;
+    auto changed_begin = overlay == nullptr ? Changes::const_iterator{}
+                                           : overlay->lower_bound(range.minimum);
+    auto changed_end = overlay == nullptr ? Changes::const_iterator{}
+                                         : overlay->upper_bound(range.maximum);
+    std::ifstream input;
+    uint64_t input_position = std::numeric_limits<uint64_t>::max();
+    std::vector<uint8_t> payload;
+    bool verify_crc = true;
+    bool verification_checked = false;
+    while (begin < end || (overlay != nullptr && changed_begin != changed_end)) {
+      const bool has_base = begin < end;
+      const bool has_change = overlay != nullptr && changed_begin != changed_end;
+      const int64_t base_key = has_base ? keys[descending ? end - 1 : begin] : 0;
+      const auto changed = has_change && descending ? std::prev(changed_end)
+                                                    : changed_begin;
+      const bool take_change = has_change &&
+          (!has_base || (descending ? changed->first >= base_key
+                                    : changed->first <= base_key));
+      if (take_change) {
+        if (has_base && changed->first == base_key) {
+          descending ? --end : ++begin;
+        }
+        if (changed->second.has_value() &&
+            !callback(changed->first, *changed->second, true)) {
+          return false;
+        }
+        descending ? --changed_end : ++changed_begin;
+        continue;
+      }
+      const Version &version = versions_.at(base_key);
+      descending ? --end : ++begin;
+      if (version.cached) {
+        if (!callback(base_key, version.row, true)) {
+          return false;
+        }
+        continue;
+      }
+      if (!input.is_open()) {
+        input.open(data_path_, std::ios::binary);
+      }
+      if (!verification_checked) {
+        verify_crc = verifyCrcForScan();
+        verification_checked = true;
+      }
+      Row row = readRow(version.offset, input, &input_position, payload, verify_crc);
+      if (!callback(base_key, row, false)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   std::vector<PendingRecord> appendChanges(uint64_t txid,
                                            FileWriter &writer,
                                            const std::map<int64_t, std::optional<Row>>
@@ -2552,6 +2667,9 @@ class Table {
       }
       if (record.op == 3) {
         auto existing = versions_.find(record.primary);
+        if (existing != versions_.end()) {
+          primary_order_dirty_ = true;
+        }
         if (existing != versions_.end() && existing->second.cached) {
           const size_t bytes = cachedRowBytes(existing->second.row);
           cache_bytes_ = cache_bytes_ > bytes ? cache_bytes_ - bytes : 0;
@@ -2560,6 +2678,9 @@ class Table {
         continue;
       }
       auto existing = versions_.find(record.primary);
+      if (existing == versions_.end()) {
+        primary_order_dirty_ = true;
+      }
       if (existing != versions_.end() && existing->second.cached) {
         const size_t bytes = cachedRowBytes(existing->second.row);
         cache_bytes_ = cache_bytes_ > bytes ? cache_bytes_ - bytes : 0;
@@ -2622,6 +2743,7 @@ class Table {
   void applyRecord(const DecodedRecord &record,
                    const std::vector<uint8_t> &payload, uint64_t offset) {
     physical_order_dirty_ = true;
+    primary_order_dirty_ = true;
     if (record.op == 3) {
       if (payload.size() != sizeof(int64_t)) {
         fail("CORRUPT_DATA", "invalid delete record");
@@ -2865,7 +2987,24 @@ class Table {
 
   TableDef definition_;
   fs::path data_path_;
+  const std::vector<int64_t> &primaryOrder() const {
+    if (primary_order_dirty_) {
+      std::vector<int64_t> staged;
+      staged.reserve(versions_.size());
+      for (const auto &[primary, version] : versions_) {
+        (void)version;
+        staged.push_back(primary);
+      }
+      std::sort(staged.begin(), staged.end());
+      primary_order_.swap(staged);
+      primary_order_dirty_ = false;
+    }
+    return primary_order_;
+  }
+
   std::unordered_map<int64_t, Version> versions_;
+  mutable std::vector<int64_t> primary_order_;
+  mutable bool primary_order_dirty_ = true;
   mutable std::vector<std::pair<uint64_t, int64_t>> physical_order_;
   mutable bool physical_order_dirty_ = false;
   bool cache_enabled_ = true;
@@ -3443,8 +3582,14 @@ class Database {
   }
 
   bool matches(const TableDef &definition, const Row &row,
-               const std::vector<Condition> &conditions) const {
-    for (const Condition &condition : conditions) {
+               const std::vector<Condition> &conditions,
+               size_t guaranteed_condition =
+                   std::numeric_limits<size_t>::max()) const {
+    for (size_t index = 0; index < conditions.size(); ++index) {
+      if (index == guaranteed_condition) {
+        continue;
+      }
+      const Condition &condition = conditions[index];
       if (!valuesCompare(row[condition.column], condition.value, condition.op,
                          definition.columns[condition.column].type)) {
         return false;
@@ -3520,7 +3665,11 @@ class Database {
 
   template <typename Callback>
   bool forEachCandidateView(Table &table, const std::vector<Condition> &conditions,
-                            Callback &&callback, bool ordered = false) {
+                            Callback &&callback, bool ordered = false,
+                            size_t *guaranteed_condition = nullptr) {
+    if (guaranteed_condition != nullptr) {
+      *guaranteed_condition = std::numeric_limits<size_t>::max();
+    }
     if (conditions.empty()) {
       const auto changed = overlay_.find(table.definition().oid);
       if ((changed == overlay_.end() || changed->second.empty()) &&
@@ -3528,9 +3677,13 @@ class Database {
         return table.forEachCached(std::forward<Callback>(callback));
       }
     }
-    for (const Condition &condition : conditions) {
+    for (size_t index = 0; index < conditions.size(); ++index) {
+      const Condition &condition = conditions[index];
       if (condition.column == table.definition().primary_key &&
           condition.op == CompareOp::Eq) {
+        if (guaranteed_condition != nullptr) {
+          *guaranteed_condition = index;
+        }
         Row row;
         if (currentRow(table, condition.value.integer, row)) {
           return callback(condition.value.integer, row, false);
@@ -3538,7 +3691,15 @@ class Database {
         return true;
       }
     }
-    for (const Condition &condition : conditions) {
+    const PrimaryKeyRange range = primaryKeyRange(table.definition(), conditions);
+    if (range.constrained) {
+      const auto changed = overlay_.find(table.definition().oid);
+      const auto *overlay = changed == overlay_.end() ? nullptr : &changed->second;
+      return table.forEachPrimaryRange(range, overlay,
+                                      std::forward<Callback>(callback));
+    }
+    for (size_t index = 0; index < conditions.size(); ++index) {
+      const Condition &condition = conditions[index];
       if (condition.op != CompareOp::Eq) {
         continue;
       }
@@ -3549,6 +3710,9 @@ class Database {
       const auto changed_table = overlay_.find(table.definition().oid);
       const std::map<int64_t, std::optional<Row>> *overlay =
           changed_table == overlay_.end() ? nullptr : &changed_table->second;
+      if (guaranteed_condition != nullptr) {
+        *guaranteed_condition = index;
+      }
       if (!table.forEachIndexedBase(*indexed, overlay, callback)) {
         return false;
       }
@@ -3727,6 +3891,31 @@ class Database {
       }
       return output;
     };
+
+    // A unique primary key resolves every later ORDER BY key. Traverse its
+    // range directly instead of sorting or reading the rest of the table.
+    if (!resolved_order.empty() && !resolved_order.front().distance &&
+        resolved_order.front().column == definition.primary_key) {
+      ExecResult result;
+      result.select = true;
+      uint64_t skipped = 0;
+      const auto changed = overlay_.find(definition.oid);
+      const auto *overlay = changed == overlay_.end() ? nullptr : &changed->second;
+      table.forEachPrimaryRange(primaryKeyRange(definition, statement.conditions),
+          overlay, [&](int64_t, const Row &row, bool) {
+            if (!matches(definition, row, statement.conditions)) {
+              return true;
+            }
+            if (skipped < static_cast<uint64_t>(statement.offset)) {
+              ++skipped;
+              return true;
+            }
+            result.appendRow(makeOutput(row), data_dir_, json_output_);
+            return statement.limit < 0 ||
+                   result.row_count < static_cast<uint64_t>(statement.limit);
+          }, resolved_order.front().descending);
+      return result;
+    }
 
     // Without ordering, output can be produced directly. Do not keep copies of
     // unprojected vector columns, or scan the remaining disk rows after LIMIT.
