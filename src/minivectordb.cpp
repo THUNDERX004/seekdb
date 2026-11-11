@@ -4492,7 +4492,11 @@ class Database {
             quantized_kernel = &quantizedDistanceBatchVnni;
           }
         }
-        if (__builtin_cpu_supports("avx2") &&
+        // Small filtered lists rarely amortize their own code-cache build.
+        // Keep their existing float scan and reserve codes for broader scans.
+        const bool quantized_worthwhile = statement.conditions.empty() ||
+                                          cached_candidates->size() >= 2048;
+        if (quantized_worthwhile && __builtin_cpu_supports("avx2") &&
             table.prepareQuantizedRows(*cached_candidates, prepared_probe.size())) {
           const double step = cached_candidates->code_step;
           quantized = std::all_of(prepared_probe.begin(), prepared_probe.end(),

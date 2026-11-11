@@ -29,9 +29,9 @@ quoted = cached.quoted
 
 def repeated_rows(vectors, count=259, outsiders=4):
     """A real equality subset: >=256 red rows plus nonmatching blue rows."""
-    rows = [Row((index * 73) % 521 - 260, 7, "red", f"red {index}",
+    rows = [Row((index * 73) % 8191 - 4095, 7, "red", f"red {index}",
                 vectors[index % len(vectors)]) for index in range(count)]
-    rows += [Row(1000 + index, 8, "blue", f"blue {index}",
+    rows += [Row(100000 + index, 8, "blue", f"blue {index}",
                  vectors[index % len(vectors)]) for index in range(outsiders)]
     return rows
 
@@ -111,8 +111,8 @@ class QuantizedScreenTests(unittest.TestCase):
                                    0x42FE0000, 0x42FF0000)
                     for delta in (-1, 0, 1)] + [from_bits(0x42FFFFFF)]
         for dimension, count, exponent in ((16, 256, -20), (17, 257, -3),
-                                            (127, 258, 0), (128, 259, 12),
-                                            (129, 259, 60)):
+                                            (127, 2048, 0), (128, 2049, 12),
+                                            (129, 2050, 60)):
             with self.subTest(dimension=dimension, bucket=count):
                 scale = math.ldexp(1.0, exponent)
 
@@ -223,7 +223,7 @@ class QuantizedScreenTests(unittest.TestCase):
         rows = list(rows.values())
         probe = (0.0,) * 17
         scores = exact_scores(rows, probe)
-        # Warm two real >=256 buckets and the full view together, then switch
+        # Warm two real >=2048 buckets and the full view together, then switch
         # equality columns to invalidate/rebuild their shared cache accounting.
         for where, predicate in (
             ("tag=7", lambda row: row.tag == 7),
@@ -235,6 +235,8 @@ class QuantizedScreenTests(unittest.TestCase):
             ("", None),
             ("category='red'", lambda row: row.category == "red"),
         ):
+            if predicate is not None:
+                self.assertGreaterEqual(sum(predicate(row) for row in rows), 2048)
             self.check(client, "mutable", rows, probe, where=where,
                        predicate=predicate, limit=5, offset=0, scores=scores)
 
@@ -246,12 +248,12 @@ class QuantizedScreenTests(unittest.TestCase):
 
     def test_warm_views_mutations_rollback_commit_and_restart(self):
         client = self.open_client()
-        fixture = [Row((index * 73) % 521 - 260,
-                       7 if index < 260 else 8,
-                       "red" if index < 260 else "blue", f"initial {index}",
+        fixture = [Row((index * 73) % 4177 - 2088,
+                       7 if index < 2080 else 8,
+                       "red" if index < 2080 else "blue", f"initial {index}",
                        (32.0 + index % 83,) + (0.0,) * 15
                        + (((index * 7) % 29 - 14) / 8,))
-                   for index in range(520)]
+                   for index in range(4160)]
         rows = {row.primary: row for row in fixture}
         self.create(client, "mutable", 17, fixture)
         self.warm_views(client, rows)
@@ -304,8 +306,9 @@ class QuantizedScreenTests(unittest.TestCase):
         vectors = [(float(rank),) + (0.0,) * (dimension - 2) + (0.5,)
                    for rank in (-95, -32, -1, 0, 1, 32, 95, 127)]
         rows = repeated_rows(vectors, count=260)
-        # Even ignoring row/directory overhead, full + equality int8 copies
-        # and float32 vectors cannot coexist within the one-MiB cache budget.
+        # Even ignoring row/directory overhead, raw vectors nearly fill this
+        # budget. Small filtered views retain the float scan; the full view
+        # must share the remaining allowance with every existing directory.
         self.assertLess(len(rows) * dimension * 4, 1024 * 1024)
         self.assertGreater((len(rows) * 5 + 260) * dimension, 1024 * 1024)
         self.create(client, "budget", dimension, rows)
