@@ -2,6 +2,7 @@
 #define MVD_PACKED_ROW_HPP
 
 #include <cstddef>
+#include <cassert>
 #include <cstdint>
 #include <cstring>
 #include <limits>
@@ -23,6 +24,26 @@ struct ColumnSpec {
 class Cell;
 class View;
 class PackedRow;
+
+// Bind a schema-checked scalar column once per query, outside the row loop.
+// It may only read rows belonging to the Layout that produced it.
+struct ScalarColumn {
+  std::uint32_t offset = 0;
+  bool primary = false;
+
+  std::int64_t integer(const std::byte *data, std::int64_t key) const noexcept {
+    if (primary) return key;
+    std::int64_t value;
+    std::memcpy(&value, data + offset, sizeof(value));
+    return value;
+  }
+  std::string_view text(const std::byte *data) const noexcept {
+    std::uint32_t begin, length;
+    std::memcpy(&begin, data + offset, sizeof(begin));
+    std::memcpy(&length, data + begin, sizeof(length));
+    return {reinterpret_cast<const char *>(data + begin + sizeof(length)), length};
+  }
+};
 
 // Layouts must outlive their views and must not change while those views live.
 class Layout {
@@ -51,7 +72,7 @@ class Layout {
         case Type::Vector:
           if (column.length == 0 || column.primary) return;
           alignment = 4;
-          width = std::uint64_t{column.length} * sizeof(float);
+          width = sizeof(std::uint32_t);
           break;
         default:
           return;
@@ -69,12 +90,31 @@ class Layout {
       offset += width;
     }
     if (!found_primary) return;
+    // Offset slots alone can fit while the smallest complete row cannot.
+    // Reject such layouts before they can be used by any cached row.
+    std::uint64_t minimum_bytes = offset;
+    for (const Slot &slot : slots_) {
+      if (slot.type != Type::VarChar) continue;
+      minimum_bytes += sizeof(std::uint32_t);
+      if (minimum_bytes > maximum) return;
+    }
+    for (const Slot &slot : slots_) {
+      if (slot.type != Type::Vector) continue;
+      minimum_bytes = (minimum_bytes + 3) & ~std::uint64_t{3};
+      minimum_bytes += std::uint64_t{slot.length} * sizeof(float);
+      if (minimum_bytes > maximum) return;
+    }
     fixed_bytes_ = static_cast<std::uint32_t>(offset);
     supported_ = true;
   }
 
   bool supported() const noexcept { return supported_; }
   std::size_t size() const noexcept { return supported_ ? slots_.size() : 0; }
+  ScalarColumn scalarColumn(std::size_t index) const noexcept {
+    if (!supported_) return {};
+    assert(index < slots_.size() && slots_[index].type != Type::Vector);
+    return {slots_[index].offset, slots_[index].primary};
+  }
 
  private:
   struct Slot {
@@ -117,8 +157,9 @@ class Cell {
 
   std::span<const float> vector() const noexcept {
     if (slot_ == nullptr || slot_->type != Type::Vector) return {};
-    return {reinterpret_cast<const float *>(data_ + slot_->offset),
-            slot_->length};
+    std::uint32_t offset;
+    std::memcpy(&offset, data_ + slot_->offset, sizeof(offset));
+    return {reinterpret_cast<const float *>(data_ + offset), slot_->length};
   }
 
  private:
@@ -184,26 +225,31 @@ class PackedRow {
         if (total > maximum) return false;
       }
     }
+    for (const auto &slot : layout.slots_) {
+      if (slot.type != Type::Vector) continue;
+      total = (total + 3) & ~std::uint64_t{3};
+      total += std::uint64_t{slot.length} * sizeof(float);
+      if (total > maximum) return false;
+    }
 
     // byte[] provides float alignment; memcpy creates the float objects without
     // evaluating them, preserving every float32 bit pattern, including NaNs.
     static_assert(sizeof(float) == 4 && alignof(float) <= 4);
     std::unique_ptr<std::byte[]> staged(new std::byte[static_cast<std::size_t>(total)]);
+    std::memset(staged.get(), 0, layout.fixed_bytes_);
     const auto byte_count = static_cast<std::uint32_t>(total);
     std::memcpy(staged.get(), &byte_count, sizeof(byte_count));
     std::uint32_t tail = layout.fixed_bytes_;
-    std::uint32_t written = sizeof(byte_count);
+    // Keep scalar fields and all text together. Ordinary scans then avoid
+    // stepping across the vector payload merely to read a short sort key.
     for (std::size_t index = 0; index < layout.size(); ++index) {
       const auto &slot = layout.slots_[index];
       if (slot.primary) continue;
-      if (slot.offset > written)
-        std::memset(staged.get() + written, 0, slot.offset - written);
       std::byte *destination = staged.get() + slot.offset;
       switch (slot.type) {
         case Type::BigInt: {
           const std::int64_t value = row[index].integer();
           std::memcpy(destination, &value, sizeof(value));
-          written = slot.offset + sizeof(value);
           break;
         }
         case Type::VarChar: {
@@ -215,17 +261,22 @@ class PackedRow {
           if (length != 0)
             std::memcpy(staged.get() + tail, text.data(), length);
           tail += length;
-          written = slot.offset + sizeof(tail);
           break;
         }
-        case Type::Vector: {
-          const auto &vector = row[index].vector();
-          const auto bytes = static_cast<std::size_t>(slot.length) * sizeof(float);
-          std::memcpy(destination, vector.data(), bytes);
-          written = slot.offset + static_cast<std::uint32_t>(bytes);
-          break;
-        }
+        case Type::Vector: break;
       }
+    }
+    for (std::size_t index = 0; index < layout.size(); ++index) {
+      const auto &slot = layout.slots_[index];
+      if (slot.type != Type::Vector) continue;
+      const auto offset = static_cast<std::uint32_t>(
+          (std::uint64_t{tail} + 3) & ~std::uint64_t{3});
+      if (offset != tail)
+        std::memset(staged.get() + tail, 0, offset - tail);
+      std::memcpy(staged.get() + slot.offset, &offset, sizeof(offset));
+      const auto bytes = static_cast<std::size_t>(slot.length) * sizeof(float);
+      std::memcpy(staged.get() + offset, row[index].vector().data(), bytes);
+      tail = offset + static_cast<std::uint32_t>(bytes);
     }
     data_.swap(staged);
     return true;

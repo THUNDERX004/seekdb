@@ -80,6 +80,28 @@ class RowView {
     return isPacked() ? CellView(packed()[column])
                       : CellView(static_cast<const Value *>(data_)[column]);
   }
+  std::int64_t integer(std::size_t column) const noexcept {
+    return isPacked() ? packed()[column].integer()
+                      : static_cast<const Value *>(data_)[column].integer();
+  }
+  std::string_view text(std::size_t column) const noexcept {
+    return isPacked() ? packed()[column].text()
+                      : std::string_view(static_cast<const Value *>(data_)[column].text());
+  }
+  std::int64_t integer(std::size_t column,
+                       packed_row::ScalarColumn bound) const noexcept {
+    return isPacked() ? bound.integer(static_cast<const std::byte *>(data_), context_)
+                      : static_cast<const Value *>(data_)[column].integer();
+  }
+  std::string_view text(std::size_t column,
+                        packed_row::ScalarColumn bound) const noexcept {
+    return isPacked() ? bound.text(static_cast<const std::byte *>(data_))
+                      : std::string_view(static_cast<const Value *>(data_)[column].text());
+  }
+  std::span<const float> vector(std::size_t column) const noexcept {
+    return isPacked() ? packed()[column].vector()
+                      : std::span<const float>(static_cast<const Value *>(data_)[column].vector());
+  }
   std::vector<Value> materialize() const {
     std::vector<Value> row;
     row.reserve(size());

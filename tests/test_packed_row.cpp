@@ -88,21 +88,26 @@ void put(std::vector<std::byte> &bytes, std::size_t offset, Scalar value) {
   std::memcpy(bytes.data() + offset, &value, sizeof(value));
 }
 
-// Independent native-endian oracle: offsets are hand-derived from the schema,
-// never taken from Layout, Cell, or an encoded row. PK consumes no payload.
+// Independent native-endian oracle: fixed slots contain integers or uint32
+// offsets. All strings precede aligned raw vectors, each in schema order.
+// Offsets are hand-derived, never read from Layout/Cell. PK has no payload.
 std::vector<std::byte> expected_bytes() {
-  std::vector<std::byte> result(101, std::byte{0});
-  put(result, 0, std::uint32_t{101});
+  std::vector<std::byte> result(116, std::byte{0});
+  put(result, 0, std::uint32_t{116});
   put(result, 8, std::numeric_limits<std::int64_t>::min());
-  put(result, 16, std::uint32_t{88});
-  std::memcpy(result.data() + 20, kBits0.data(), sizeof(kBits0));
-  put(result, 32, std::uint32_t{97});
-  put(result, 40, std::numeric_limits<std::int64_t>::max());
-  std::memcpy(result.data() + 48, kBits1.data(), sizeof(kBits1));
-  std::memcpy(result.data() + 68, kBits2.data(), sizeof(kBits2));
-  put(result, 88, std::uint32_t{5});
-  std::memcpy(result.data() + 92, "A\0\xE4\xB8\xAD", 5);
-  put(result, 97, std::uint32_t{0});  // Deliberately unaligned length.
+  put(result, 16, std::uint32_t{48});
+  put(result, 20, std::uint32_t{64});
+  put(result, 24, std::uint32_t{57});
+  put(result, 32, std::numeric_limits<std::int64_t>::max());
+  put(result, 40, std::uint32_t{76});
+  put(result, 44, std::uint32_t{96});
+  put(result, 48, std::uint32_t{5});
+  std::memcpy(result.data() + 52, "A\0\xE4\xB8\xAD", 5);
+  put(result, 57, std::uint32_t{0});  // Deliberately unaligned length.
+  // 61..63 is alignment padding after the complete text region.
+  std::memcpy(result.data() + 64, kBits0.data(), sizeof(kBits0));
+  std::memcpy(result.data() + 76, kBits1.data(), sizeof(kBits1));
+  std::memcpy(result.data() + 96, kBits2.data(), sizeof(kBits2));
   return result;
 }
 
@@ -120,6 +125,169 @@ void check_bits(std::span<const float> actual,
           "unaligned float payload");
   require(std::memcmp(actual.data(), expected.data(), expected.size_bytes()) == 0,
           "float32 bits changed");
+}
+
+void scalar_column_bindings() {
+  const pr::Layout layout(kColumns);
+  const auto first = layout.scalarColumn(0);
+  const auto text = layout.scalarColumn(1);
+  const auto primary = layout.scalarColumn(3);
+  const auto empty = layout.scalarColumn(4);
+  const auto middle = layout.scalarColumn(5);
+  require(first.offset == 8 && !first.primary &&
+              text.offset == 16 && !text.primary &&
+              primary.offset == 0 && primary.primary &&
+              empty.offset == 24 && !empty.primary &&
+              middle.offset == 32 && !middle.primary,
+          "scalar bindings differ from independent fixed-slot offsets");
+  const auto check = [&](const std::byte *data, std::int64_t key,
+                         std::int64_t first_value, std::string_view first_text,
+                         std::string_view second_text, std::int64_t middle_value) {
+    require(first.integer(data, key) == first_value &&
+                middle.integer(data, key) == middle_value,
+            "bound integer read changed");
+    require(primary.integer(data, key) == key,
+            "bound primary read used omitted payload instead of key");
+    require(text.text(data) == first_text && empty.text(data) == second_text,
+            "bound text bytes or length changed");
+  };
+  const auto expected = expected_bytes();
+  const std::string_view nul_utf8("A\0\xE4\xB8\xAD", 5);
+  // Check the accessors against hand-written bytes without invoking assign.
+  check(expected.data(), -77, std::numeric_limits<std::int64_t>::min(),
+        nul_utf8, {}, std::numeric_limits<std::int64_t>::max());
+  pr::PackedRow packed;
+  Row row = source_row();
+  require(packed.assign(layout, row), "scalar binding fixture rejected");
+  check(packed.view(layout, 0).data(), -77,
+        std::numeric_limits<std::int64_t>::min(), nul_utf8, {},
+        std::numeric_limits<std::int64_t>::max());
+
+  row[0].setInteger(-123);
+  row[1].setText("");
+  row[3].setInteger(9999);
+  row[4].setText(std::string("\xC3\xA9\0Z", 4));
+  row[5].setInteger(456);
+  // Same slots, different row-specific tails: T1=48, T4=52, vectors=60.
+  std::vector<std::byte> second_expected(112, std::byte{0});
+  put(second_expected, 0, std::uint32_t{112});
+  put(second_expected, 8, std::int64_t{-123});
+  put(second_expected, 16, std::uint32_t{48});
+  put(second_expected, 20, std::uint32_t{60});
+  put(second_expected, 24, std::uint32_t{52});
+  put(second_expected, 32, std::int64_t{456});
+  put(second_expected, 40, std::uint32_t{72});
+  put(second_expected, 44, std::uint32_t{92});
+  put(second_expected, 48, std::uint32_t{0});
+  put(second_expected, 52, std::uint32_t{4});
+  std::memcpy(second_expected.data() + 56, "\xC3\xA9\0Z", 4);
+  std::memcpy(second_expected.data() + 60, kBits0.data(), sizeof(kBits0));
+  std::memcpy(second_expected.data() + 72, kBits1.data(), sizeof(kBits1));
+  std::memcpy(second_expected.data() + 92, kBits2.data(), sizeof(kBits2));
+  const std::string_view second_text("\xC3\xA9\0Z", 4);
+  check(second_expected.data(), 81, -123, {}, second_text, 456);
+  pr::PackedRow second;
+  require(second.assign(layout, row), "second scalar binding fixture rejected");
+  check_bytes(second, layout, second_expected);
+  check(second.view(layout, 0).data(), 81, -123, {}, second_text, 456);
+  check(packed.view(layout, 0).data(), 82,
+        std::numeric_limits<std::int64_t>::min(), nul_utf8, {},
+        std::numeric_limits<std::int64_t>::max());
+  const auto borrowed = second.view(layout, -88);
+  require(second.assign(layout, borrowed), "bound row self-view assign rejected");
+  check_bytes(second, layout, second_expected);
+  check(second.view(layout, 0).data(), -88, -123, {}, second_text, 456);
+}
+
+void vector_slot_order_and_alignment() {
+  // Vectors occupy the first, middle, and final schema positions. Text appears
+  // on both sides of a vector; storage still places both texts before all V's.
+  constexpr std::array<pr::ColumnSpec, 7> columns{{
+      {pr::Type::Vector, 3, false}, {pr::Type::VarChar, 4, false},
+      {pr::Type::BigInt, 0, true}, {pr::Type::Vector, 5, false},
+      {pr::Type::VarChar, 2, false}, {pr::Type::BigInt, 0, false},
+      {pr::Type::Vector, 5, false},
+  }};
+  const pr::Layout layout(columns);
+  require(layout.supported(), "vector-slot fixture layout rejected");
+  Row row(columns.size());
+  row[0].setVector(floats(kBits0));
+  row[2].setInteger(999);
+  row[3].setVector(floats(kBits1));
+  row[4].setText("yz");
+  row[5].setInteger(-123456789);
+  row[6].setVector(floats(kBits2));
+  pr::PackedRow packed;
+  for (std::size_t length = 0; length < 4; ++length) {
+    row[1].setText(std::string("\0\xC3\xA9", length));
+    // Hand-derived fixed slots: V0=4, T1=8, V3=12, T4=16, I5=24,
+    // V6=32. Fixed end=36; text headers/bytes end at 46+length.
+    const auto vector_begin = static_cast<std::uint32_t>((46 + length + 3) & ~std::size_t{3});
+    std::vector<std::byte> expected(vector_begin + 52, std::byte{0});
+    put(expected, 0, static_cast<std::uint32_t>(expected.size()));
+    put(expected, 4, vector_begin);
+    put(expected, 8, std::uint32_t{36});
+    put(expected, 12, std::uint32_t{vector_begin + 12});
+    put(expected, 16, static_cast<std::uint32_t>(40 + length));
+    put(expected, 24, std::int64_t{-123456789});
+    put(expected, 32, std::uint32_t{vector_begin + 32});
+    put(expected, 36, static_cast<std::uint32_t>(length));
+    if (length != 0) std::memcpy(expected.data() + 40, "\0\xC3\xA9", length);
+    put(expected, 40 + length, std::uint32_t{2});
+    std::memcpy(expected.data() + 44 + length, "yz", 2);
+    std::memcpy(expected.data() + vector_begin, kBits0.data(), sizeof(kBits0));
+    std::memcpy(expected.data() + vector_begin + 12, kBits1.data(), sizeof(kBits1));
+    std::memcpy(expected.data() + vector_begin + 32, kBits2.data(), sizeof(kBits2));
+    require(packed.assign(layout, row), "vector-slot assign rejected");
+    check_bytes(packed, layout, expected);
+    const auto view = packed.view(layout, -77);
+    require(view[2].integer() == -77 && view[5].integer() == -123456789,
+            "mixed fixed integer/PK mismatch");
+    require(view[1].text() == row[1].text() && view[4].text() == "yz",
+            "text around schema vectors changed");
+    check_bits(view[0].vector(), kBits0);
+    check_bits(view[3].vector(), kBits1);
+    check_bits(view[6].vector(), kBits2);
+    require(reinterpret_cast<const std::byte *>(view[0].vector().data()) == view.data() + vector_begin &&
+                reinterpret_cast<const std::byte *>(view[3].vector().data()) == view.data() + vector_begin + 12 &&
+                reinterpret_cast<const std::byte *>(view[6].vector().data()) == view.data() + vector_begin + 32,
+            "vector getters did not follow independent tail offsets");
+  }
+}
+
+void scalar_prefix_before_large_vector() {
+  constexpr std::array<pr::ColumnSpec, 4> columns{{
+      {pr::Type::BigInt, 0, true}, {pr::Type::VarChar, 16, false},
+      {pr::Type::VarChar, 64, false}, {pr::Type::Vector, 128, false},
+  }};
+  const pr::Layout layout(columns);
+  Row row(columns.size());
+  row[1].setText("c9");
+  row[2].setText("row42");
+  std::array<std::uint32_t, 128> bits{};
+  for (std::size_t axis = 0; axis < bits.size(); ++axis)
+    bits[axis] = kBits2[axis % kBits2.size()];
+  row[3].setVector(floats(bits));
+  std::vector<std::byte> expected(544, std::byte{0});
+  put(expected, 0, std::uint32_t{544});
+  put(expected, 4, std::uint32_t{16});
+  put(expected, 8, std::uint32_t{22});
+  put(expected, 12, std::uint32_t{32});
+  put(expected, 16, std::uint32_t{2});
+  std::memcpy(expected.data() + 20, "c9", 2);
+  put(expected, 22, std::uint32_t{5});
+  std::memcpy(expected.data() + 26, "row42", 5);
+  std::memcpy(expected.data() + 32, bits.data(), sizeof(bits));
+  pr::PackedRow packed;
+  require(packed.assign(layout, row), "scalar-prefix fixture assign rejected");
+  check_bytes(packed, layout, expected);
+  const auto view = packed.view(layout, 42);
+  require(view[0].integer() == 42 && view[1].text() == "c9" && view[2].text() == "row42",
+          "scalar-prefix roundtrip changed");
+  require(reinterpret_cast<const std::byte *>(view[1].text().data()) == view.data() + 20 &&
+              reinterpret_cast<const std::byte *>(view[2].text().data()) == view.data() + 26,
+          "short text was not placed before the 512-byte vector");
+  check_bits(view[3].vector(), bits);
 }
 
 void roundtrip_and_views() {
@@ -187,6 +355,8 @@ void invalid_layouts() {
   unsupported({{pr::Type::BigInt, 0, true}, {pr::Type::Vector, 0, false}});
   unsupported({{pr::Type::BigInt, 0, true}, {static_cast<pr::Type>(255), 0, false}});
   constexpr auto maximum = std::numeric_limits<std::uint32_t>::max();
+  // VECTOR slots are only four bytes, but even the minimum complete blob
+  // must fit uint32 once its raw vector tail and integer alignment are counted.
   unsupported({{pr::Type::BigInt, 0, true}, {pr::Type::Vector, maximum, false}});
   unsupported({{pr::Type::BigInt, 0, true},
                {pr::Type::Vector, (maximum - 4) / 4, false},
@@ -211,10 +381,23 @@ void failure_guarantees_and_utf8() {
   Row source = source_row();
   pr::PackedRow packed;
   require(packed.assign(layout, source), "initial assign failed");
+  const auto integer_binding = layout.scalarColumn(0);
+  const auto text_binding = layout.scalarColumn(1);
+  const auto primary_binding = layout.scalarColumn(3);
+  const auto empty_binding = layout.scalarColumn(4);
+  const auto middle_binding = layout.scalarColumn(5);
   const std::byte *original = packed.view(layout, 0).data();
   const auto unchanged = [&] {
     require(packed.view(layout, 0).data() == original, "failed assign replaced allocation");
     check_bytes(packed, layout, expected);
+    require(integer_binding.integer(original, -77) ==
+                std::numeric_limits<std::int64_t>::min() &&
+                middle_binding.integer(original, -77) ==
+                    std::numeric_limits<std::int64_t>::max() &&
+                primary_binding.integer(original, -77) == -77 &&
+                text_binding.text(original) == std::string_view("A\0\xE4\xB8\xAD", 5) &&
+                empty_binding.text(original).empty(),
+            "failed assign changed bound scalar reads");
   };
   require(!packed.assign(pr::Layout{}, source), "unsupported layout accepted");
   unchanged();
@@ -304,12 +487,21 @@ void moves_reset_and_primary_only() {
   require(first.bytes() == 4 && view.size() == 1 &&
               view[0].integer() == std::numeric_limits<std::int64_t>::min(),
           "primary-only payload was not omitted");
+  const auto primary_binding = primary_layout.scalarColumn(0);
+  require(primary_binding.offset == 0 && primary_binding.primary &&
+              primary_binding.integer(view.data(), view.primary()) ==
+                  std::numeric_limits<std::int64_t>::min() &&
+              primary_binding.integer(view.data(), 42) == 42,
+          "schema-first primary binding read the four-byte header as payload");
 }
 }  // namespace
 
 int main() {
   try {
     roundtrip_and_views();
+    scalar_column_bindings();
+    vector_slot_order_and_alignment();
+    scalar_prefix_before_large_vector();
     invalid_layouts();
     failure_guarantees_and_utf8();
     moves_reset_and_primary_only();

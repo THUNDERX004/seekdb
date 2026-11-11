@@ -2719,6 +2719,9 @@ class Table {
   RowView view(int64_t primary, const CachedRow &row) const noexcept {
     return cachedRowView(row, row_layout_, primary);
   }
+  packed_row::ScalarColumn scalarColumn(size_t index) const noexcept {
+    return row_layout_.scalarColumn(index);
+  }
 
   template <typename Callback>
   bool visitCached(Callback &&callback, int64_t primary,
@@ -4034,18 +4037,7 @@ struct ExecResult {
   }
 };
 
-bool valuesCompare(CellView left, CellView right, CompareOp op,
-                   ColumnType type) {
-  int comparison = 0;
-  if (type == ColumnType::BigInt) {
-    comparison = left.integer() < right.integer()
-                     ? -1
-                     : (left.integer() > right.integer() ? 1 : 0);
-  } else if (type == ColumnType::VarChar) {
-    comparison = left.text() < right.text() ? -1 : (left.text() > right.text() ? 1 : 0);
-  } else {
-    fail("UNSUPPORTED", "VECTOR values are not comparable with WHERE operators");
-  }
+bool comparisonMatches(int comparison, CompareOp op) noexcept {
   switch (op) {
     case CompareOp::Eq:
       return comparison == 0;
@@ -4059,6 +4051,20 @@ bool valuesCompare(CellView left, CellView right, CompareOp op,
       return comparison >= 0;
   }
   return false;
+}
+
+bool valuesCompare(CellView left, CellView right, CompareOp op,
+                   ColumnType type) {
+  int comparison = 0;
+  if (type == ColumnType::BigInt) {
+    const auto a = left.integer(), b = right.integer();
+    comparison = a < b ? -1 : (a > b ? 1 : 0);
+  } else if (type == ColumnType::VarChar) {
+    comparison = left.text().compare(right.text());
+  } else {
+    fail("UNSUPPORTED", "VECTOR values are not comparable with WHERE operators");
+  }
+  return comparisonMatches(comparison, op);
 }
 
 class Database {
@@ -4196,6 +4202,7 @@ class Database {
     size_t distance_index = 0;
     ColumnType column_type = ColumnType::BigInt;
     bool descending = false;
+    packed_row::ScalarColumn bound;
   };
 
   Table &requireTable(std::string_view name) {
@@ -4436,7 +4443,7 @@ class Database {
     }
   }
 
-  bool matches(const TableDef &definition, RowView row,
+  bool matches(const TableDef &definition, const RowView &row,
                const std::vector<Condition> &conditions,
                size_t guaranteed_condition =
                    std::numeric_limits<size_t>::max()) const {
@@ -4445,8 +4452,17 @@ class Database {
         continue;
       }
       const Condition &condition = conditions[index];
-      if (!valuesCompare(row[condition.column], condition.value, condition.op,
-                         definition.columns[condition.column].type)) {
+      int comparison;
+      const ColumnType type = definition.columns[condition.column].type;
+      if (type == ColumnType::BigInt) {
+        const auto a = row.integer(condition.column), b = condition.value.integer();
+        comparison = a < b ? -1 : (a > b ? 1 : 0);
+      } else if (type == ColumnType::VarChar) {
+        comparison = row.text(condition.column).compare(condition.value.text());
+      } else {
+        fail("UNSUPPORTED", "VECTOR values are not comparable with WHERE operators");
+      }
+      if (!comparisonMatches(comparison, condition.op)) {
         return false;
       }
     }
@@ -4720,6 +4736,7 @@ class Database {
         if (resolved.column_type == ColumnType::Vector) {
           fail("UNSUPPORTED", "VECTOR columns cannot be ordered directly");
         }
+        resolved.bound = table.scalarColumn(resolved.column);
       }
       resolved_order.push_back(resolved);
     }
@@ -5358,30 +5375,64 @@ class Database {
           output_bytes += actual_bytes;
         }
       };
-      const auto sortValue = [&](const ScalarCandidate &candidate, size_t index)
-          -> CellView {
+      const auto sortText = [&](const ScalarCandidate &candidate, size_t index)
+          -> std::string_view {
         return candidate.stable_row.valid()
-            ? candidate.stable_row[resolved_order[index].column]
-            : CellView(candidate.keys[index]);
+            ? candidate.stable_row.text(resolved_order[index].column,
+                                         resolved_order[index].bound)
+            : std::string_view(candidate.keys[index].text());
+      };
+      const auto sortInteger = [&](const ScalarCandidate &candidate, size_t index) {
+        return candidate.stable_row.valid()
+            ? candidate.stable_row.integer(resolved_order[index].column,
+                                            resolved_order[index].bound)
+            : candidate.keys[index].integer();
       };
       const auto worseFirst = [&](const ScalarCandidate &left,
                                   const ScalarCandidate &right) {
         for (size_t index = 0; index < resolved_order.size(); ++index) {
           const ResolvedOrder &key = resolved_order[index];
-          const int comparison = compareValues(
-              sortValue(left, index), sortValue(right, index), key.column_type);
+          int comparison;
+          if (key.column_type == ColumnType::VarChar) {
+            const auto a = sortText(left, index), b = sortText(right, index);
+            comparison = a < b ? -1 : (a > b ? 1 : 0);
+          } else {
+            const auto a = sortInteger(left, index), b = sortInteger(right, index);
+            comparison = a < b ? -1 : (a > b ? 1 : 0);
+          }
           if (comparison != 0) {
             return key.descending ? comparison > 0 : comparison < 0;
           }
         }
         return left.primary < right.primary;
       };
+      struct BoundaryKey {
+        int64_t integer = 0;
+        std::string_view text;
+      };
+      std::vector<BoundaryKey> boundary_keys(resolved_order.size());
+      const auto updateBoundary = [&] {
+        const ScalarCandidate &worst = selected.front();
+        for (size_t index = 0; index < resolved_order.size(); ++index) {
+          if (resolved_order[index].column_type == ColumnType::VarChar) {
+            boundary_keys[index].text = sortText(worst, index);
+          } else {
+            boundary_keys[index].integer = sortInteger(worst, index);
+          }
+        }
+      };
       const auto rowBefore = [&](int64_t primary, RowView row,
                                   const ScalarCandidate &right) {
         for (size_t index = 0; index < resolved_order.size(); ++index) {
           const ResolvedOrder &key = resolved_order[index];
-          const int comparison = compareValues(
-              row[key.column], sortValue(right, index), key.column_type);
+          int comparison;
+          if (key.column_type == ColumnType::VarChar) {
+            const auto a = row.text(key.column, key.bound), b = boundary_keys[index].text;
+            comparison = a < b ? -1 : (a > b ? 1 : 0);
+          } else {
+            const auto a = row.integer(key.column, key.bound), b = boundary_keys[index].integer;
+            comparison = a < b ? -1 : (a > b ? 1 : 0);
+          }
           if (comparison != 0) {
             return key.descending ? comparison > 0 : comparison < 0;
           }
@@ -5394,16 +5445,14 @@ class Database {
                                       : statement.offset + statement.limit;
       const size_t capacity = std::min(static_cast<size_t>(wanted), visible_upper);
       selected.reserve(std::min<size_t>(capacity, 64));
-      forEachCandidateView(table, statement.conditions,
-          [&](int64_t primary, RowView row, bool stable) {
-        if (!matches(definition, row, statement.conditions)) {
-          return true;
-        }
+      // Keep the uncommon owning/heap work out of the per-row rejection path.
+      // Otherwise its stack frame and saved registers are paid for every loser.
+      const auto keepCandidate = [&](int64_t primary, RowView row, bool stable)
+#if defined(__GNUC__) || defined(__clang__)
+          __attribute__((noinline))
+#endif
+      {
         if (statement.limit >= 0 && selected.size() == capacity) {
-          // Reject losers before allocating keys or copying any row payload.
-          if (!rowBefore(primary, row, selected.front())) {
-            return true;
-          }
           std::pop_heap(selected.begin(), selected.end(), worseFirst);
           output_bytes -= selected.back().output_bytes;
           selected.pop_back();
@@ -5424,7 +5473,26 @@ class Database {
         selected.push_back(std::move(candidate));
         if (statement.limit >= 0) {
           std::push_heap(selected.begin(), selected.end(), worseFirst);
+          // Borrowed boundary strings refer to the stable row or the root's
+          // owned keys. Refresh after every heap mutation before scanning on.
+          updateBoundary();
         }
+      };
+      forEachCandidateView(table, statement.conditions,
+          [&](int64_t primary, RowView row, bool stable)
+#if defined(__GNUC__) || defined(__clang__)
+          __attribute__((always_inline))
+#endif
+      {
+        if (!statement.conditions.empty() &&
+            !matches(definition, row, statement.conditions)) {
+          return true;
+        }
+        if (statement.limit >= 0 && selected.size() == capacity &&
+            !rowBefore(primary, row, selected.front())) {
+          return true;
+        }
+        keepCandidate(primary, row, stable);
         return true;
       }, true);
       if (statement.limit >= 0) {
