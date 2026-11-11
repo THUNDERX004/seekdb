@@ -4,7 +4,10 @@ Comparison baseline: `3593447905bb00771d7d72ae341ba6a961f71639`.
 The platform result for that baseline is still unknown. The last platform-admitted
 version remains b235ce181, E=2816.094040. No competition submission was made here.
 
-Candidate source SHA256:
+Final candidate source SHA256 (including bounded spool writeback):
+`beab3cd1edd981288906de66c6d85bb457adc5496e6a413575c41d08030cde0e`.
+Implementation commit: `cfa446a38fd38750e89dc4574b71b6a6b09f4b4b`.
+Earlier parser/scan-only source:
 `e974042b58f697ead39ceaf2e6222fb84f73c3a5c49d8fc6edfa05763742bf37`.
 
 ## Changes and contract
@@ -76,7 +79,105 @@ local reports remain under `build/performance-parser-20261111/`.
   against an independent exact integer-lattice oracle.
 - Independent static review found no reproducible Blocker or Major findings.
 
-Linux CI and paired measurement results must be checked for the actual commit.
+## Linux comparison and memory follow-up
+
+The initial Linux paired run42970901738 verified all14,000 exact queries and
+restart contents. Its median write speedup was1.1383x; query speedup0.9811x.
+The independent run42971392581 repeated seven paired seeds and added ablations:
+
+| Comparison (numerator / denominator) | Query median ratio | Write median ratio |
+| --- | ---: | ---: |
+|359 / integrated |1.0478x|1.3223x|
+|359 / parser-only |1.0204x|1.3383x|
+|integrated / parser-only |0.9707x|1.0001x|
+
+The parser supplies the measured write benefit; cached scan changes supplied
+about3% query benefit in the direct ablation. This does not erase the earlier
+negative query result, and neither run measures the official cgroup E score.
+The integrated scan remains the candidate pending final correctness checks.
+
+Linux validation42971024966 passed all57 correctness commands, the unchanged
+official public checker, mounted-image/EOF rollback tests, and the256MiB
+20000x4096D resource workload. It **failed** the64MiB, cache8MiB,
+20000x1024D workload: the third session was OOM-killed before the response to
+`SELECT id,tag,v,v FROM t;`. The189449 output bytes contain exactly the ready
+message and previous three responses. This is not a JSON newline/flush timeout.
+
+The relevant disk scan, recovery, result buffering and spool paths are identical
+to359. The result buffer is bounded to1MiB, but this query produces an82326681
+byte result spool; dirty file pages also count toward cgroup memory. Attribution
+to page-cache pressure is a hypothesis until baseline/original/fixed telemetry
+is available. No failed run was discarded, and limits were not relaxed.
+
+The final candidate bounds dirty result-spool writes to4MiB with
+`fflush -> fdatasync -> POSIX_FADV_DONTNEED` on Linux. Small results never enter
+this path. Sync errors remain before response publication. Fault injection
+covers both a mid-result and final-tail failure, full retry and production hook
+isolation. Local spool8checks and large-result5tests passed in normal/scalar;
+JSON19tests passed in normal. Independent static review found no Blocker/Major.
+
+Linux memory controls42974002746 built359, ac126, and the fixed candidate with
+identical pinned toolchain/runtime. All six workloads passed, in order
+359/ac126/fixed/fixed/ac126/359, with three fresh-process sessions per workload.
+The earlier OOM did not reproduce in the controls, so its precise cause remains
+unconfirmed; passing controls are not described as proof that ac126 was safe.
+All mounts were ext4, shmem was zero, and anonymous memory remained about9–10MiB.
+At50ms sampling, query-phase dirty page peaks were:
+
+| Variant | Four query sessions' sampled dirty peaks (MiB) |
+| --- | --- |
+|359 |15.49,12.21,15.70,16.63|
+|ac126 |12.54,16.63,16.86,12.40|
+|fixed |3.78,3.75,3.80,3.89|
+
+The controls demonstrate lower dirty-page pressure and successful constrained
+execution. Total cgroup memory still approaches64MiB because clean file cache
+is reclaimable; no total-memory reduction is claimed. Process exit removes the
+cgroup files, so final kernel memory.peak/events are unavailable; sampled peaks
+and observed OOMKilled/ExitCode are retained separately. Existing limits and
+assertions were not weakened. The fix is retained for this measured reduction.
+
+Final Linux performance run42974002567, seven alternating paired seeds against
+359, verified all14,000 exact queries and restart contents. Median paired write
+speedup is1.3366x (about25.2% less time), query1.0497x (about4.7% less time).
+Query ratios range0.9766–1.1119, so gains vary. The repeated integrated/parser
+ablation ratio0.9393 supports retaining batch scans. This test does not measure
+official E, hard-cgroup peak memory, or physical-disk I/O; no ranking is predicted.
+
+Full Linux validation42974139587 **passed** all57commands, the unchanged official
+public protocol checker, actual image startup/mount/EOF rollback, and both the
+256MiB/20000x4096D and64MiB/20000x1024D resource workloads. The final source and
+binary fingerprints were checked in the job log. No competition submission was
+made; formal hidden-case results remain a platform-only check.
+
+## Qdrant source reference
+
+Read upstream at fixed commit
+`6ab21cac18ebb6f4ae29102c7f8f5cc11affd5de`; no Qdrant engine/library is linked.
+
+- `lib/common/common/src/universal_io/mmap/mod.rs`, `clear_ram_cache` and its
+  dual-mapping test: clean vs dirty file pages and tmpfs are distinct. The test
+  syncs before eviction. This supports the spool diagnostic/control design,
+  not an assertion that every cache-advice call releases memory.
+- `lib/segment/src/vector_storage/chunked_vectors/read_only/read_ops.rs` and
+  `query_scorer/metric_query_scorer.rs`: chunked dense storage and batched reads
+  improve locality. Our pointer directory and four-row SIMD screening already
+  address part of this. Larger batches/prefetch need their own paired evidence;
+  duplicating the whole128D matrix would add4.88MiB before metadata.
+- `lib/segment/src/index/query_estimator.rs` and
+  `struct_payload_index/read_view/optimizer.rs`: choose selective candidates
+  and predicate order. Compound-filter planning is a future experiment; exact
+  membership and the complete predicate must still be checked.
+
+Broader dense-storage, HNSW and quantization changes are not part of this round.
+Exact TopK retains the existing double/exact-integer comparison and PK ties.
+
+Known pre-existing limitation found during the audit: large distance ORDER BY
+selection can retain many complete disk rows (for example LIMIT20000 on1024D
+vectors). Result spooling happens afterward and does not bound that selection
+heap. This is separate from the unordered projection OOM and is unchanged here;
+the current improvements do not establish arbitrary-large-K memory safety.
+
 The existing full correctness/container workflow is unchanged. A separate
 read-only-permission workflow runs serial Linux comparisons against pinned359
 with the submission's pinned GCC image; it does not contact the competition.
