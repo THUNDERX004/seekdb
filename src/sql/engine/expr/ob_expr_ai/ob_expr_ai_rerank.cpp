@@ -301,6 +301,7 @@ int ObExprAIRerank::map_rerank_batch(ObIAllocator &allocator,
   struct ScoredResult {
     ObJsonObject *object_;
     double score_;
+    int64_t original_index_;
   };
   ObJsonArray *mapped_array = nullptr;
   ObArray<ScoredResult> ordered_results;
@@ -394,6 +395,7 @@ int ObExprAIRerank::map_rerank_batch(ObIAllocator &allocator,
           ScoredResult ordered_result;
           ordered_result.object_ = output_object;
           ordered_result.score_ = score;
+          ordered_result.original_index_ = start_idx + local_index;
           if (OB_FAIL(ordered_results.push_back(ordered_result))) {
           }
         }
@@ -405,7 +407,10 @@ int ObExprAIRerank::map_rerank_batch(ObIAllocator &allocator,
       ScoredResult current = ordered_results.at(i);
       int64_t position = i;
       while (position > 0
-             && ordered_results.at(position - 1).score_ < current.score_) {
+             && (ordered_results.at(position - 1).score_ < current.score_
+                 || (ordered_results.at(position - 1).score_ == current.score_
+                     && ordered_results.at(position - 1).original_index_
+                            > current.original_index_))) {
         ordered_results.at(position) = ordered_results.at(position - 1);
         --position;
       }

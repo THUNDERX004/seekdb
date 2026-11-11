@@ -133,9 +133,6 @@ int ObExprAIPrompt::eval_ai_prompt(const ObExpr &expr, ObEvalCtx &ctx, ObDatum &
                 expr, ctx, tmp_allocator, i, arg_json_base, is_json_null))) {
         } else if (is_json_null || OB_ISNULL(arg_json_base)) {
           ret = OB_ERR_INVALID_TYPE_FOR_OP;
-        } else if (arg_json_base->json_type() != ObJsonNodeType::J_ARRAY
-                   && arg_json_base->json_type() != ObJsonNodeType::J_OBJECT) {
-          ret = OB_ERR_INVALID_TYPE_FOR_OP;
         } else {
           ObJsonNode *arg_json_node =
               static_cast<ObJsonNode *>(arg_json_base)->clone(&tmp_allocator, true);
