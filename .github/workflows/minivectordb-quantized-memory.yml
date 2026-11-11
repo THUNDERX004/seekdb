@@ -1,0 +1,56 @@
+name: MiniVectorDB quantized cache memory comparison
+
+on:
+  push:
+    branches: [codex/performance-round3-20261111]
+    paths:
+      - src/minivectordb.cpp
+      - bench/evaluate_container_memory.py
+      - .github/workflows/minivectordb-quantized-memory.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  memory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Fetch the fixed comparison source
+        run: |
+          git fetch --no-tags --depth=1 origin b951bafbc6d65fb8861441165920be9c971e03be
+          mkdir -p build/quantized-memory
+          git show b951bafbc6d65fb8861441165920be9c971e03be:src/minivectordb.cpp > build/quantized-memory/baseline.cpp
+      - name: Build with the submission compiler
+        run: |
+          docker run --rm --network=none --mount type=bind,src="$PWD",dst=/work --workdir /work \
+            gcc:14.3.0-bookworm@sha256:5e927c284bf55a7dc796262e311a0703344f62f41f5621eb56843111b1d37e15 \
+            bash -euc '
+              flags="-std=c++20 -O3 -DNDEBUG -Wall -Wextra -Wpedantic -static-libstdc++ -static-libgcc"
+              g++ $flags build/quantized-memory/baseline.cpp -o build/quantized-memory/baseline
+              g++ $flags src/minivectordb.cpp -o build/quantized-memory/candidate
+            '
+          docker pull debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc
+          python3 -m pip install numpy==2.1.3
+      - name: Measure six isolated database containers and verify exact results
+        run: |
+          python3 -X utf8 -B bench/evaluate_container_memory.py \
+            --baseline build/quantized-memory/baseline --candidate build/quantized-memory/candidate \
+            --runs 3 --rows 10000 --dim 128 --queries 1000 --batch 100 --k 10 \
+            --seed 20261320 --report build/quantized-memory/result.json
+      - name: Print versioned memory evidence
+        if: always()
+        run: |
+          git rev-parse HEAD
+          sha256sum src/minivectordb.cpp build/quantized-memory/baseline build/quantized-memory/candidate
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('build/quantized-memory/result.json').read_text())
+          print('QUANTIZED_MEMORY_EVIDENCE ' + json.dumps(result, separators=(',', ':')))
+          PY
