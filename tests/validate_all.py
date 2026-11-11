@@ -49,7 +49,7 @@ def main():
               "test_selection_retention.py", "test_large_results.py",
               "test_json_protocol.py", "test_official_json_public.py",
               "test_primary_ranges.py", "test_cached_topk.py",
-              "test_string_fast_paths.py")
+              "test_string_fast_paths.py", "test_quantized_screen.py")
     commands = []
     for label in ("normal", "scalar"):
         commands.extend((f"{label}/{suite}",

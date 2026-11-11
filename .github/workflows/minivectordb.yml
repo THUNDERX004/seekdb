@@ -2,7 +2,7 @@ name: MiniVectorDB Linux validation
 
 on:
   push:
-    branches: [2026-competition-round2]
+    branches: [2026-competition-round2, codex/performance-round3-20261111]
     paths:
       - src/minivectordb.cpp
       - tests/**
@@ -40,6 +40,7 @@ jobs:
               flags="-std=c++20 -static-libstdc++ -static-libgcc"
               g++ $flags -O3 -DNDEBUG -Wall -Wextra -Wpedantic -DMVD_FORCE_SCALAR src/minivectordb.cpp -o build/linux-scalar/minivectordb
               g++ $flags -O3 -DNDEBUG -Wall -Wextra -Wpedantic -DMVD_TEST_FAULTS src/minivectordb.cpp -o build/linux-fault/minivectordb
+              g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_quantized_kernels.cpp -o build/test_quantized_kernels
               for mode in normal scalar; do
                 extra=""
                 if [ "$mode" = scalar ]; then extra=-DMVD_FORCE_SCALAR; fi
@@ -48,6 +49,8 @@ jobs:
                 done
               done
             '
+      - name: Verify every supported integer SIMD kernel against the scalar oracle
+        run: build/test_quantized_kernels
       - name: Run the full local correctness contract on Linux
         run: |
           python3 -X utf8 -B tests/validate_all.py \

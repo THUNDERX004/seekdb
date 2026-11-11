@@ -2388,7 +2388,33 @@ class Table {
     const Row *cached = nullptr;
     const float *vector_data = nullptr;
   };
-  using IndexedRows = std::vector<IndexedRow>;
+  struct IndexedRows {
+    using value_type = IndexedRow;
+    std::vector<IndexedRow> rows;
+    mutable std::vector<int8_t> codes;
+    mutable std::vector<uint32_t> code_norms;
+    mutable double code_step = 0;
+    mutable bool codes_attempted = false;
+
+    auto begin() { return rows.begin(); }
+    auto end() { return rows.end(); }
+    auto begin() const { return rows.begin(); }
+    auto end() const { return rows.end(); }
+    bool empty() const { return rows.empty(); }
+    size_t size() const { return rows.size(); }
+    size_t capacity() const { return rows.capacity(); }
+    const IndexedRow *data() const { return rows.data(); }
+    const IndexedRow &operator[](size_t i) const { return rows[i]; }
+    void reserve(size_t n) { rows.reserve(n); }
+    void push_back(IndexedRow row) { rows.push_back(row); }
+    void swap(IndexedRows &other) noexcept {
+      rows.swap(other.rows);
+      codes.swap(other.codes);
+      code_norms.swap(other.code_norms);
+      std::swap(code_step, other.code_step);
+      std::swap(codes_attempted, other.codes_attempted);
+    }
+  };
 
   static void orderCachedVectors(IndexedRows &rows) {
     // Reuse the address directory to visit nearby allocations together. This
@@ -2533,8 +2559,8 @@ class Table {
     if (!cached_distance_ready_) {
       const size_t unused = cache_limit_bytes_ > cache_bytes_
           ? cache_limit_bytes_ - cache_bytes_ : 0;
-      const size_t available = unused > equality_bytes_
-          ? unused - equality_bytes_ : 0;
+      const size_t metadata = equality_bytes_ + quantized_bytes_;
+      const size_t available = unused > metadata ? unused - metadata : 0;
       if (versions_.size() > available / sizeof(IndexedRow)) {
         return nullptr;
       }
@@ -2554,6 +2580,78 @@ class Table {
       cached_distance_ready_ = true;
     }
     return &cached_distance_rows_;
+  }
+
+  bool prepareQuantizedRows(const IndexedRows &rows, size_t dimension) {
+    if (rows.codes_attempted) {
+      return !rows.codes.empty();
+    }
+    rows.codes_attempted = true;
+    if (!cache_enabled_ || rows.size() < 256 || dimension < 16 ||
+        dimension > 16384) {
+      return false;
+    }
+    const size_t metadata = equality_bytes_ + quantized_bytes_ +
+        cached_distance_rows_.capacity() * sizeof(IndexedRow);
+    const size_t unused = cache_limit_bytes_ > cache_bytes_
+        ? cache_limit_bytes_ - cache_bytes_ : 0;
+    constexpr size_t maximum = 16ULL * 1024ULL * 1024ULL;
+    const size_t available = std::min(maximum,
+        unused > metadata ? unused - metadata : 0);
+    if (rows.size() > available / (dimension + sizeof(uint32_t))) {
+      return false;
+    }
+    double maximum_absolute = 0;
+    for (const IndexedRow &row : rows) {
+      if (row.vector_data == nullptr) {
+        return false;
+      }
+      for (size_t axis = 0; axis < dimension; ++axis) {
+        maximum_absolute = std::max(maximum_absolute,
+            std::abs(static_cast<double>(row.vector_data[axis])));
+      }
+    }
+    if (maximum_absolute == 0) {
+      return false;
+    }
+    int exponent;
+    std::frexp(maximum_absolute, &exponent);
+    // Power-of-two scaling is exact for all finite float32 inputs in double.
+    // Values fall strictly within (-128,128). Rounding plus clamping to127
+    // has an absolute error of at most one code unit per component.
+    const double step = std::ldexp(1.0, exponent - 7);
+    std::vector<int8_t> codes;
+    std::vector<uint32_t> norms;
+    try {
+      codes.resize(rows.size() * dimension);
+      norms.resize(rows.size());
+    } catch (const std::bad_alloc &) {
+      // This cache is optional; the borrowed rows remain valid for exact scan.
+      return false;
+    }
+    const size_t allocated = codes.capacity() + norms.capacity() * sizeof(uint32_t);
+    if (allocated > available) {
+      return false;
+    }
+    size_t out = 0;
+    size_t row_index = 0;
+    for (const IndexedRow &row : rows) {
+      uint32_t norm = 0;
+      for (size_t axis = 0; axis < dimension; ++axis) {
+        const int code = static_cast<int>(std::clamp(
+            std::round(static_cast<double>(row.vector_data[axis]) / step),
+            -127.0, 127.0));
+        codes[out++] = static_cast<int8_t>(code);
+        norm += static_cast<uint32_t>(code * code);
+      }
+      norms[row_index++] = norm;
+    }
+    // Publish only complete codes; reuse the directory's invalidation rules.
+    quantized_bytes_ += allocated;
+    rows.code_step = step;
+    rows.codes.swap(codes);
+    rows.code_norms.swap(norms);
+    return true;
   }
 
   template <typename Callback>
@@ -3113,6 +3211,7 @@ class Table {
   size_t equality_column_ = std::numeric_limits<size_t>::max();
   bool equality_disabled_ = false;
   size_t equality_bytes_ = 0;
+  size_t quantized_bytes_ = 0;
   IndexedRows cached_distance_rows_;
   bool cached_distance_ready_ = false;
   std::unordered_map<int64_t, IndexedRows> integer_equality_index_;
@@ -3128,6 +3227,7 @@ class Table {
     IndexedRows{}.swap(cached_distance_rows_);
     cached_distance_ready_ = false;
     equality_bytes_ = 0;
+    quantized_bytes_ = 0;
     decltype(integer_equality_index_){}.swap(integer_equality_index_);
     decltype(text_equality_index_){}.swap(text_equality_index_);
     equality_column_ = std::numeric_limits<size_t>::max();
@@ -3367,6 +3467,9 @@ bool valuesCompare(const Value &left, const Value &right, CompareOp op,
 }
 
 class Database {
+#ifdef MVD_TEST_QUANTIZED_KERNELS
+  friend struct QuantizedKernelTest;
+#endif
  public:
   explicit Database(fs::path data_dir, bool ann, bool json_output = false)
       : data_dir_(std::move(data_dir)), ann_mode_(ann), json_output_(json_output) {
@@ -4304,6 +4407,11 @@ class Database {
       const WorseFirst candidateLess{distance_spec.column, &distance_spec.probe};
       std::vector<Candidate> heap;
       heap.reserve(std::min<size_t>(capacity, 64));
+      double quantized_step = 0;
+      std::vector<int8_t> quantized_probe;
+      uint32_t quantized_above = std::numeric_limits<uint32_t>::max();
+      const double quantized_error = std::sqrt(
+          static_cast<double>(prepared_probe.size())) + 1;
       const double rejection_multiplier =
           1 + (static_cast<double>(prepared_probe.size()) + 16) * 16 *
                   std::numeric_limits<double>::epsilon();
@@ -4315,6 +4423,17 @@ class Database {
             std::numeric_limits<double>::infinity());
         screening_above =
             reject_above * screening_multiplier + screening_absolute;
+        if (quantized_step > 0) {
+          // Clamp is nonexpansive; rounding adds at most one code unit to
+          // each component difference. Hence code-distance <= true-distance
+          // / step + sqrt(d). The extra whole unit covers floating evaluation
+          // roundoff (all useful radii are below32768); ceil rounds outward.
+          const double radius = std::sqrt(reject_above) / quantized_step +
+                                quantized_error;
+          quantized_above = radius < 32768
+              ? static_cast<uint32_t>(std::ceil(radius * radius))
+              : std::numeric_limits<uint32_t>::max();
+        }
       };
       const auto consumeVector = [&](int64_t primary, const float *vector,
                                      const Row *row, bool stable,
@@ -4361,7 +4480,57 @@ class Database {
       }
       if (cached_candidates != nullptr) {
         size_t i = 0;
-        if (screening_batch_kernel != nullptr) {
+        bool quantized = false;
+#if !defined(MVD_FORCE_SCALAR) && (defined(__GNUC__) || defined(__clang__)) && \
+    (defined(__x86_64__) || defined(__i386__))
+        using QuantizedBatchKernel = void (*)(const int8_t *, const int8_t *,
+                                              size_t, uint32_t *, const uint32_t *, int64_t);
+        QuantizedBatchKernel quantized_kernel = &quantizedDistanceBatchAvx2;
+        if (__builtin_cpu_supports("avx512f") && __builtin_cpu_supports("avx512bw")) {
+          quantized_kernel = &quantizedDistanceBatchAvx512;
+          if (__builtin_cpu_supports("avx512vnni") && prepared_probe.size() >= 64) {
+            quantized_kernel = &quantizedDistanceBatchVnni;
+          }
+        }
+        if (__builtin_cpu_supports("avx2") &&
+            table.prepareQuantizedRows(*cached_candidates, prepared_probe.size())) {
+          const double step = cached_candidates->code_step;
+          quantized = std::all_of(prepared_probe.begin(), prepared_probe.end(),
+              [&](double value) { return std::abs(value / step) < 128; });
+          if (quantized) {
+            try {
+              quantized_probe.reserve(prepared_probe.size());
+            } catch (const std::bad_alloc &) {
+              quantized = false;
+            }
+          }
+          if (quantized) {
+            int64_t query_correction = 0;
+            for (double value : prepared_probe) {
+              const int code = static_cast<int>(
+                  std::clamp(std::round(value / step), -127.0, 127.0));
+              quantized_probe.push_back(static_cast<int8_t>(code));
+              query_correction += code * code + 256 * code;
+            }
+            quantized_step = step;
+            for (; cached_candidates->size() - i >= 4; i += 4) {
+              uint32_t scores[4];
+              quantized_kernel(cached_candidates->codes.data() +
+                      i * prepared_probe.size(), quantized_probe.data(),
+                  prepared_probe.size(), scores,
+                  cached_candidates->code_norms.data() + i, query_correction);
+              for (size_t j = 0; j < 4; ++j) {
+                if (heap.size() == capacity && scores[j] > quantized_above) {
+                  continue;
+                }
+                const auto &row = (*cached_candidates)[i + j];
+                consumeVector(row.primary, row.vector_data, row.cached, true);
+              }
+            }
+          }
+        }
+#endif
+        if (!quantized && screening_batch_kernel != nullptr) {
           for (; cached_candidates->size() - i >= 4; i += 4) {
             const auto *batch = cached_candidates->data() + i;
             for (size_t j = 0; j < 4; ++j) {
@@ -4732,6 +4901,117 @@ class Database {
 
 #if (defined(__GNUC__) || defined(__clang__)) && \
     (defined(__x86_64__) || defined(__i386__))
+  __attribute__((target("avx512f,avx512bw,avx512vnni")))
+  static void quantizedDistanceBatchVnni(
+      const int8_t *rows, const int8_t *probe, size_t size, uint32_t *scores,
+      const uint32_t *norms, int64_t query_correction) {
+    __m512i sum0 = _mm512_setzero_si512();
+    __m512i sum1 = _mm512_setzero_si512();
+    __m512i sum2 = _mm512_setzero_si512();
+    __m512i sum3 = _mm512_setzero_si512();
+    const __m512i bias = _mm512_set1_epi8(static_cast<char>(-128));
+    size_t i = 0;
+    for (; i + 64 <= size; i += 64) {
+      const __m512i p = _mm512_loadu_si512(probe + i);
+      sum0 = _mm512_dpbusd_epi32(sum0,
+          _mm512_xor_si512(_mm512_loadu_si512(rows + i), bias), p);
+      sum1 = _mm512_dpbusd_epi32(sum1,
+          _mm512_xor_si512(_mm512_loadu_si512(rows + size + i), bias), p);
+      sum2 = _mm512_dpbusd_epi32(sum2,
+          _mm512_xor_si512(_mm512_loadu_si512(rows + 2 * size + i), bias), p);
+      sum3 = _mm512_dpbusd_epi32(sum3,
+          _mm512_xor_si512(_mm512_loadu_si512(rows + 3 * size + i), bias), p);
+    }
+    const int32_t dots[] = {_mm512_reduce_add_epi32(sum0),
+        _mm512_reduce_add_epi32(sum1), _mm512_reduce_add_epi32(sum2),
+        _mm512_reduce_add_epi32(sum3)};
+    for (size_t j = 0; j < 4; ++j) {
+      int64_t dot = dots[j];
+      for (size_t tail = i; tail < size; ++tail) {
+        dot += (static_cast<int>(rows[j * size + tail]) + 128) *
+               static_cast<int>(probe[tail]);
+      }
+      // dot uses (row+128)*query; correction cancels the unsigned-byte bias.
+      scores[j] = static_cast<uint32_t>(norms[j] + query_correction - 2 * dot);
+    }
+  }
+
+  __attribute__((target("avx512f,avx512bw"))) static void quantizedDistanceBatchAvx512(
+      const int8_t *rows, const int8_t *probe, size_t size, uint32_t *scores,
+      const uint32_t *, int64_t) {
+    __m512i sum0 = _mm512_setzero_si512();
+    __m512i sum1 = _mm512_setzero_si512();
+    __m512i sum2 = _mm512_setzero_si512();
+    __m512i sum3 = _mm512_setzero_si512();
+    size_t i = 0;
+    for (; i + 32 <= size; i += 32) {
+      const __m512i p = _mm512_cvtepi8_epi16(_mm256_loadu_si256(
+          reinterpret_cast<const __m256i *>(probe + i)));
+      const __m512i d0 = _mm512_sub_epi16(_mm512_cvtepi8_epi16(_mm256_loadu_si256(
+          reinterpret_cast<const __m256i *>(rows + i))), p);
+      const __m512i d1 = _mm512_sub_epi16(_mm512_cvtepi8_epi16(_mm256_loadu_si256(
+          reinterpret_cast<const __m256i *>(rows + size + i))), p);
+      const __m512i d2 = _mm512_sub_epi16(_mm512_cvtepi8_epi16(_mm256_loadu_si256(
+          reinterpret_cast<const __m256i *>(rows + 2 * size + i))), p);
+      const __m512i d3 = _mm512_sub_epi16(_mm512_cvtepi8_epi16(_mm256_loadu_si256(
+          reinterpret_cast<const __m256i *>(rows + 3 * size + i))), p);
+      sum0 = _mm512_add_epi32(sum0, _mm512_madd_epi16(d0, d0));
+      sum1 = _mm512_add_epi32(sum1, _mm512_madd_epi16(d1, d1));
+      sum2 = _mm512_add_epi32(sum2, _mm512_madd_epi16(d2, d2));
+      sum3 = _mm512_add_epi32(sum3, _mm512_madd_epi16(d3, d3));
+    }
+    scores[0] = static_cast<uint32_t>(_mm512_reduce_add_epi32(sum0));
+    scores[1] = static_cast<uint32_t>(_mm512_reduce_add_epi32(sum1));
+    scores[2] = static_cast<uint32_t>(_mm512_reduce_add_epi32(sum2));
+    scores[3] = static_cast<uint32_t>(_mm512_reduce_add_epi32(sum3));
+    for (; i < size; ++i) {
+      for (size_t j = 0; j < 4; ++j) {
+        const int difference = static_cast<int>(rows[j * size + i]) -
+                               static_cast<int>(probe[i]);
+        scores[j] += static_cast<uint32_t>(difference * difference);
+      }
+    }
+  }
+
+  __attribute__((target("avx2"))) static void quantizedDistanceBatchAvx2(
+      const int8_t *rows, const int8_t *probe, size_t size, uint32_t *scores,
+      const uint32_t *, int64_t) {
+    __m256i sum0 = _mm256_setzero_si256();
+    __m256i sum1 = _mm256_setzero_si256();
+    __m256i sum2 = _mm256_setzero_si256();
+    __m256i sum3 = _mm256_setzero_si256();
+    size_t i = 0;
+    for (; i + 16 <= size; i += 16) {
+      const __m256i p = _mm256_cvtepi8_epi16(_mm_loadu_si128(
+          reinterpret_cast<const __m128i *>(probe + i)));
+      const __m256i d0 = _mm256_sub_epi16(_mm256_cvtepi8_epi16(_mm_loadu_si128(
+          reinterpret_cast<const __m128i *>(rows + i))), p);
+      const __m256i d1 = _mm256_sub_epi16(_mm256_cvtepi8_epi16(_mm_loadu_si128(
+          reinterpret_cast<const __m128i *>(rows + size + i))), p);
+      const __m256i d2 = _mm256_sub_epi16(_mm256_cvtepi8_epi16(_mm_loadu_si128(
+          reinterpret_cast<const __m128i *>(rows + 2 * size + i))), p);
+      const __m256i d3 = _mm256_sub_epi16(_mm256_cvtepi8_epi16(_mm_loadu_si128(
+          reinterpret_cast<const __m128i *>(rows + 3 * size + i))), p);
+      sum0 = _mm256_add_epi32(sum0, _mm256_madd_epi16(d0, d0));
+      sum1 = _mm256_add_epi32(sum1, _mm256_madd_epi16(d1, d1));
+      sum2 = _mm256_add_epi32(sum2, _mm256_madd_epi16(d2, d2));
+      sum3 = _mm256_add_epi32(sum3, _mm256_madd_epi16(d3, d3));
+    }
+    const __m256i sums[] = {sum0, sum1, sum2, sum3};
+    for (size_t j = 0; j < 4; ++j) {
+      __m128i sum = _mm_add_epi32(_mm256_castsi256_si128(sums[j]),
+                                  _mm256_extracti128_si256(sums[j], 1));
+      sum = _mm_hadd_epi32(sum, sum);
+      sum = _mm_hadd_epi32(sum, sum);
+      scores[j] = static_cast<uint32_t>(_mm_cvtsi128_si32(sum));
+      for (size_t tail = i; tail < size; ++tail) {
+        const int difference = static_cast<int>(rows[j * size + tail]) -
+                               static_cast<int>(probe[tail]);
+        scores[j] += static_cast<uint32_t>(difference * difference);
+      }
+    }
+  }
+
   // Four independent rows share probe loads and one kernel call. Scores only
   // screen candidates; exact survivors still use double/integer comparison.
   __attribute__((target("avx512f"))) static void approximateDistanceBatchAvx512(
