@@ -35,6 +35,8 @@
 
 #include "quantized_block_scan.hpp"
 #include "compact_value.hpp"
+#include "decimal_float.hpp"
+#include "topk_heap.hpp"
 
 #ifdef MVD_PROFILE
 #include <chrono>
@@ -858,6 +860,25 @@ class JsonRequestParser {
     const size_t start = pos_;
     // SQL and vector payloads usually contain ordinary ASCII. Copy that span
     // once; only escaped or non-ASCII strings need decoding and UTF-8 checks.
+    constexpr uint64_t ones = 0x0101010101010101ULL;
+    constexpr uint64_t high = 0x8080808080808080ULL;
+    const auto hasZeroByte = [&](uint64_t word) {
+      return ((word - ones) & ~word & high) != 0;
+    };
+    while (input_.size() - pos_ >= sizeof(uint64_t)) {
+      uint64_t word;
+      std::memcpy(&word, input_.data() + pos_, sizeof(word));
+      // These masks only test existence: subtraction can propagate a borrow
+      // into an adjacent byte, so the original loop locates the first special
+      // byte. The bounded memcpy also permits unaligned input on every host.
+      if ((word & high) != 0 ||
+          ((word - 0x2020202020202020ULL) & ~word & high) != 0 ||
+          hasZeroByte(word ^ 0x2222222222222222ULL) ||
+          hasZeroByte(word ^ 0x5c5c5c5c5c5c5c5cULL)) {
+        break;
+      }
+      pos_ += sizeof(word);
+    }
     while (pos_ < input_.size()) {
       const unsigned char c = static_cast<unsigned char>(input_[pos_]);
       if (c == '"') {
@@ -1481,6 +1502,8 @@ class Parser {
   }
 
   static float parseFloat32Text(std::string_view text) {
+    float short_value;
+    if (parseShortDecimalFloat32(text, short_value)) return short_value;
     const char *begin = text.data();
     const char *end = begin + text.size();
     if (begin != end && *begin == '+') {
@@ -2548,6 +2571,9 @@ PrimaryKeyRange primaryKeyRange(const TableDef &definition,
 }
 
 class Table {
+#ifdef MVD_TEST_PHYSICAL_ORDER
+  friend struct PhysicalOrderTest;
+#endif
  public:
   Table(TableDef definition, fs::path data_path)
       : definition_(std::move(definition)), data_path_(std::move(data_path)) {}
@@ -3664,7 +3690,7 @@ class Table {
   mutable std::vector<int64_t> primary_order_;
   mutable bool primary_order_dirty_ = true;
   mutable std::vector<std::pair<uint64_t, int64_t>> physical_order_;
-  mutable bool physical_order_dirty_ = false;
+  mutable bool physical_order_dirty_ = true;
   bool cache_enabled_ = true;
   size_t cache_bytes_ = 0;
   size_t cache_limit_bytes_ = cacheLimitBytes();
@@ -4943,9 +4969,9 @@ class Database {
               worst.row.get()[distance_spec.column].vector(), distance_spec.probe);
           if (comparison < 0 || (comparison == 0 && primary < worst.primary)) {
             MVD_PROFILE_SCOPE(heap_profile, Heap, 31);
-            std::pop_heap(heap.begin(), heap.end(), candidateLess);
-            heap.back() = Candidate{squared, primary, RetainedRow::keep(*row, stable)};
-            std::push_heap(heap.begin(), heap.end(), candidateLess);
+            replaceHeapRoot(heap,
+                Candidate{squared, primary, RetainedRow::keep(*row, stable)},
+                candidateLess);
             updateRejectionBoundary();
           }
         }
@@ -5033,6 +5059,40 @@ class Database {
             quantized_error = code_rows->code_error +
                 std::sqrt(squared_query_error * rejection_multiplier) *
                     rejection_multiplier + 1;
+            // Gather only within this synchronous scan. Delaying consumption
+            // leaves a safe older code boundary; consumeVector checks each
+            // supplied float score against the current heap boundary.
+            std::array<Table::IndexedRow, 4> screening_rows;
+            size_t screening_count = 0;
+            const auto flushScreeningRows = [&] {
+              if (screening_count == screening_rows.size()) {
+                float scores[4];
+                screening_batch_kernel(screening_rows.data(),
+                    distance_spec.probe.data(), prepared_probe.size(), scores);
+                for (size_t j = 0; j < screening_count; ++j) {
+                  const auto &row = screening_rows[j];
+                  consumeVector(row.primary, row.vector_data, row.cached, true,
+                                &scores[j]);
+                }
+              } else {
+                for (size_t j = 0; j < screening_count; ++j) {
+                  const auto &row = screening_rows[j];
+                  consumeVector(row.primary, row.vector_data, row.cached, true);
+                }
+              }
+              screening_count = 0;
+            };
+            const auto consumeQuantizedSurvivor = [&](const Table::IndexedRow &row) {
+              // Fill the heap immediately so warm-up tightens the boundary.
+              if (heap.size() < capacity || screening_batch_kernel == nullptr) {
+                consumeVector(row.primary, row.vector_data, row.cached, true);
+                return;
+              }
+              screening_rows[screening_count++] = row;
+              if (screening_count == screening_rows.size()) {
+                flushScreeningRows();
+              }
+            };
             if (code_rows->codes_blocked) {
               for (; i < cached_candidates->size();) {
                 const size_t first = code_first + i;
@@ -5062,7 +5122,7 @@ class Database {
                   const size_t j = std::countr_zero(survivors);
                   survivors &= survivors - 1;
                   const auto &row = (*cached_candidates)[i + j];
-                  consumeVector(row.primary, row.vector_data, row.cached, true);
+                  consumeQuantizedSurvivor(row);
                 }
                 i += count;
               }
@@ -5082,10 +5142,12 @@ class Database {
                   const size_t j = std::countr_zero(survivors);
                   survivors &= survivors - 1;
                   const auto &row = (*cached_candidates)[i + j];
-                  consumeVector(row.primary, row.vector_data, row.cached, true);
+                  consumeQuantizedSurvivor(row);
                 }
               }
             }
+            // Consume a partial group before any fallback or raw-vector tail.
+            flushScreeningRows();
           }
         }
 #endif

@@ -2,7 +2,7 @@ name: MiniVectorDB Linux validation
 
 on:
   push:
-    branches: [2026-competition-round2, codex/performance-round9-20261111]
+    branches: [2026-competition-round2, codex/performance-five-rounds-20261111]
     paths:
       - src/minivectordb.cpp
       - src/*.hpp
@@ -48,6 +48,9 @@ jobs:
               g++ $flags -O1 tests/test_quantized_allocation.cpp -o build/test_quantized_allocation
               g++ $flags -O1 tests/test_value_storage.cpp -o build/test_value_storage
               g++ $flags -O1 tests/test_query_ownership.cpp -o build/test_query_ownership
+              g++ $flags -O2 tests/test_decimal_float.cpp -o build/test_decimal_float
+              g++ $flags -O2 tests/test_topk_heap.cpp -o build/test_topk_heap
+              g++ $flags -O2 tests/test_json_ascii_scan.cpp -o build/test_json_ascii_scan
               g++ $flags -O0 -DMVD_FORCE_SCALAR tests/test_durable_page_cache.cpp \
                 -Wl,--wrap=fsync -Wl,--wrap=sysconf -Wl,--wrap=posix_fadvise \
                 -o build/test_durable_page_cache
@@ -57,7 +60,7 @@ jobs:
                 for kind in statement commit catalog; do
                   g++ $flags -O1 $extra tests/test_${kind}_allocation.cpp -o build/test_${kind}_allocation_${mode}
                 done
-                for test in select_templates commit_row_transfer; do
+                for test in select_templates commit_row_transfer lazy_physical_order; do
                   g++ $flags -O1 $extra tests/test_${test}.cpp -o build/test_${test}_${mode}
                 done
               done
@@ -74,6 +77,9 @@ jobs:
         run: |
           build/test_quantized_allocation
           build/test_value_storage
+          build/test_decimal_float
+          build/test_topk_heap
+          build/test_json_ascii_scan
       - name: Verify durable page advice preserves sync and restart semantics
         run: python3 -B tests/test_statement_allocation.py build/test_durable_page_cache
       - name: Verify query ownership and bounded scalar selection allocations
@@ -87,6 +93,11 @@ jobs:
         run: |
           for mode in normal scalar; do
             python3 -B tests/test_statement_allocation.py build/test_commit_row_transfer_${mode}
+          done
+      - name: Verify lazy physical directories in normal and scalar modes
+        run: |
+          for mode in normal scalar; do
+            python3 -B tests/test_statement_allocation.py build/test_lazy_physical_order_${mode}
           done
       - name: Run the full local correctness contract on Linux
         run: |
