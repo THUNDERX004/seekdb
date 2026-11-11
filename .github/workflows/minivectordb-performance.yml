@@ -55,6 +55,11 @@ jobs:
             --baseline-protocol json --candidate-protocol json \
             --runs 3 --rows 1000 --dim 128 --queries 1000 --batch 100 --k 10 \
             --seed 20261530 --report build/paired-linux/small.json > build/paired-linux/small.stdout.txt
+          python3 -X utf8 -B bench/evaluate.py \
+            --baseline build/paired-linux/candidate --candidate build/paired-linux/candidate \
+            --baseline-protocol json --candidate-protocol json \
+            --runs 3 --rows 1000 --dim 128 --queries 1000 --batch 100 --k 10 \
+            --seed 20261530 --report build/paired-linux/small-aa.json > build/paired-linux/small-aa.stdout.txt
       - name: Print comparison evidence
         if: always()
         run: |
@@ -73,7 +78,7 @@ jobs:
                   result.pop('write_batch_ns', None)
                   result.pop('queries_raw', None)
           print('PAIRED_LINUX_EVIDENCE ' + json.dumps(report, separators=(',', ':')))
-          for name in ('dim512', 'small'):
+          for name in ('dim512', 'small', 'small-aa'):
               report = json.loads(Path('build/paired-linux/' + name + '.json').read_text())
               for run in report['runs']:
                   for result in run['results'].values():

@@ -1502,32 +1502,37 @@ class Parser {
         if (pos < text.size() && (text[pos] == '+' || text[pos] == '-')) {
           ++pos;
         }
-        if (pos == text.size() || text[pos] < '0' || text[pos] > '9') {
+        const size_t integer_start = pos;
+        while (pos < text.size() &&
+               std::isdigit(static_cast<unsigned char>(text[pos]))) {
+          ++pos;
+        }
+        if (pos == integer_start) {
           fail("TYPE_MISMATCH", "vector component must be numeric");
         }
-        // from_chars already finds the end of the decimal. Avoid a separate
-        // digit-by-digit tokenization pass over every stored/query component.
-        const char *begin = text.data() + start;
-        if (*begin == '+') { ++begin; }
-        float component = 0;
-        auto parsed = std::from_chars(begin, text.data() + text.size(), component);
-        pos = static_cast<size_t>(parsed.ptr - text.data());
-        // A malformed exponent is left unconsumed by from_chars; retain the
-        // grammar and error classification used by the tokenized vector path.
-        if (pos < text.size() && (text[pos] == 'e' || text[pos] == 'E') &&
-            std::string_view(begin, parsed.ptr - begin).find_first_of("eE") ==
-                std::string_view::npos) {
-          fail("SQL_SYNTAX", "numeric exponent requires digits");
+        if (pos < text.size() && text[pos] == '.') {
+          ++pos;
+          while (pos < text.size() &&
+                 std::isdigit(static_cast<unsigned char>(text[pos]))) {
+            ++pos;
+          }
         }
-        if (parsed.ec == std::errc::result_out_of_range &&
-            decimalMagnitudeBelowOne(std::string_view(begin, parsed.ptr - begin))) {
-          component = *begin == '-' ? -0.0f : 0.0f;
-          parsed.ec = std::errc();
+        if (pos < text.size() && (text[pos] == 'e' || text[pos] == 'E')) {
+          ++pos;
+          if (pos < text.size() && (text[pos] == '+' || text[pos] == '-')) {
+            ++pos;
+          }
+          const size_t exponent_start = pos;
+          while (pos < text.size() &&
+                 std::isdigit(static_cast<unsigned char>(text[pos]))) {
+            ++pos;
+          }
+          if (pos == exponent_start) {
+            fail("SQL_SYNTAX", "numeric exponent requires digits");
+          }
         }
-        if (parsed.ec != std::errc() || !std::isfinite(component)) {
-          fail("VALUE_OUT_OF_RANGE", "vector component is not a finite float32");
-        }
-        result.push_back(component);
+        result.push_back(
+            parseFloat32Text(text.substr(start, pos - start)));
         space();
         if (pos < text.size() && text[pos] == ']') {
           ++pos;
@@ -4564,12 +4569,14 @@ class Database {
         const bool quantized_worthwhile = statement.conditions.empty() ||
                                           cached_candidates->size() >= 2048;
         // VNNI can accumulate sixteen independent rows without horizontal
-        // reductions. Keep the existing row layout on other CPUs.
+        // reductions. Retain the existing layout on other CPUs and for small
+        // scans, where packing/setup does not reliably amortize its cost.
         const auto block_kernel = quantized_block::kernel_for(
             quantized_block::KernelKind::vnni512);
         if (quantized_worthwhile && __builtin_cpu_supports("avx2") &&
             table.prepareQuantizedRows(*cached_candidates, prepared_probe.size(),
-                block_kernel != nullptr && prepared_probe.size() >= 64)) {
+                block_kernel != nullptr && prepared_probe.size() >= 64 &&
+                    cached_candidates->size() >= 2048)) {
           const double step = cached_candidates->code_step;
           quantized = std::all_of(prepared_probe.begin(), prepared_probe.end(),
               [&](double value) { return std::abs(value / step) < 128; });
