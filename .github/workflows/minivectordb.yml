@@ -2,7 +2,7 @@ name: MiniVectorDB Linux validation
 
 on:
   push:
-    branches: [2026-competition-round2, codex/performance-round8-20261111]
+    branches: [2026-competition-round2, codex/performance-round9-20261111]
     paths:
       - src/minivectordb.cpp
       - src/*.hpp
@@ -57,6 +57,9 @@ jobs:
                 for kind in statement commit catalog; do
                   g++ $flags -O1 $extra tests/test_${kind}_allocation.cpp -o build/test_${kind}_allocation_${mode}
                 done
+                for test in select_templates commit_row_transfer; do
+                  g++ $flags -O1 $extra tests/test_${test}.cpp -o build/test_${test}_${mode}
+                done
               done
             '
       - name: Verify every supported integer SIMD kernel against the scalar oracle
@@ -75,6 +78,16 @@ jobs:
         run: python3 -B tests/test_statement_allocation.py build/test_durable_page_cache
       - name: Verify query ownership and bounded scalar selection allocations
         run: python3 -B tests/test_statement_allocation.py build/test_query_ownership
+      - name: Verify bounded parameterized SELECT templates in normal and scalar modes
+        run: |
+          for mode in normal scalar; do
+            python3 -B tests/test_statement_allocation.py build/test_select_templates_${mode}
+          done
+      - name: Verify commit row ownership transfer in normal and scalar modes
+        run: |
+          for mode in normal scalar; do
+            python3 -B tests/test_statement_allocation.py build/test_commit_row_transfer_${mode}
+          done
       - name: Run the full local correctness contract on Linux
         run: |
           python3 -X utf8 -B tests/validate_all.py \

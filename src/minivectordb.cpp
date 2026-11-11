@@ -1267,11 +1267,31 @@ using Statement =
 
 class Parser {
  public:
+  struct ProbeLiteral {
+    size_t begin = 0;
+    size_t size = 0;
+  };
+
   Parser(std::string_view sql,
          const std::unordered_map<std::string, const TableDef *> &tables)
-      : tokens_(Lexer(sql, decoded_literals_).tokenize()), tables_(tables) {}
+      : tokens_(Lexer(sql, decoded_literals_).tokenize()), tables_(tables),
+        input_(sql) {}
 
   bool empty() const { return tokens_.front().kind == TokenKind::End; }
+
+  std::optional<ProbeLiteral> singleProbeLiteral() const noexcept {
+    return query_probe_count_ == 1 ? probe_literal_ : std::nullopt;
+  }
+
+  static std::vector<float> bindProbeLiteral(std::string_view text,
+                                            size_t dimension) {
+    auto probe = parseVectorLiteralText(text, dimension);
+    if (probe.size() != dimension) {
+      fail("VECTOR_DIMENSION_MISMATCH",
+           "query vector dimension does not match schema");
+    }
+    return probe;
+  }
 
   Statement parse() {
     if (acceptKeyword("select")) {
@@ -1659,6 +1679,24 @@ class Parser {
     return conditions;
   }
 
+  std::vector<float> parseQueryProbe(const char *message) {
+    ++query_probe_count_;
+    if (peek().kind == TokenKind::Symbol && peek().text == "[") {
+      return parseVectorBody();
+    }
+    if (peek().kind == TokenKind::String) {
+      const Token &token = tokens_[pos_++];
+      // An unescaped token is a direct view between the original SQL quotes.
+      // Decoded literals have different storage and use the full parser.
+      if (token.position < input_.size() &&
+          token.text.data() == input_.data() + token.position + 1) {
+        probe_literal_ = ProbeLiteral{token.position + 1, token.text.size()};
+      }
+      return parseVectorLiteralText(token.text);
+    }
+    fail("TYPE_MISMATCH", message);
+  }
+
   SelectStatement parseSelect() {
     SelectStatement statement;
     if (tokenIsKeyword(peek(), "distinct")) {
@@ -1675,13 +1713,7 @@ class Parser {
         item.distance = true;
         item.source_name = expectIdentifier();
         expectSymbol(",");
-        if (peek().kind == TokenKind::Symbol && peek().text == "[") {
-          item.probe = parseVectorBody();
-        } else if (peek().kind == TokenKind::String) {
-          item.probe = parseVectorLiteralText(tokens_[pos_++].text);
-        } else {
-          fail("TYPE_MISMATCH", "L2_DISTANCE requires a vector literal");
-        }
+        item.probe = parseQueryProbe("L2_DISTANCE requires a vector literal");
         expectSymbol(")");
         item.output_name = item.source_name;
       } else {
@@ -1726,14 +1758,8 @@ class Parser {
           key.distance = true;
           key.source_name = expectIdentifier();
           expectSymbol(",");
-          if (peek().kind == TokenKind::Symbol && peek().text == "[") {
-            key.probe = parseVectorBody();
-          } else if (peek().kind == TokenKind::String) {
-            key.probe = parseVectorLiteralText(tokens_[pos_++].text);
-          } else {
-            fail("TYPE_MISMATCH",
-                 "ORDER BY L2_DISTANCE requires a vector literal");
-          }
+          key.probe = parseQueryProbe(
+              "ORDER BY L2_DISTANCE requires a vector literal");
           expectSymbol(")");
           key.reference = key.source_name;
         } else {
@@ -2024,6 +2050,145 @@ class Parser {
   std::vector<Token> tokens_;
   size_t pos_ = 0;
   const std::unordered_map<std::string, const TableDef *> &tables_;
+  std::string_view input_;
+  size_t query_probe_count_ = 0;
+  std::optional<ProbeLiteral> probe_literal_;
+};
+
+// Cache parsed structure only. Every binding decodes a fresh vector; SELECT
+// still reads current base/overlay rows and performs its usual exact ranking.
+// Quotes, comments, predicates, projection, order and limits outside that one
+// literal must match byte for byte. DDL discards all entries.
+class SelectTemplateCache {
+ public:
+  static constexpr size_t kMaxEntries = 16;
+  static constexpr size_t kByteLimit = 64ULL * 1024ULL;
+
+  const SelectStatement *bind(std::string_view sql) {
+    for (auto &slot : entries_) {
+      if (!slot) continue;
+      Entry &entry = *slot;
+      if (sql.size() < entry.prefix.size() + entry.suffix.size() ||
+          !sql.starts_with(entry.prefix) || !sql.ends_with(entry.suffix)) {
+        continue;
+      }
+      const auto literal = sql.substr(entry.prefix.size(),
+          sql.size() - entry.prefix.size() - entry.suffix.size());
+      // Such bytes change SQL quoting/decoding, so the lexer must inspect them.
+      if (literal.find_first_of("'\"\\") != std::string_view::npos) continue;
+      auto probe = Parser::bindProbeLiteral(literal, entry.dimension);
+      auto &destination = entry.statement.items[entry.probe_item].probe;
+      // A successful binding has a fixed dimension. The hint reserves exactly
+      // that many elements; cap accounting is refreshed before publishing it.
+      const size_t old_bytes = destination.capacity() * sizeof(float);
+      const size_t new_bytes = probe.capacity() * sizeof(float);
+      if (new_bytes > old_bytes && new_bytes - old_bytes >
+          kByteLimit - retainedBytes()) {
+        continue;
+      }
+      destination = std::move(probe);
+      dynamic_bytes_ = dynamic_bytes_ - old_bytes + new_bytes;
+      entry.bytes = entry.bytes - old_bytes + new_bytes;
+      return &entry.statement;
+    }
+    return nullptr;
+  }
+
+  void remember(std::string_view sql, std::optional<Parser::ProbeLiteral> span,
+                const SelectStatement &statement) noexcept {
+    if (!span || span->begin > sql.size() ||
+        span->size > sql.size() - span->begin) return;
+    size_t probe_item = statement.items.size();
+    for (size_t i = 0; i < statement.items.size(); ++i) {
+      if (!statement.items[i].distance) continue;
+      if (statement.items[i].hidden || probe_item != statement.items.size()) return;
+      probe_item = i;
+    }
+    if (probe_item == statement.items.size()) return;
+    const auto prefix = sql.substr(0, span->begin);
+    const auto suffix = sql.substr(span->begin + span->size);
+    if (measure(statement, prefix.size(), suffix.size()) >= kByteLimit) return;
+    try {
+      Entry staged{std::string(prefix), std::string(suffix), statement,
+                   probe_item, statement.items[probe_item].probe.size(), 0};
+      staged.bytes = measure(staged.statement, staged.prefix.capacity(),
+                              staged.suffix.capacity());
+      if (staged.bytes > kByteLimit - sizeof(*this)) return;
+      // Construct off to the side. Optional cache allocation failure leaves
+      // the successful query and previously cached templates untouched.
+      erase(next_);
+      while (staged.bytes > kByteLimit - retainedBytes()) {
+        next_ = (next_ + 1) % kMaxEntries;
+        erase(next_);
+      }
+      dynamic_bytes_ += staged.bytes;
+      static_assert(std::is_nothrow_move_constructible_v<Entry>);
+      entries_[next_].emplace(std::move(staged));
+      next_ = (next_ + 1) % kMaxEntries;
+    } catch (const std::bad_alloc &) {
+      // Parsing is still usable without an optional template.
+    }
+  }
+
+  void clear() noexcept {
+    for (auto &entry : entries_) entry.reset();
+    dynamic_bytes_ = 0;
+    next_ = 0;
+  }
+
+  size_t retainedBytes() const noexcept { return sizeof(*this) + dynamic_bytes_; }
+  size_t size() const noexcept {
+    size_t count = 0;
+    for (const auto &entry : entries_) count += entry.has_value();
+    return count;
+  }
+
+ private:
+  struct Entry {
+    std::string prefix;
+    std::string suffix;
+    SelectStatement statement;
+    size_t probe_item;
+    size_t dimension;
+    size_t bytes;
+  };
+
+  static size_t measure(const SelectStatement &statement,
+                        size_t prefix, size_t suffix) noexcept {
+    size_t bytes = 0;
+    const auto add = [&](size_t amount) {
+      bytes += std::min(amount, kByteLimit - bytes);
+    };
+    add(prefix); add(1); add(suffix); add(1);
+    add(statement.table.capacity()); add(1);
+    add(statement.items.capacity() * sizeof(SelectItem));
+    add(statement.conditions.capacity() * sizeof(Condition));
+    add(statement.order.capacity() * sizeof(OrderKey));
+    for (const auto &item : statement.items) {
+      add(item.source_name.capacity()); add(1);
+      add(item.output_name.capacity()); add(1);
+      add(item.probe.capacity() * sizeof(float));
+    }
+    for (const auto &condition : statement.conditions) {
+      add(condition.value.text().capacity()); add(1);
+    }
+    for (const auto &key : statement.order) {
+      add(key.source_name.capacity()); add(1);
+      add(key.reference.capacity()); add(1);
+      add(key.probe.capacity() * sizeof(float));
+    }
+    return bytes;
+  }
+
+  void erase(size_t index) noexcept {
+    if (!entries_[index]) return;
+    dynamic_bytes_ -= entries_[index]->bytes;
+    entries_[index].reset();
+  }
+
+  std::array<std::optional<Entry>, kMaxEntries> entries_{};
+  size_t dynamic_bytes_ = 0;
+  size_t next_ = 0;
 };
 
 struct DecodedRecord {
@@ -2330,7 +2495,7 @@ struct PendingRecord {
   uint32_t oid = 0;
   int64_t primary = 0;
   uint16_t op = 0;
-  const Row *row = nullptr;
+  Row *row = nullptr;
   uint64_t offset = 0;
 };
 
@@ -3113,13 +3278,13 @@ class Table {
 
   std::vector<PendingRecord> appendChanges(uint64_t txid,
                                            FileWriter &writer,
-                                           const std::map<int64_t, std::optional<Row>>
+                                           std::map<int64_t, std::optional<Row>>
                                                &changes) {
     std::vector<PendingRecord> pending;
     pending.reserve(changes.size());
     std::vector<uint8_t> payload;
     std::vector<uint8_t> header;
-    for (const auto &[primary, row] : changes) {
+    for (auto &[primary, row] : changes) {
       payload.clear();
       uint16_t op = 0;
       if (row.has_value()) {
@@ -3133,8 +3298,8 @@ class Table {
       encodeRowHeader(txid, op, payload, header);
       const uint64_t offset = writer.append(header);
       writer.append(payload);
-      // The transaction overlay remains alive until every table is published.
-      // Pending metadata does not need a second full copy of each vector row.
+      // Borrow until every table and the WAL are synced. Publication can then
+      // consume each owned overlay row once without another full row copy.
       pending.push_back({definition_.oid, primary, op,
                          row.has_value() ? &*row : nullptr, offset});
       next_offset_ = writer.offset();
@@ -3143,8 +3308,9 @@ class Table {
   }
 
   void applyPending(const std::vector<PendingRecord> &pending) {
+    static_assert(std::is_nothrow_move_assignable_v<Row>);
     // Entries point to immutable committed row objects. Invalidate before
-    // replacing/deleting a row or changing the cache's residency.
+    // consuming overlay rows, replacing/deleting rows or changing residency.
     clearEqualityIndex();
     const size_t stale_limit =
         versions_.size() > (std::numeric_limits<size_t>::max() - 1024) / 2
@@ -3181,7 +3347,7 @@ class Table {
       value.offset = record.offset;
       value.cached = cache_enabled_;
       if (value.cached) {
-        value.row = *record.row;
+        value.row = std::move(*record.row);
         cache_bytes_ += cachedRowBytes(value.row);
       }
       versions_[record.primary] = std::move(value);
@@ -3799,6 +3965,10 @@ class Database {
   std::optional<ExecResult> execute(std::string_view sql) {
     MVD_PROFILE_SCOPE(execute_profile, Execute, 0);
     MVD_PROFILE_SCOPE(parse_profile, Parse, 0);
+    if (const SelectStatement *select = select_templates_.bind(sql)) {
+      MVD_PROFILE_END(parse_profile);
+      return executeSelectResult(*select);
+    }
     Parser parser(sql, definitions_);
     // A comment-only tail is not a request and must not emit a response frame.
     // Reuse the parsed token stream instead of lexing every request twice.
@@ -3829,9 +3999,11 @@ class Database {
       return ExecResult{};
     }
     if (std::holds_alternative<CreateTableStatement>(statement)) {
+      select_templates_.clear();
       return createTable(std::get<CreateTableStatement>(statement).definition);
     }
     if (std::holds_alternative<CreateIndexStatement>(statement)) {
+      select_templates_.clear();
       return createIndex(std::get<CreateIndexStatement>(statement));
     }
     if (std::holds_alternative<InsertStatement>(statement)) {
@@ -3851,20 +4023,8 @@ class Database {
       return result;
     }
     const SelectStatement &select = std::get<SelectStatement>(statement);
-    ExecResult result = executeSelect(select);
-    if (result.spool) {
-      result.spool->prepare();
-    }
-    const TableDef &definition = requireTable(select.table).definition();
-    for (const SelectItem &item : select.items) {
-      if (item.star) {
-        for (const Column &column : definition.columns) {
-          result.columns.push_back(column.name);
-        }
-      } else if (!item.hidden) {
-        result.columns.push_back(item.output_name);
-      }
-    }
+    ExecResult result = executeSelectResult(select);
+    select_templates_.remember(sql, parser.singleProbeLiteral(), select);
     return result;
   }
 
@@ -4054,7 +4214,7 @@ class Database {
     std::unordered_set<uint32_t> written_tables;
     bool write_started = false;
     try {
-      for (const auto &[oid, changes] : overlay_) {
+      for (auto &[oid, changes] : overlay_) {
         if (changes.empty()) {
           continue;
         }
@@ -4348,6 +4508,22 @@ class Database {
     const uint64_t affected = static_cast<uint64_t>(matches_to_delete.size());
     publishStatementChanges(definition.oid, std::move(matches_to_delete));
     return ExecResult{false, affected, {}};
+  }
+
+  ExecResult executeSelectResult(const SelectStatement &statement) {
+    ExecResult result = executeSelect(statement);
+    if (result.spool) result.spool->prepare();
+    const TableDef &definition = requireTable(statement.table).definition();
+    for (const SelectItem &item : statement.items) {
+      if (item.star) {
+        for (const Column &column : definition.columns) {
+          result.columns.push_back(column.name);
+        }
+      } else if (!item.hidden) {
+        result.columns.push_back(item.output_name);
+      }
+    }
+    return result;
   }
 
   ExecResult executeSelect(const SelectStatement &statement) {
@@ -5764,6 +5940,7 @@ class Database {
   uint64_t next_txid_ = 1;
   std::unordered_map<std::string, std::unique_ptr<Table>> tables_;
   std::unordered_map<std::string, const TableDef *> definitions_;
+  SelectTemplateCache select_templates_;
   std::unordered_map<uint32_t, std::map<int64_t, std::optional<Row>>> overlay_;
   std::unordered_map<uint32_t, std::map<int64_t, std::optional<Row>>>
       shutdown_overlay_;

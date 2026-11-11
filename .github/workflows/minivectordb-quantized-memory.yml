@@ -2,7 +2,7 @@ name: MiniVectorDB quantized cache memory comparison
 
 on:
   push:
-    branches: [codex/performance-round8-20261111]
+    branches: [codex/performance-round9-20261111]
     paths:
       - src/minivectordb.cpp
       - src/*.hpp
@@ -24,11 +24,11 @@ jobs:
           fetch-depth: 1
       - name: Fetch the fixed comparison source
         run: |
-          git fetch --no-tags --depth=1 origin dd9406198cae0a9a6539fe54b2971e23c17a97db
+          git fetch --no-tags --depth=1 origin 29d7fa4ee48bb80bc06acb1b38ed8d5dc5177e2b
           mkdir -p build/quantized-memory
-          git show dd9406198cae0a9a6539fe54b2971e23c17a97db:src/minivectordb.cpp > build/quantized-memory/baseline.cpp
-          git show dd9406198cae0a9a6539fe54b2971e23c17a97db:src/compact_value.hpp > build/quantized-memory/compact_value.hpp
-          git show dd9406198cae0a9a6539fe54b2971e23c17a97db:src/quantized_block_scan.hpp > build/quantized-memory/quantized_block_scan.hpp
+          git show 29d7fa4ee48bb80bc06acb1b38ed8d5dc5177e2b:src/minivectordb.cpp > build/quantized-memory/baseline.cpp
+          git show 29d7fa4ee48bb80bc06acb1b38ed8d5dc5177e2b:src/compact_value.hpp > build/quantized-memory/compact_value.hpp
+          git show 29d7fa4ee48bb80bc06acb1b38ed8d5dc5177e2b:src/quantized_block_scan.hpp > build/quantized-memory/quantized_block_scan.hpp
       - name: Build with the submission compiler
         run: |
           docker run --rm --network=none --mount type=bind,src="$PWD",dst=/work --workdir /work \
