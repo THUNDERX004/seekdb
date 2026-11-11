@@ -2149,6 +2149,9 @@ class FileWriter {
       fail("IO_ERROR", "cannot open " + path.string() + " for append: " +
                            std::strerror(errno));
     }
+    // Aggregate record headers and payloads into larger writes. sync() still
+    // flushes this buffer before the durable commit marker is appended.
+    std::setvbuf(file_, buffer_.data(), _IOFBF, buffer_.size());
 #ifdef _WIN32
     if (_fseeki64(file_, 0, SEEK_END) != 0) {
       std::fclose(file_);
@@ -2213,6 +2216,7 @@ class FileWriter {
 
  private:
   fs::path path_;
+  std::array<char, 65536> buffer_;
   FILE *file_ = nullptr;
   uint64_t offset_ = 0;
 };
@@ -2362,6 +2366,7 @@ class Table {
     int64_t primary = 0;
     uint64_t offset = 0;
     const Row *cached = nullptr;
+    const float *vector_data = nullptr;
   };
   using IndexedRows = std::vector<IndexedRow>;
 
@@ -2381,6 +2386,13 @@ class Table {
           ? (cache_limit_bytes_ > cache_bytes_
                  ? cache_limit_bytes_ - cache_bytes_ : 0)
           : equalityMetadataLimitBytes();
+      size_t vector_column = std::numeric_limits<size_t>::max();
+      for (size_t i = 0; i < definition_.columns.size(); ++i) {
+        if (definition_.columns[i].type == ColumnType::Vector) {
+          vector_column = i;
+          break;
+        }
+      }
       size_t allocated = 0;
       const auto appendTo = [&](auto &index, auto key, int64_t primary,
                                 const Version &version) {
@@ -2395,7 +2407,12 @@ class Table {
         IndexedRows &rows = entry->second;
         const size_t old_capacity = rows.capacity();
         rows.push_back({primary, version.offset,
-                        version.cached ? &version.row : nullptr});
+                        version.cached ? &version.row : nullptr,
+                        version.cached &&
+                                vector_column != std::numeric_limits<size_t>::max() &&
+                                version.row[vector_column].vector.size() ==
+                                    definition_.columns[vector_column].length
+                            ? version.row[vector_column].vector.data() : nullptr});
         allocated += (rows.capacity() - old_capacity) * sizeof(IndexedRows::value_type);
         if (allocated + staged_integer.bucket_count() * sizeof(void *) +
                 staged_text.bucket_count() * sizeof(void *) > available) {
@@ -2446,6 +2463,9 @@ class Table {
       integer_equality_index_.swap(staged_integer);
       text_equality_index_.swap(staged_text);
       equality_column_ = column;
+      equality_bytes_ = allocated +
+          integer_equality_index_.bucket_count() * sizeof(void *) +
+          text_equality_index_.bucket_count() * sizeof(void *);
     }
     if (equality_disabled_) {
       return nullptr;
@@ -2458,6 +2478,42 @@ class Table {
     const auto found =
         integer_equality_index_.find(condition.value.integer);
     return found == integer_equality_index_.end() ? &empty : &found->second;
+  }
+
+  // Keep vector addresses beside row identities so exact TopK scans do not
+  // chase hash nodes and per-column storage for every rejected candidate.
+  // These views are valid only until a committed change or cache rebalance.
+  const IndexedRows *cachedDistanceCandidates(size_t vector_column,
+                                              const Condition *condition) {
+    if (!cache_enabled_) {
+      return nullptr;
+    }
+    if (condition != nullptr) {
+      return equalityCandidates(*condition);
+    }
+    if (!cached_distance_ready_) {
+      const size_t unused = cache_limit_bytes_ > cache_bytes_
+          ? cache_limit_bytes_ - cache_bytes_ : 0;
+      const size_t available = unused > equality_bytes_
+          ? unused - equality_bytes_ : 0;
+      if (versions_.size() > available / sizeof(IndexedRow)) {
+        return nullptr;
+      }
+      IndexedRows staged;
+      staged.reserve(versions_.size());
+      if (staged.capacity() > available / sizeof(IndexedRow)) {
+        return nullptr;
+      }
+      for (const auto &[primary, version] : versions_) {
+        const auto &vector = version.row[vector_column].vector;
+        staged.push_back({primary, version.offset, &version.row,
+                          vector.size() == definition_.columns[vector_column].length
+                              ? vector.data() : nullptr});
+      }
+      cached_distance_rows_.swap(staged);
+      cached_distance_ready_ = true;
+    }
+    return &cached_distance_rows_;
   }
 
   template <typename Callback>
@@ -3016,6 +3072,9 @@ class Table {
   fs::file_time_type verified_write_time_{};
   size_t equality_column_ = std::numeric_limits<size_t>::max();
   bool equality_disabled_ = false;
+  size_t equality_bytes_ = 0;
+  IndexedRows cached_distance_rows_;
+  bool cached_distance_ready_ = false;
   std::unordered_map<int64_t, IndexedRows> integer_equality_index_;
   std::unordered_map<std::string, IndexedRows> text_equality_index_;
 
@@ -3026,6 +3085,9 @@ class Table {
   }
 
   void clearEqualityIndex() noexcept {
+    IndexedRows{}.swap(cached_distance_rows_);
+    cached_distance_ready_ = false;
+    equality_bytes_ = 0;
     decltype(integer_equality_index_){}.swap(integer_equality_index_);
     decltype(text_equality_index_){}.swap(text_equality_index_);
     equality_column_ = std::numeric_limits<size_t>::max();
@@ -3487,7 +3549,7 @@ class Database {
     }
     const uint64_t txid = next_txid_++;
     std::vector<PendingRecord> pending;
-    std::unordered_map<uint32_t, std::unique_ptr<FileWriter>> writers;
+    std::unordered_set<uint32_t> written_tables;
     bool write_started = false;
     try {
       for (const auto &[oid, changes] : overlay_) {
@@ -3504,7 +3566,9 @@ class Database {
             table->appendChanges(txid, *writer, changes);
         pending.insert(pending.end(), records.begin(), records.end());
         writer->sync();
-        writers.emplace(oid, std::move(writer));
+        written_tables.insert(oid);
+        // The synced file needs no further writes in this commit. Closing it
+        // here bounds append buffers and descriptors even for many tables.
       }
       if (pending.empty()) {
         overlay_.clear();
@@ -3512,7 +3576,7 @@ class Database {
       }
       write_started = true;
 #ifdef MVD_TEST_FAULTS
-      if (writers.size() > 1 &&
+      if (written_tables.size() > 1 &&
           std::getenv("MVD_TEST_FAIL_WAL_APPEND") != nullptr) {
         auto torn = encodeCommitRecord(txid, pending.size());
         torn.resize(torn.size() / 2);
@@ -3525,10 +3589,10 @@ class Database {
       wal_writer_->sync();
       for (auto &[name, table] : tables_) {
         (void)name;
-        if (writers.contains(table->definition().oid)) {
+        if (written_tables.contains(table->definition().oid)) {
           table->applyPending(pending);
 #ifdef MVD_TEST_FAULTS
-          if (writers.size() > 1 &&
+          if (written_tables.size() > 1 &&
               std::getenv("MVD_TEST_FAIL_COMMIT_PUBLICATION") != nullptr) {
             throw std::bad_alloc();
           }
@@ -3982,15 +4046,40 @@ class Database {
                                                 distance_spec.probe.end());
       using DistanceKernel = double (*)(const float *, const double *, size_t);
       DistanceKernel distance_kernel = &squaredDistanceScalar<double>;
+      using ScreeningKernel = float (*)(const float *, const float *, size_t);
+      ScreeningKernel screening_kernel = nullptr;
 #if !defined(MVD_FORCE_SCALAR) && (defined(__GNUC__) || defined(__clang__)) && \
     (defined(__x86_64__) || defined(__i386__))
       if (__builtin_cpu_supports("avx512f")) {
         distance_kernel = &squaredDistanceAvx512<double>;
+        screening_kernel = &approximateDistanceAvx512;
       } else if (__builtin_cpu_supports("avx2") &&
                  __builtin_cpu_supports("fma")) {
         distance_kernel = &squaredDistanceAvx2<double>;
+        screening_kernel = &approximateDistanceAvx2;
       }
 #endif
+      // A float SIMD pass screens clearly worse rows. Its error envelope is
+      // deliberately wider than the positive-term accumulation bound, including
+      // subnormal/flush-to-zero error. Every survivor is reranked using the same
+      // double kernel and exact integer tie comparison as the general path.
+      if (prepared_probe.size() > 16384) {
+        screening_kernel = nullptr;
+      }
+      const double screening_multiplier =
+          1 + (static_cast<double>(prepared_probe.size()) + 16) * 32 *
+                  std::numeric_limits<float>::epsilon();
+      const double screening_absolute =
+          (static_cast<double>(prepared_probe.size()) + 16) * 64 *
+          static_cast<double>(std::numeric_limits<float>::min());
+      const auto clearlyWorse = [&](const float *vector, double threshold) {
+        if (screening_kernel == nullptr) {
+          return false;
+        }
+        const float score = screening_kernel(
+            vector, distance_spec.probe.data(), prepared_probe.size());
+        return std::isfinite(score) && static_cast<double>(score) > threshold;
+      };
       const int64_t wanted = statement.offset >
                   std::numeric_limits<int64_t>::max() - statement.limit
               ? std::numeric_limits<int64_t>::max()
@@ -4036,16 +4125,23 @@ class Database {
             1 + (static_cast<double>(prepared_probe.size()) + 16) * 16 *
                     std::numeric_limits<double>::epsilon();
         double reject_above = std::numeric_limits<double>::infinity();
+        double screening_above = std::numeric_limits<double>::infinity();
         const auto updateRejectionBoundary = [&] {
           reject_above = std::nextafter(
               payload_heap.front().squared_distance * rejection_multiplier,
               std::numeric_limits<double>::infinity());
+          screening_above =
+              reject_above * screening_multiplier + screening_absolute;
         };
         const auto consumeCandidate =
             [&](int64_t primary, const std::vector<float> &vector,
                 const std::vector<uint8_t> &payload) {
           if (vector.size() != prepared_probe.size()) {
             fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
+          }
+          if (payload_heap.size() == capacity &&
+              clearlyWorse(vector.data(), screening_above)) {
+            return true;
           }
           MVD_PROFILE_SCOPE(distance_profile, Distance, 255);
           const double squared = distance_kernel(
@@ -4110,44 +4206,73 @@ class Database {
           1 + (static_cast<double>(prepared_probe.size()) + 16) * 16 *
                   std::numeric_limits<double>::epsilon();
       double reject_above = std::numeric_limits<double>::infinity();
+      double screening_above = std::numeric_limits<double>::infinity();
       const auto updateRejectionBoundary = [&] {
         reject_above = std::nextafter(
             heap.front().squared_distance * rejection_multiplier,
             std::numeric_limits<double>::infinity());
+        screening_above =
+            reject_above * screening_multiplier + screening_absolute;
       };
-      forEachCandidateView(table, statement.conditions,
-          [&](int64_t primary, const Row &row, bool stable) {
-        if (!matches(definition, row, statement.conditions)) {
+      const auto consumeVector = [&](int64_t primary, const float *vector,
+                                     const Row *row, bool stable) {
+        if (heap.size() == capacity && clearlyWorse(vector, screening_above)) {
           return true;
         }
-        const auto &vector = row[distance_spec.column].vector;
-        if (vector.size() != prepared_probe.size()) {
-          fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
-        }
         MVD_PROFILE_SCOPE(distance_profile, Distance, 255);
-        const double squared = distance_kernel(vector.data(), prepared_probe.data(),
+        const double squared = distance_kernel(vector, prepared_probe.data(),
                                                 prepared_probe.size());
         MVD_PROFILE_END(distance_profile);
         if (heap.size() < capacity) {
           MVD_PROFILE_SCOPE(heap_profile, Heap, 31);
-          heap.push_back(Candidate{squared, primary, RetainedRow::keep(row, stable)});
+          heap.push_back(Candidate{squared, primary, RetainedRow::keep(*row, stable)});
           std::push_heap(heap.begin(), heap.end(), candidateLess);
           updateRejectionBoundary();
         } else if (squared <= reject_above) {
           const Candidate &worst = heap.front();
           const int comparison = compareDistances(
-              squared, vector, worst.squared_distance,
+              squared, (*row)[distance_spec.column].vector, worst.squared_distance,
               worst.row.get()[distance_spec.column].vector, distance_spec.probe);
           if (comparison < 0 || (comparison == 0 && primary < worst.primary)) {
             MVD_PROFILE_SCOPE(heap_profile, Heap, 31);
             std::pop_heap(heap.begin(), heap.end(), candidateLess);
-            heap.back() = Candidate{squared, primary, RetainedRow::keep(row, stable)};
+            heap.back() = Candidate{squared, primary, RetainedRow::keep(*row, stable)};
             std::push_heap(heap.begin(), heap.end(), candidateLess);
             updateRejectionBoundary();
           }
         }
         return true;
-      }, true);
+      };
+      const Table::IndexedRows *cached_candidates = nullptr;
+      if ((overlay_table == overlay_.end() || overlay_table->second.empty()) &&
+          compact_condition_shape &&
+          (statement.conditions.empty() ||
+           statement.conditions.front().column != definition.primary_key)) {
+        cached_candidates = table.cachedDistanceCandidates(
+            distance_spec.column, statement.conditions.empty()
+                ? nullptr : &statement.conditions.front());
+      }
+      if (cached_candidates != nullptr) {
+        for (const Table::IndexedRow &indexed : *cached_candidates) {
+          if (indexed.vector_data == nullptr) {
+            fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
+          }
+          consumeVector(indexed.primary, indexed.vector_data, indexed.cached, true);
+        }
+      } else {
+        size_t guaranteed_condition = std::numeric_limits<size_t>::max();
+        forEachCandidateView(table, statement.conditions,
+            [&](int64_t primary, const Row &row, bool stable) {
+          if (!matches(definition, row, statement.conditions, guaranteed_condition)) {
+            return true;
+          }
+          const auto &vector = row[distance_spec.column].vector;
+          if (vector.size() != prepared_probe.size()) {
+            fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
+          }
+          return consumeVector(primary, vector.data(), &row, stable);
+        }, true, &guaranteed_condition);
+      }
       std::sort_heap(heap.begin(), heap.end(), candidateLess);
       ExecResult result;
       result.select = true;
@@ -4481,6 +4606,80 @@ class Database {
 
 #if (defined(__GNUC__) || defined(__clang__)) && \
     (defined(__x86_64__) || defined(__i386__))
+  __attribute__((target("avx512f"))) static float approximateDistanceAvx512(
+      const float *left, const float *right, size_t size) {
+    __m512 sum0 = _mm512_setzero_ps();
+    __m512 sum1 = _mm512_setzero_ps();
+    __m512 sum2 = _mm512_setzero_ps();
+    __m512 sum3 = _mm512_setzero_ps();
+    size_t i = 0;
+    for (; i + 64 <= size; i += 64) {
+      const __m512 d0 = _mm512_sub_ps(_mm512_loadu_ps(left + i),
+                                     _mm512_loadu_ps(right + i));
+      const __m512 d1 = _mm512_sub_ps(_mm512_loadu_ps(left + i + 16),
+                                     _mm512_loadu_ps(right + i + 16));
+      const __m512 d2 = _mm512_sub_ps(_mm512_loadu_ps(left + i + 32),
+                                     _mm512_loadu_ps(right + i + 32));
+      const __m512 d3 = _mm512_sub_ps(_mm512_loadu_ps(left + i + 48),
+                                     _mm512_loadu_ps(right + i + 48));
+      sum0 = _mm512_fmadd_ps(d0, d0, sum0);
+      sum1 = _mm512_fmadd_ps(d1, d1, sum1);
+      sum2 = _mm512_fmadd_ps(d2, d2, sum2);
+      sum3 = _mm512_fmadd_ps(d3, d3, sum3);
+    }
+    sum0 = _mm512_add_ps(_mm512_add_ps(sum0, sum1), _mm512_add_ps(sum2, sum3));
+    for (; i + 16 <= size; i += 16) {
+      const __m512 d = _mm512_sub_ps(_mm512_loadu_ps(left + i),
+                                    _mm512_loadu_ps(right + i));
+      sum0 = _mm512_fmadd_ps(d, d, sum0);
+    }
+    float sum = _mm512_reduce_add_ps(sum0);
+    for (; i < size; ++i) {
+      const float difference = left[i] - right[i];
+      sum += difference * difference;
+    }
+    return sum;
+  }
+
+  __attribute__((target("avx2,fma"))) static float approximateDistanceAvx2(
+      const float *left, const float *right, size_t size) {
+    __m256 sum0 = _mm256_setzero_ps();
+    __m256 sum1 = _mm256_setzero_ps();
+    __m256 sum2 = _mm256_setzero_ps();
+    __m256 sum3 = _mm256_setzero_ps();
+    size_t i = 0;
+    for (; i + 32 <= size; i += 32) {
+      const __m256 d0 = _mm256_sub_ps(_mm256_loadu_ps(left + i),
+                                     _mm256_loadu_ps(right + i));
+      const __m256 d1 = _mm256_sub_ps(_mm256_loadu_ps(left + i + 8),
+                                     _mm256_loadu_ps(right + i + 8));
+      const __m256 d2 = _mm256_sub_ps(_mm256_loadu_ps(left + i + 16),
+                                     _mm256_loadu_ps(right + i + 16));
+      const __m256 d3 = _mm256_sub_ps(_mm256_loadu_ps(left + i + 24),
+                                     _mm256_loadu_ps(right + i + 24));
+      sum0 = _mm256_fmadd_ps(d0, d0, sum0);
+      sum1 = _mm256_fmadd_ps(d1, d1, sum1);
+      sum2 = _mm256_fmadd_ps(d2, d2, sum2);
+      sum3 = _mm256_fmadd_ps(d3, d3, sum3);
+    }
+    sum0 = _mm256_add_ps(_mm256_add_ps(sum0, sum1), _mm256_add_ps(sum2, sum3));
+    for (; i + 8 <= size; i += 8) {
+      const __m256 d = _mm256_sub_ps(_mm256_loadu_ps(left + i),
+                                    _mm256_loadu_ps(right + i));
+      sum0 = _mm256_fmadd_ps(d, d, sum0);
+    }
+    __m128 sum4 = _mm_add_ps(_mm256_castps256_ps128(sum0),
+                             _mm256_extractf128_ps(sum0, 1));
+    sum4 = _mm_hadd_ps(sum4, sum4);
+    sum4 = _mm_hadd_ps(sum4, sum4);
+    float sum = _mm_cvtss_f32(sum4);
+    for (; i < size; ++i) {
+      const float difference = left[i] - right[i];
+      sum += difference * difference;
+    }
+    return sum;
+  }
+
   __attribute__((target("avx512f"))) static __m512d loadProbe8(
       const float *probe) {
     return _mm512_cvtps_pd(_mm256_loadu_ps(probe));

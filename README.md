@@ -196,8 +196,12 @@ verification while the data file size and modification time remain unchanged;
 an external modification invalidates the snapshot and restores per-record CRC
 checks. Cached scans do not inspect the data file solely for this optimization.
 
-Distance subtraction and accumulation use double precision. The exact TopK
-scan prepares the constant probe and chooses the CPU kernel once per query.
+Reported distances and retained-candidate comparisons use double precision.
+The exact TopK scan prepares the constant probe and chooses the CPU kernel once
+per query. AVX2/FMA and AVX512 kernels can first reject clearly worse candidates
+with a float SIMD pass and a conservative error envelope. Nonfinite float scores,
+near-boundary candidates, scalar CPUs, and dimensions above 16384 retain the
+double path. This screen never supplies an approximate returned distance.
 When approximate distances are within a conservative rounding-error bound, a
 from-scratch integer accumulator compares squared distances exactly for the
 stored float32 values. This avoids false ties for mixed large/small components,
@@ -347,3 +351,27 @@ version hashes, known gaps and failure-to-fix evidence. New regression commands:
     python -X utf8 -B tests/test_formal_sql_edges.py ./build/minivectordb
 
 The existing tests/validate_all.py command now includes both new suites.
+
+
+## 2026-11-11 performance follow-up
+
+The performance candidate starts from the platform-admitted b235ce181 revision.
+Fully cached exact TopK queries with no overlay and no predicate or one scalar
+equality can use contiguous row-identity/vector-address entries. The directory
+borrows vectors; it does not duplicate the vector matrix. Directory capacity and
+equality-index allocations share the remaining row-cache budget. Committed
+changes, cache eviction and budget changes invalidate these views before freeing
+or replacing rows; unsupported shapes retain the general candidate path.
+
+Append streams use a bounded 64 KiB buffer. Every table stream is flushed and
+synced before the durable transaction marker, then closed before another table
+stream is opened. Commit acknowledgement still follows the synced WAL marker.
+The on-disk format and JSON protocol are unchanged.
+
+The final paired JSON measurements and numerical-screen rationale are recorded
+in refine-logs/PERFORMANCE_20261111.md, with compact machine-readable evidence in
+bench/results/performance-20261111-json.json. These are local Windows timings,
+not a prediction of the platform E score. New cached TopK tests check transaction
+visibility, invalidation, restart, float32 extremes and near-unit ULP boundaries
+with an independent integer-distance oracle; validate_all.py includes them for
+both normal and forced-scalar builds. agent/conversation.json is unchanged.
