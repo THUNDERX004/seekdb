@@ -283,6 +283,37 @@ class CachedTopKTests(unittest.TestCase):
                                limit=limit, include_vector=False)
         client.shutdown()
 
+    def test_screened_rows_keep_scores_filters_and_partial_batches_aligned(self):
+        client = self.open_client()
+        for dimension in (1, 7, 8, 9, 15, 16, 17, 127, 128, 129, 16384):
+            with self.subTest(dimension=dimension):
+                table = f"screened_{dimension}"
+                fixture = [
+                    Row(100 - index * 11, 7 if index % 3 else 8,
+                        "red" if index % 3 else "blue", f"varied {index}",
+                        tuple(((index * 19 + axis * 7) % 129 - 64) / 32
+                              for axis in range(dimension)))
+                    for index in range(19)
+                ]
+                self.create(client, table, dimension, fixture)
+                # These finite, well-separated distances allow screening to
+                # reject rows. Mixed PKs and filtered subsets independently
+                # expose a score attributed to the wrong row or a skipped tail.
+                for probe in ((0.0,) * dimension, fixture[5].vector):
+                    scores = {row.primary: exact_squared(row.vector, probe)
+                              for row in fixture}
+                    for limit, offset, where, predicate in (
+                        (1, 0, "", None),
+                        (5, 2, "", None),
+                        (1, 0, "tag=7", lambda row: row.tag == 7),
+                        (4, 1, "category='blue'", lambda row: row.category == "blue"),
+                        (20, 0, "", None),
+                    ):
+                        self.query(client, table, probe, fixture, scores,
+                                   where, predicate, limit=limit, offset=offset,
+                                   include_vector=False)
+        client.shutdown()
+
 
 
 if __name__ == "__main__":

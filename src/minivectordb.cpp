@@ -838,7 +838,21 @@ class JsonRequestParser {
 
   std::string string() {
     expect('"');
-    std::string result;
+    const size_t start = pos_;
+    // SQL and vector payloads usually contain ordinary ASCII. Copy that span
+    // once; only escaped or non-ASCII strings need decoding and UTF-8 checks.
+    while (pos_ < input_.size()) {
+      const unsigned char c = static_cast<unsigned char>(input_[pos_]);
+      if (c == '"') {
+        const size_t length = pos_++ - start;
+        return std::string(input_.substr(start, length));
+      }
+      if (c == '\\' || c < 0x20U || c >= 0x80U) {
+        break;
+      }
+      ++pos_;
+    }
+    std::string result(input_.substr(start, pos_ - start));
     while (pos_ < input_.size()) {
       const unsigned char c = static_cast<unsigned char>(input_[pos_++]);
       if (c == '"') {
@@ -1045,7 +1059,13 @@ class Lexer {
       if (c == '\'' || c == '"') {
         const char quote = static_cast<char>(c);
         ++pos_;
-        std::string value;
+        const size_t text_start = pos_;
+        while (pos_ < input_.size() && input_[pos_] != quote &&
+               input_[pos_] != '\\') {
+          ++pos_;
+        }
+        // Keep the existing decoder for doubled quotes and backslash escapes.
+        std::string value(input_.substr(text_start, pos_ - text_start));
         bool closed = false;
         while (pos_ < input_.size()) {
           char n = input_[pos_++];
@@ -2370,6 +2390,16 @@ class Table {
   };
   using IndexedRows = std::vector<IndexedRow>;
 
+  static void orderCachedVectors(IndexedRows &rows) {
+    // Reuse the address directory to visit nearby allocations together. This
+    // changes scan order only; the exact distance/primary-key comparator still
+    // determines TopK membership and output order.
+    std::sort(rows.begin(), rows.end(), [](const IndexedRow &a,
+                                         const IndexedRow &b) {
+      return std::less<const float *>{}(a.vector_data, b.vector_data);
+    });
+  }
+
   const IndexedRows *equalityCandidates(const Condition &condition) {
     if (equality_column_ == condition.column && equality_disabled_) {
       return nullptr;
@@ -2460,6 +2490,15 @@ class Table {
           }
         }
       }
+      if (cache_enabled_ &&
+          vector_column != std::numeric_limits<size_t>::max()) {
+        for (auto &[key, rows] : staged_integer) {
+          orderCachedVectors(rows);
+        }
+        for (auto &[key, rows] : staged_text) {
+          orderCachedVectors(rows);
+        }
+      }
       integer_equality_index_.swap(staged_integer);
       text_equality_index_.swap(staged_text);
       equality_column_ = column;
@@ -2510,6 +2549,7 @@ class Table {
                           vector.size() == definition_.columns[vector_column].length
                               ? vector.data() : nullptr});
       }
+      orderCachedVectors(staged);
       cached_distance_rows_.swap(staged);
       cached_distance_ready_ = true;
     }
@@ -4048,15 +4088,20 @@ class Database {
       DistanceKernel distance_kernel = &squaredDistanceScalar<double>;
       using ScreeningKernel = float (*)(const float *, const float *, size_t);
       ScreeningKernel screening_kernel = nullptr;
+      using ScreeningBatchKernel = void (*)(
+          const Table::IndexedRow *, const float *, size_t, float *);
+      ScreeningBatchKernel screening_batch_kernel = nullptr;
 #if !defined(MVD_FORCE_SCALAR) && (defined(__GNUC__) || defined(__clang__)) && \
     (defined(__x86_64__) || defined(__i386__))
       if (__builtin_cpu_supports("avx512f")) {
         distance_kernel = &squaredDistanceAvx512<double>;
         screening_kernel = &approximateDistanceAvx512;
+        screening_batch_kernel = &approximateDistanceBatchAvx512;
       } else if (__builtin_cpu_supports("avx2") &&
                  __builtin_cpu_supports("fma")) {
         distance_kernel = &squaredDistanceAvx2<double>;
         screening_kernel = &approximateDistanceAvx2;
+        screening_batch_kernel = &approximateDistanceBatchAvx2;
       }
 #endif
       // A float SIMD pass screens clearly worse rows. Its error envelope is
@@ -4065,6 +4110,7 @@ class Database {
       // double kernel and exact integer tie comparison as the general path.
       if (prepared_probe.size() > 16384) {
         screening_kernel = nullptr;
+        screening_batch_kernel = nullptr;
       }
       const double screening_multiplier =
           1 + (static_cast<double>(prepared_probe.size()) + 16) * 32 *
@@ -4215,8 +4261,13 @@ class Database {
             reject_above * screening_multiplier + screening_absolute;
       };
       const auto consumeVector = [&](int64_t primary, const float *vector,
-                                     const Row *row, bool stable) {
-        if (heap.size() == capacity && clearlyWorse(vector, screening_above)) {
+                                     const Row *row, bool stable,
+                                     const float *screen = nullptr) {
+        if (heap.size() == capacity &&
+            (screen != nullptr
+                 ? std::isfinite(*screen) &&
+                       static_cast<double>(*screen) > screening_above
+                 : clearlyWorse(vector, screening_above))) {
           return true;
         }
         MVD_PROFILE_SCOPE(distance_profile, Distance, 255);
@@ -4253,7 +4304,26 @@ class Database {
                 ? nullptr : &statement.conditions.front());
       }
       if (cached_candidates != nullptr) {
-        for (const Table::IndexedRow &indexed : *cached_candidates) {
+        size_t i = 0;
+        if (screening_batch_kernel != nullptr) {
+          for (; cached_candidates->size() - i >= 4; i += 4) {
+            const auto *batch = cached_candidates->data() + i;
+            for (size_t j = 0; j < 4; ++j) {
+              if (batch[j].vector_data == nullptr) {
+                fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
+              }
+            }
+            float scores[4];
+            screening_batch_kernel(batch, distance_spec.probe.data(),
+                                   prepared_probe.size(), scores);
+            for (size_t j = 0; j < 4; ++j) {
+              consumeVector(batch[j].primary, batch[j].vector_data,
+                            batch[j].cached, true, &scores[j]);
+            }
+          }
+        }
+        for (; i < cached_candidates->size(); ++i) {
+          const Table::IndexedRow &indexed = (*cached_candidates)[i];
           if (indexed.vector_data == nullptr) {
             fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
           }
@@ -4606,6 +4676,74 @@ class Database {
 
 #if (defined(__GNUC__) || defined(__clang__)) && \
     (defined(__x86_64__) || defined(__i386__))
+  // Four independent rows share probe loads and one kernel call. Scores only
+  // screen candidates; exact survivors still use double/integer comparison.
+  __attribute__((target("avx512f"))) static void approximateDistanceBatchAvx512(
+      const Table::IndexedRow *rows, const float *probe, size_t size,
+      float *scores) {
+    __m512 sum0 = _mm512_setzero_ps();
+    __m512 sum1 = _mm512_setzero_ps();
+    __m512 sum2 = _mm512_setzero_ps();
+    __m512 sum3 = _mm512_setzero_ps();
+    size_t i = 0;
+    for (; i + 16 <= size; i += 16) {
+      const __m512 p = _mm512_loadu_ps(probe + i);
+      const __m512 d0 = _mm512_sub_ps(_mm512_loadu_ps(rows[0].vector_data + i), p);
+      const __m512 d1 = _mm512_sub_ps(_mm512_loadu_ps(rows[1].vector_data + i), p);
+      const __m512 d2 = _mm512_sub_ps(_mm512_loadu_ps(rows[2].vector_data + i), p);
+      const __m512 d3 = _mm512_sub_ps(_mm512_loadu_ps(rows[3].vector_data + i), p);
+      sum0 = _mm512_fmadd_ps(d0, d0, sum0);
+      sum1 = _mm512_fmadd_ps(d1, d1, sum1);
+      sum2 = _mm512_fmadd_ps(d2, d2, sum2);
+      sum3 = _mm512_fmadd_ps(d3, d3, sum3);
+    }
+    scores[0] = _mm512_reduce_add_ps(sum0);
+    scores[1] = _mm512_reduce_add_ps(sum1);
+    scores[2] = _mm512_reduce_add_ps(sum2);
+    scores[3] = _mm512_reduce_add_ps(sum3);
+    for (; i < size; ++i) {
+      for (size_t j = 0; j < 4; ++j) {
+        const float difference = rows[j].vector_data[i] - probe[i];
+        scores[j] += difference * difference;
+      }
+    }
+  }
+
+  __attribute__((target("avx2,fma"))) static void approximateDistanceBatchAvx2(
+      const Table::IndexedRow *rows, const float *probe, size_t size,
+      float *scores) {
+    __m256 sum0 = _mm256_setzero_ps();
+    __m256 sum1 = _mm256_setzero_ps();
+    __m256 sum2 = _mm256_setzero_ps();
+    __m256 sum3 = _mm256_setzero_ps();
+    size_t i = 0;
+    for (; i + 8 <= size; i += 8) {
+      const __m256 p = _mm256_loadu_ps(probe + i);
+      const __m256 d0 = _mm256_sub_ps(_mm256_loadu_ps(rows[0].vector_data + i), p);
+      const __m256 d1 = _mm256_sub_ps(_mm256_loadu_ps(rows[1].vector_data + i), p);
+      const __m256 d2 = _mm256_sub_ps(_mm256_loadu_ps(rows[2].vector_data + i), p);
+      const __m256 d3 = _mm256_sub_ps(_mm256_loadu_ps(rows[3].vector_data + i), p);
+      sum0 = _mm256_fmadd_ps(d0, d0, sum0);
+      sum1 = _mm256_fmadd_ps(d1, d1, sum1);
+      sum2 = _mm256_fmadd_ps(d2, d2, sum2);
+      sum3 = _mm256_fmadd_ps(d3, d3, sum3);
+    }
+    const __m256 sums[] = {sum0, sum1, sum2, sum3};
+    for (size_t j = 0; j < 4; ++j) {
+      __m128 sum = _mm_add_ps(_mm256_castps256_ps128(sums[j]),
+                              _mm256_extractf128_ps(sums[j], 1));
+      sum = _mm_hadd_ps(sum, sum);
+      sum = _mm_hadd_ps(sum, sum);
+      scores[j] = _mm_cvtss_f32(sum);
+    }
+    for (; i < size; ++i) {
+      for (size_t j = 0; j < 4; ++j) {
+        const float difference = rows[j].vector_data[i] - probe[i];
+        scores[j] += difference * difference;
+      }
+    }
+  }
+
   __attribute__((target("avx512f"))) static float approximateDistanceAvx512(
       const float *left, const float *right, size_t size) {
     __m512 sum0 = _mm512_setzero_ps();

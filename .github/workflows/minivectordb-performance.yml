@@ -1,0 +1,65 @@
+name: MiniVectorDB paired Linux benchmark
+
+on:
+  push:
+    branches: [codex/performance-round2-20261111]
+    paths:
+      - src/minivectordb.cpp
+      - bench/evaluate.py
+      - .github/workflows/minivectordb-performance.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  paired:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Fetch the fixed comparison source
+        run: |
+          git fetch --no-tags --depth=1 origin 3593447905bb00771d7d72ae341ba6a961f71639
+          mkdir -p build/paired-linux
+          git show 3593447905bb00771d7d72ae341ba6a961f71639:src/minivectordb.cpp > build/paired-linux/baseline.cpp
+      - name: Build both versions with the submission compiler
+        run: |
+          docker run --rm --network=none --mount type=bind,src="$PWD",dst=/work --workdir /work \
+            gcc:14.3.0-bookworm@sha256:5e927c284bf55a7dc796262e311a0703344f62f41f5621eb56843111b1d37e15 \
+            bash -euc '
+              flags="-std=c++20 -O3 -DNDEBUG -Wall -Wextra -Wpedantic -static-libstdc++ -static-libgcc"
+              g++ $flags build/paired-linux/baseline.cpp -o build/paired-linux/baseline
+              g++ $flags src/minivectordb.cpp -o build/paired-linux/candidate
+            '
+      - name: Install the independent oracle
+        run: python3 -m pip install numpy==2.1.3
+      - name: Run serial paired JSON measurements and independent verification
+        run: |
+          python3 -X utf8 -B bench/evaluate.py \
+            --baseline build/paired-linux/baseline --candidate build/paired-linux/candidate \
+            --baseline-protocol json --candidate-protocol json \
+            --runs 7 --rows 10000 --dim 128 --queries 1000 --batch 100 --k 10 \
+            --seed 20261210 --report build/paired-linux/result.json > build/paired-linux/stdout.txt
+      - name: Print comparison evidence
+        if: always()
+        run: |
+          git rev-parse HEAD
+          sha256sum src/minivectordb.cpp build/paired-linux/baseline build/paired-linux/candidate
+          lscpu | head -35
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('build/paired-linux/result.json')
+          if not path.exists():
+              raise SystemExit('No complete benchmark report')
+          report = json.loads(path.read_text())
+          for run in report['runs']:
+              for result in run['results'].values():
+                  result.pop('write_batch_ns', None)
+                  result.pop('queries_raw', None)
+          print('PAIRED_LINUX_EVIDENCE ' + json.dumps(report, separators=(',', ':')))
+          PY
