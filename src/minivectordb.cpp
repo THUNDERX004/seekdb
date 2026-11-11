@@ -2217,6 +2217,224 @@ class FileWriter {
   uint64_t offset_ = 0;
 };
 
+// Transaction payloads share one budget across tables and statements. Only
+// row metadata stays resident after this budget fills; private rows spill to an
+// anonymous file on /data and never enter the durable log before COMMIT.
+class TransactionStore {
+ public:
+  explicit TransactionStore(fs::path directory)
+      : directory_(std::move(directory)) {
+    constexpr size_t maximum = 8ULL * 1024ULL * 1024ULL;
+    limit_ = maximum;
+    if (const auto memory = detectedMemoryLimitBytes()) {
+      limit_ = static_cast<size_t>(std::clamp(
+          *memory / 16, uint64_t{256} * 1024, static_cast<uint64_t>(maximum)));
+    }
+    if (const char *configured = std::getenv("MVD_TRANSACTION_MEMORY_MB")) {
+      char *end = nullptr;
+      errno = 0;
+      const auto megabytes = std::strtoull(configured, &end, 10);
+      if (errno == 0 && end != configured && *end == '\0' &&
+          megabytes <= std::numeric_limits<size_t>::max() / (1024ULL * 1024ULL)) {
+        limit_ = static_cast<size_t>(megabytes) * 1024ULL * 1024ULL;
+      }
+    }
+  }
+
+  bool retain(size_t bytes) noexcept {
+    if (bytes > limit_ - resident_bytes_) {
+      return false;
+    }
+    resident_bytes_ += bytes;
+    return true;
+  }
+
+  void release(size_t bytes) noexcept { resident_bytes_ -= bytes; }
+
+  std::pair<uint64_t, size_t> append(const Row &row) {
+    serializeRowInto(row, payload_);
+    if (payload_.size() > static_cast<uint64_t>(
+            std::numeric_limits<int64_t>::max()) - file_bytes_) {
+      fail("VALUE_TOO_LARGE", "transaction temporary file is too large");
+    }
+    if (!file_) {
+      open();
+    }
+    seek(file_bytes_);
+#ifdef MVD_TEST_FAULTS
+    if (std::getenv("MVD_TEST_FAIL_TRANSACTION_WRITE") != nullptr) {
+      fail("IO_ERROR", "injected transaction temporary write failure");
+    }
+#endif
+    if (std::fwrite(payload_.data(), 1, payload_.size(), file_.get()) !=
+        payload_.size()) {
+      fail("IO_ERROR", "cannot write transaction temporary file");
+    }
+    const auto result = std::pair{file_bytes_, payload_.size()};
+    file_bytes_ += payload_.size();
+    return result;
+  }
+
+  Row read(uint64_t offset, size_t bytes) {
+#ifdef MVD_TEST_FAULTS
+    if (std::getenv("MVD_TEST_FAIL_TRANSACTION_READ") != nullptr) {
+      fail("IO_ERROR", "injected transaction temporary read failure");
+    }
+#endif
+    if (!file_ || offset > file_bytes_ || bytes > file_bytes_ - offset) {
+      fail("CORRUPT_DATA", "transaction temporary row is out of bounds");
+    }
+    payload_.resize(bytes);
+    seek(offset);
+    if (std::fread(payload_.data(), 1, bytes, file_.get()) != bytes) {
+      fail("IO_ERROR", "cannot read transaction temporary file");
+    }
+    return deserializeRow(payload_);
+  }
+
+  void reset() noexcept {
+    file_.reset();
+    std::vector<uint8_t>{}.swap(payload_);
+    file_bytes_ = 0;
+  }
+
+ private:
+  void open() {
+    int descriptor = -1;
+#ifdef _WIN32
+    static uint64_t sequence = 0;
+    for (unsigned attempt = 0; attempt < 64; ++attempt) {
+      const fs::path path = directory_ /
+          (".mvd-transaction-" + std::to_string(_getpid()) + "-" +
+           std::to_string(++sequence) + ".tmp");
+      descriptor = _wopen(path.c_str(), _O_RDWR | _O_CREAT | _O_EXCL |
+                         _O_BINARY | _O_TEMPORARY | _O_NOINHERIT,
+                         _S_IREAD | _S_IWRITE);
+      if (descriptor >= 0 || errno != EEXIST) {
+        break;
+      }
+    }
+#else
+    std::string pattern = (directory_ / ".mvd-transaction-XXXXXX").string();
+    descriptor = mkstemp(pattern.data());
+    if (descriptor >= 0 && unlink(pattern.c_str()) != 0) {
+      close(descriptor);
+      fail("IO_ERROR", "cannot unlink transaction temporary file");
+    }
+#endif
+    if (descriptor < 0) {
+      fail("IO_ERROR", "cannot create transaction temporary file");
+    }
+#ifdef _WIN32
+    FILE *stream = _fdopen(descriptor, "w+b");
+#else
+    FILE *stream = fdopen(descriptor, "w+b");
+#endif
+    if (stream == nullptr) {
+#ifdef _WIN32
+      _close(descriptor);
+#else
+      close(descriptor);
+#endif
+      fail("IO_ERROR", "cannot open transaction temporary stream");
+    }
+    file_.reset(stream);
+  }
+
+  void seek(uint64_t offset) {
+    std::clearerr(file_.get());
+#ifdef _WIN32
+    const int result = _fseeki64(file_.get(), static_cast<int64_t>(offset), SEEK_SET);
+#else
+    const int result = fseeko(file_.get(), static_cast<off_t>(offset), SEEK_SET);
+#endif
+    if (result != 0) {
+      fail("IO_ERROR", "cannot seek transaction temporary file");
+    }
+  }
+
+  fs::path directory_;
+  std::unique_ptr<FILE, decltype(&std::fclose)> file_{nullptr, &std::fclose};
+  std::vector<uint8_t> payload_;
+  uint64_t file_bytes_ = 0;
+  size_t limit_ = 0;
+  size_t resident_bytes_ = 0;
+};
+
+class ChangedRow {
+ public:
+  ChangedRow(std::nullopt_t) noexcept {}
+
+  ChangedRow(Row row, std::shared_ptr<TransactionStore> store)
+      : store_(std::move(store)), present_(true) {
+    const size_t bytes = cachedRowBytes(row);
+    if (store_->retain(bytes)) {
+      static_assert(std::is_nothrow_move_constructible_v<Row>);
+      resident_.emplace(std::move(row));
+      resident_bytes_ = bytes;
+    } else {
+      const auto [offset, size] = store_->append(row);
+      offset_ = offset;
+      serialized_bytes_ = size;
+    }
+  }
+
+  ChangedRow(ChangedRow &&other) noexcept { swap(other); }
+  ChangedRow &operator=(ChangedRow &&other) noexcept {
+    if (this != &other) {
+      ChangedRow previous(std::nullopt);
+      previous.swap(*this);
+      swap(other);
+    }
+    return *this;
+  }
+  ChangedRow(const ChangedRow &) = delete;
+  ChangedRow &operator=(const ChangedRow &) = delete;
+
+  ~ChangedRow() {
+    if (resident_bytes_ != 0) {
+      store_->release(resident_bytes_);
+    }
+  }
+
+  bool has_value() const noexcept { return present_; }
+  const Row *residentRow() const noexcept {
+    return resident_ ? &*resident_ : nullptr;
+  }
+
+  template <typename Callback>
+  bool visit(Callback &&callback) const {
+    if (!present_) {
+      return true;
+    }
+    if (resident_) {
+      return callback(*resident_, true);
+    }
+    Row row = store_->read(offset_, serialized_bytes_);
+    return callback(row, false);
+  }
+
+  void swap(ChangedRow &other) noexcept {
+    resident_.swap(other.resident_);
+    store_.swap(other.store_);
+    std::swap(offset_, other.offset_);
+    std::swap(serialized_bytes_, other.serialized_bytes_);
+    std::swap(resident_bytes_, other.resident_bytes_);
+    std::swap(present_, other.present_);
+  }
+  friend void swap(ChangedRow &a, ChangedRow &b) noexcept { a.swap(b); }
+
+ private:
+  std::optional<Row> resident_;
+  std::shared_ptr<TransactionStore> store_;
+  uint64_t offset_ = 0;
+  size_t serialized_bytes_ = 0;
+  size_t resident_bytes_ = 0;
+  bool present_ = false;
+};
+
+using Changes = std::map<int64_t, ChangedRow>;
+
 struct Version {
   uint64_t offset = 0;
   bool cached = false;
@@ -2463,7 +2681,7 @@ class Table {
   template <typename Callback>
   bool forEachIndexedBase(
       const IndexedRows &rows,
-      const std::map<int64_t, std::optional<Row>> *overlay,
+      const Changes *overlay,
       Callback &&callback) const {
     std::ifstream input;
     uint64_t input_position = std::numeric_limits<uint64_t>::max();
@@ -2498,7 +2716,7 @@ class Table {
 
   template <typename Callback>
   bool forEachBase(Callback &&callback,
-                   const std::map<int64_t, std::optional<Row>> *overlay,
+                   const Changes *overlay,
                    bool ordered = false) const {
     std::ifstream input;
     uint64_t input_position = std::numeric_limits<uint64_t>::max();
@@ -2510,8 +2728,9 @@ class Table {
       if (overlay != nullptr) {
         const auto changed = overlay->find(primary);
         if (changed != overlay->end()) {
-          return !changed->second.has_value() ||
-                 callback(primary, *changed->second, true);
+          return changed->second.visit([&](const Row &row, bool stable) {
+            return callback(primary, row, stable);
+          });
         }
       }
       if (version.cached) {
@@ -2556,7 +2775,7 @@ class Table {
   template <typename Callback>
   bool forEachPrimaryRange(
       const PrimaryKeyRange &range,
-      const std::map<int64_t, std::optional<Row>> *overlay,
+      const Changes *overlay,
       Callback &&callback, bool descending = false) const {
     if (range.empty) {
       return true;
@@ -2566,7 +2785,6 @@ class Table {
         std::lower_bound(keys.begin(), keys.end(), range.minimum) - keys.begin());
     size_t end = static_cast<size_t>(
         std::upper_bound(keys.begin(), keys.end(), range.maximum) - keys.begin());
-    using Changes = std::map<int64_t, std::optional<Row>>;
     auto changed_begin = overlay == nullptr ? Changes::const_iterator{}
                                            : overlay->lower_bound(range.minimum);
     auto changed_end = overlay == nullptr ? Changes::const_iterator{}
@@ -2589,8 +2807,9 @@ class Table {
         if (has_base && changed->first == base_key) {
           descending ? --end : ++begin;
         }
-        if (changed->second.has_value() &&
-            !callback(changed->first, *changed->second, true)) {
+        if (!changed->second.visit([&](const Row &row, bool stable) {
+              return callback(changed->first, row, stable);
+            })) {
           return false;
         }
         descending ? --changed_end : ++changed_begin;
@@ -2619,10 +2838,8 @@ class Table {
     return true;
   }
 
-  std::vector<PendingRecord> appendChanges(uint64_t txid,
-                                           FileWriter &writer,
-                                           const std::map<int64_t, std::optional<Row>>
-                                               &changes) {
+  std::vector<PendingRecord> appendChanges(uint64_t txid, FileWriter &writer,
+                                           const Changes &changes) {
     std::vector<PendingRecord> pending;
     pending.reserve(changes.size());
     std::vector<uint8_t> payload;
@@ -2633,7 +2850,10 @@ class Table {
       if (row.has_value()) {
         op = containsBase(primary) ? static_cast<uint16_t>(2)
                                    : static_cast<uint16_t>(1);
-        serializeRowInto(*row, payload);
+        row.visit([&](const Row &value, bool) {
+          serializeRowInto(value, payload);
+          return true;
+        });
       } else {
         op = 3;
         appendScalar<int64_t>(payload, primary);
@@ -2644,7 +2864,7 @@ class Table {
       // The transaction overlay remains alive until every table is published.
       // Pending metadata does not need a second full copy of each vector row.
       pending.push_back({definition_.oid, primary, op,
-                         row.has_value() ? &*row : nullptr, offset});
+                         row.residentRow(), offset});
       next_offset_ = writer.offset();
     }
     return pending;
@@ -2689,7 +2909,7 @@ class Table {
       value.offset = record.offset;
       value.cached = cache_enabled_;
       if (value.cached) {
-        value.row = *record.row;
+        value.row = record.row != nullptr ? *record.row : readRow(record.offset);
         cache_bytes_ += cachedRowBytes(value.row);
       }
       versions_[record.primary] = std::move(value);
@@ -3211,7 +3431,8 @@ bool valuesCompare(const Value &left, const Value &right, CompareOp op,
 class Database {
  public:
   explicit Database(fs::path data_dir, bool ann, bool json_output = false)
-      : data_dir_(std::move(data_dir)), ann_mode_(ann), json_output_(json_output) {
+      : data_dir_(std::move(data_dir)), ann_mode_(ann), json_output_(json_output),
+        transaction_store_(std::make_shared<TransactionStore>(data_dir_)) {
     fs::create_directories(data_dir_);
     loadCatalog();
     rebalanceRowCaches();
@@ -3250,7 +3471,7 @@ class Database {
           fail("TRANSACTION_ACTIVE", "a transaction is already active");
         }
         explicit_transaction_ = true;
-        overlay_.clear();
+        clearTransactionChanges();
       } else if (first == "commit" || first == "end") {
         commitTransaction();
         explicit_transaction_ = false;
@@ -3305,7 +3526,7 @@ class Database {
   }
 
   void rollbackSilently() noexcept {
-    overlay_.clear();
+    clearTransactionChanges();
     explicit_transaction_ = false;
   }
 
@@ -3469,20 +3690,26 @@ class Database {
     return ExecResult{};
   }
 
+  void clearTransactionChanges() noexcept {
+    overlay_.clear();
+    transaction_store_->reset();
+  }
+
   void finishMutation() {
     if (!explicit_transaction_) {
       try {
         commitTransaction();
       } catch (...) {
-        overlay_.clear();
+        clearTransactionChanges();
         throw;
       }
-      overlay_.clear();
+      clearTransactionChanges();
     }
   }
 
   void commitTransaction() {
     if (overlay_.empty()) {
+      transaction_store_->reset();
       return;
     }
     const uint64_t txid = next_txid_++;
@@ -3507,7 +3734,7 @@ class Database {
         writers.emplace(oid, std::move(writer));
       }
       if (pending.empty()) {
-        overlay_.clear();
+        clearTransactionChanges();
         return;
       }
       write_started = true;
@@ -3535,10 +3762,10 @@ class Database {
 #endif
         }
       }
-      overlay_.clear();
+      clearTransactionChanges();
     } catch (...) {
       if (write_started) {
-        overlay_.clear();
+        clearTransactionChanges();
         throw RecoveryRequired();
       }
       // Before any append, an explicit transaction can safely retry COMMIT.
@@ -3557,19 +3784,18 @@ class Database {
     return nullptr;
   }
 
-  std::map<int64_t, std::optional<Row>> &overlayFor(uint32_t oid) {
+  Changes &overlayFor(uint32_t oid) {
     return overlay_[oid];
   }
 
-  void publishStatementChanges(
-      uint32_t oid, std::map<int64_t, std::optional<Row>> changes) {
+  void publishStatementChanges(uint32_t oid, Changes changes) {
     if (changes.empty()) {
       return;
     }
     // Allocate every row and map node before changing the transaction view.
     // With equal allocators and integer keys, merge transfers nodes without
-    // allocating; replacing an existing optional<Row> is a nonthrowing swap.
-    static_assert(std::is_nothrow_swappable_v<std::optional<Row>>);
+    // allocating; replacing an existing ChangedRow is a nonthrowing swap.
+    static_assert(std::is_nothrow_swappable_v<ChangedRow>);
     auto &overlay = overlayFor(oid);
     if (overlay.empty()) {
       overlay.swap(changes);
@@ -3607,7 +3833,10 @@ class Database {
         if (!changed->second.has_value()) {
           return false;
         }
-        row = *changed->second;
+        changed->second.visit([&](const Row &value, bool) {
+          row = value;
+          return true;
+        });
         return true;
       }
     }
@@ -3618,7 +3847,7 @@ class Database {
   bool forEachVisibleView(Table &table, Callback &&callback, bool ordered = false) {
     const uint32_t oid = table.definition().oid;
     const auto overlay_found = overlay_.find(oid);
-    const std::map<int64_t, std::optional<Row>> *overlay =
+    const Changes *overlay =
         overlay_found == overlay_.end() ? nullptr : &overlay_found->second;
     if (!table.forEachBase(callback, overlay, ordered)) {
       return false;
@@ -3626,7 +3855,9 @@ class Database {
     if (overlay != nullptr) {
       for (const auto &[primary, row] : *overlay) {
         if (!table.containsBase(primary) && row.has_value()) {
-          if (!callback(primary, *row, true)) {
+          if (!row.visit([&](const Row &value, bool stable) {
+                return callback(primary, value, stable);
+              })) {
             return false;
           }
         }
@@ -3653,10 +3884,10 @@ class Database {
         fail("DUPLICATE_PRIMARY_KEY", "primary key already exists");
       }
     }
-    std::map<int64_t, std::optional<Row>> changes;
+    Changes changes;
     for (Row &row : statement.rows) {
       const int64_t primary = row[definition.primary_key].integer;
-      changes.emplace(primary, std::move(row));
+      changes.emplace(primary, ChangedRow(std::move(row), transaction_store_));
     }
     const uint64_t affected = static_cast<uint64_t>(changes.size());
     publishStatementChanges(definition.oid, std::move(changes));
@@ -3708,7 +3939,7 @@ class Database {
         continue;
       }
       const auto changed_table = overlay_.find(table.definition().oid);
-      const std::map<int64_t, std::optional<Row>> *overlay =
+      const Changes *overlay =
           changed_table == overlay_.end() ? nullptr : &changed_table->second;
       if (guaranteed_condition != nullptr) {
         *guaranteed_condition = index;
@@ -3718,13 +3949,13 @@ class Database {
       }
       if (changed_table != overlay_.end()) {
         for (const auto &[primary, row] : changed_table->second) {
-          if (row.has_value() &&
-              valuesCompare((*row)[condition.column], condition.value,
-                            CompareOp::Eq,
-                            table.definition().columns[condition.column].type)) {
-            if (!callback(primary, *row, true)) {
-              return false;
-            }
+          if (!row.visit([&](const Row &value, bool stable) {
+                return !valuesCompare(value[condition.column], condition.value,
+                                      CompareOp::Eq,
+                                      table.definition().columns[condition.column].type) ||
+                       callback(primary, value, stable);
+              })) {
+            return false;
           }
         }
       }
@@ -3751,7 +3982,7 @@ class Database {
         fail("UNSUPPORTED", "primary key updates are not supported");
       }
     }
-    std::map<int64_t, std::optional<Row>> replacements;
+    Changes replacements;
     forEachCandidate(table, statement.conditions, [&](int64_t primary, const Row &row) {
       if (!matches(definition, row, statement.conditions)) {
         return;
@@ -3760,7 +3991,8 @@ class Database {
       for (const Assignment &assignment : statement.assignments) {
         updated[assignment.column] = assignment.value;
       }
-      replacements.emplace(primary, std::move(updated));
+      replacements.emplace(primary,
+                           ChangedRow(std::move(updated), transaction_store_));
     });
     const uint64_t affected = static_cast<uint64_t>(replacements.size());
     publishStatementChanges(definition.oid, std::move(replacements));
@@ -3770,7 +4002,7 @@ class Database {
   ExecResult executeDelete(const DeleteStatement &statement) {
     Table &table = requireTable(statement.table);
     const TableDef &definition = table.definition();
-    std::map<int64_t, std::optional<Row>> matches_to_delete;
+    Changes matches_to_delete;
     forEachCandidate(table, statement.conditions, [&](int64_t primary, const Row &row) {
       if (matches(definition, row, statement.conditions)) {
         matches_to_delete.emplace(primary, std::nullopt);
@@ -4646,9 +4878,9 @@ class Database {
   uint64_t next_txid_ = 1;
   std::unordered_map<std::string, std::unique_ptr<Table>> tables_;
   std::unordered_map<std::string, const TableDef *> definitions_;
-  std::unordered_map<uint32_t, std::map<int64_t, std::optional<Row>>> overlay_;
-  std::unordered_map<uint32_t, std::map<int64_t, std::optional<Row>>>
-      shutdown_overlay_;
+  std::shared_ptr<TransactionStore> transaction_store_;
+  std::unordered_map<uint32_t, Changes> overlay_;
+  std::unordered_map<uint32_t, Changes> shutdown_overlay_;
   std::unique_ptr<FileWriter> wal_writer_;
 };
 

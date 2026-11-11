@@ -48,7 +48,7 @@ def main():
               "test_sql_round11.py", "test_protocol_round11.py",
               "test_selection_retention.py", "test_large_results.py",
               "test_json_protocol.py", "test_official_json_public.py",
-              "test_primary_ranges.py")
+              "test_primary_ranges.py", "test_transaction_spill.py")
     commands = []
     for label in ("normal", "scalar"):
         commands.extend((f"{label}/{suite}",
@@ -93,7 +93,9 @@ def main():
     environment = os.environ.copy()
     for key in ("MVD_TEST_FAIL_COMMIT_PUBLICATION", "MVD_TEST_FAIL_WAL_APPEND",
                 "MVD_TEST_FAIL_CATALOG_APPEND", "MVD_TEST_FAIL_CATALOG_PUBLICATION",
-                "MVD_TEST_FAIL_RESULT_READ", "MVD_CACHE_LIMIT_MB"):
+                "MVD_TEST_FAIL_RESULT_READ", "MVD_CACHE_LIMIT_MB",
+                "MVD_TRANSACTION_MEMORY_MB", "MVD_TEST_FAIL_TRANSACTION_READ",
+                "MVD_TEST_FAIL_TRANSACTION_WRITE"):
         environment.pop(key, None)
     transcript = []
     passed = True

@@ -76,7 +76,11 @@ transactions, ALTER TABLE, and other unsupported syntax return an error.
 - `catalog.bin` is an append-only catalog whose records are checksummed.
 - `t<oid>.dat` stores append-only row versions.
 - `mvd.wal` stores commit records.
-- A transaction buffers its final row changes in memory.
+- A transaction keeps final changed-key metadata in memory and bounds resident
+  row payloads. Additional payloads spill to an automatically removed private
+  file under the data directory until COMMIT or ROLLBACK. The payload budget is
+  8 MiB, reduced to cgroup memory/16 when applicable (minimum 256 KiB), and can
+  be configured with `MVD_TRANSACTION_MEMORY_MB` (0 forces spill).
 - Commit writes and `fsync`s all row versions first, then writes and `fsync`s a
   commit record before returning success.
 - Startup truncates incomplete torn tails, reads committed transaction IDs, and

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check Docker writes, TopK, large unordered output and EOF restart under limits.
+"""Check Docker transactions, bulk updates, TopK and EOF restart under limits.
 
 Build the image separately, then run this standard-library-only test:
   python -B tests/test_container_resources.py --image minivectordb:validation
@@ -74,6 +74,65 @@ def write_load(stream, args):
         write_execute(stream, ident, "INSERT INTO t VALUES" + rows + ";")
         ident += 1
     write_pending_delete(stream, ident)
+
+
+
+def transaction_tail(args):
+    statements = [
+        ("UPDATE u SET tag=99;", {"affected_rows": args.rows}),
+        ("SELECT id,tag FROM u ORDER BY id LIMIT 3;",
+         {"columns": ["id", "tag"], "rows": [[i, 99] for i in range(1, min(3, args.rows) + 1)]}),
+        ("COMMIT;", {}),
+        ("BEGIN;", {}),
+        ("UPDATE u SET tag=98;", {"affected_rows": args.rows}),
+        ("DELETE FROM u WHERE id=1;", {"affected_rows": 1}),
+        ("ROLLBACK;", {}),
+        ("SELECT id,tag FROM u WHERE id=1;", {"columns": ["id", "tag"], "rows": [[1, 99]]}),
+        ("BEGIN;", {}),
+        ("UPDATE u SET v='" + vector(0, args.dim) + "' WHERE id=1;", {"affected_rows": 1}),
+    ]
+    first = 3 + (args.rows + BATCH_SIZE - 1) // BATCH_SIZE
+    return [(ident, sql, {"id": ident, "ok": True, **expected})
+            for ident, (sql, expected) in enumerate(statements, first)]
+
+
+def write_transaction_load(stream, args):
+    write_execute(stream, 1, "CREATE TABLE u(id BIGINT PRIMARY KEY,tag BIGINT,"
+                  f"v VECTOR({args.dim}));")
+    write_execute(stream, 2, "BEGIN;")
+    for ident, start in enumerate(range(1, args.rows + 1, BATCH_SIZE), 3):
+        values = ",".join(
+            f"({row},0,'{vector(row, args.dim)}')"
+            for row in range(start, min(start + BATCH_SIZE, args.rows + 1))
+        )
+        write_execute(stream, ident, "INSERT INTO u VALUES" + values + ";")
+    for ident, sql, _ in transaction_tail(args):
+        write_execute(stream, ident, sql)
+
+
+def transaction_load_responses(args):
+    result = [{"id": 1, "ok": True}, {"id": 2, "ok": True}]
+    for ident, start in enumerate(range(1, args.rows + 1, BATCH_SIZE), 3):
+        result.append({"id": ident, "ok": True,
+                       "affected_rows": min(BATCH_SIZE, args.rows - start + 1)})
+    result.extend(expected for _, _, expected in transaction_tail(args))
+    return result
+
+
+def transaction_recovery_cases(args):
+    distance = "L2_DISTANCE(v,'" + vector(0, args.dim) + "') AS d"
+    keys = list(range(1, min(3, args.rows) + 1))
+    return [
+        ("committed long transaction and EOF rollback",
+         "SELECT id,tag," + distance + " FROM u WHERE id<=3 ORDER BY d LIMIT 3;",
+         {"id": 1, "ok": True, "columns": ["id", "tag", "d"],
+          "rows": [[i, 99, float(i)] for i in keys]}),
+        ("autocommitted bulk update", "UPDATE u SET tag=100;",
+         {"id": 2, "ok": True, "affected_rows": args.rows}),
+        ("bulk update visible rows", "SELECT id,tag FROM u ORDER BY id LIMIT 3;",
+         {"id": 3, "ok": True, "columns": ["id", "tag"],
+          "rows": [[i, 100] for i in keys]}),
+    ]
 
 
 def pending_responses(ident):
@@ -485,6 +544,27 @@ def main():
         containers.run(args, directory, "write and EOF", lambda stream: write_load(stream, args),
                        [("startup", READY), ("autocommitted batch writes", loaded),
                         ("uncommitted delete before EOF", pending_responses(len(loaded) + 1))])
+        containers.run(args, directory, "bounded long transaction and bulk rollback",
+                       lambda stream: write_transaction_load(stream, args),
+                       [("startup", READY),
+                        ("spilled INSERT, bulk UPDATE, COMMIT, ROLLBACK and EOF",
+                         transaction_load_responses(args))])
+        transaction_cases = transaction_recovery_cases(args)
+
+        def write_transaction_recovery(stream):
+            for ident, (_, sql, _) in enumerate(transaction_cases, 1):
+                write_execute(stream, ident, sql)
+
+        containers.run(args, directory, "transaction recovery and autocommitted bulk update",
+                       write_transaction_recovery,
+                       [("recovery", READY)] + [(name, expected) for name, _, expected in transaction_cases])
+
+        def verify_bulk_commit(stream):
+            write_execute(stream, 1, "SELECT id,tag FROM u WHERE id=1;")
+
+        containers.run(args, directory, "bulk commit restart", verify_bulk_commit,
+                       [("recovery", READY), ("committed scalar survives restart",
+                         {"id": 1, "ok": True, "columns": ["id", "tag"], "rows": [[1, 100]]})])
         cases = query_cases(args)
 
         def write_queries(stream):
@@ -512,7 +592,7 @@ def main():
                 print(f"FAIL cleanup of owned directory {directory}: {error}", file=sys.stderr)
                 status = 1
     if status == 0:
-        print("PASS resource limits, TopK, unordered and disk-ordered vector projection, EOF restart")
+        print("PASS resource limits, long transactions, bulk updates, TopK, vector projection and EOF restart")
     return status
 
 

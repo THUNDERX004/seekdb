@@ -1,0 +1,470 @@
+{
+  "scope": "Windows diagnostic; no Linux container or platform claim",
+  "base_commit": "b235ce1819cf8b41a8426cd01ca114476441ed80",
+  "validation": {
+    "status": "passed",
+    "commands": 55,
+    "runs": [
+      {
+        "label": "normal/run_public.py",
+        "returncode": 0,
+        "seconds": 0.597762799996417
+      },
+      {
+        "label": "normal/test_extended.py",
+        "returncode": 0,
+        "seconds": 0.16356409998843446
+      },
+      {
+        "label": "normal/test_semantics.py",
+        "returncode": 0,
+        "seconds": 0.12439620000077412
+      },
+      {
+        "label": "normal/test_disk_scan.py",
+        "returncode": 0,
+        "seconds": 0.23080089999712072
+      },
+      {
+        "label": "normal/test_hidden_edges.py",
+        "returncode": 0,
+        "seconds": 0.7995861000090372
+      },
+      {
+        "label": "normal/test_differential.py",
+        "returncode": 0,
+        "seconds": 1.8971972000144888
+      },
+      {
+        "label": "normal/test_exact_distance.py",
+        "returncode": 0,
+        "seconds": 0.4051255000231322
+      },
+      {
+        "label": "normal/test_selection_paths.py",
+        "returncode": 0,
+        "seconds": 1.8723008999950252
+      },
+      {
+        "label": "normal/test_stdio_contract.py",
+        "returncode": 0,
+        "seconds": 0.4500627999950666
+      },
+      {
+        "label": "normal/test_formal_sql_edges.py",
+        "returncode": 0,
+        "seconds": 0.3586607000033837
+      },
+      {
+        "label": "normal/test_round6_sql_contract.py",
+        "returncode": 0,
+        "seconds": 0.37482939998153597
+      },
+      {
+        "label": "normal/test_round6_stream_contract.py",
+        "returncode": 0,
+        "seconds": 6.844120699999621
+      },
+      {
+        "label": "normal/test_stream_followup.py",
+        "returncode": 0,
+        "seconds": 0.4040711999987252
+      },
+      {
+        "label": "normal/test_float32_literals.py",
+        "returncode": 0,
+        "seconds": 0.2922070999920834
+      },
+      {
+        "label": "normal/test_sql_round11.py",
+        "returncode": 0,
+        "seconds": 0.19815149999340065
+      },
+      {
+        "label": "normal/test_protocol_round11.py",
+        "returncode": 0,
+        "seconds": 2.098541600018507
+      },
+      {
+        "label": "normal/test_selection_retention.py",
+        "returncode": 0,
+        "seconds": 1.144140200020047
+      },
+      {
+        "label": "normal/test_large_results.py",
+        "returncode": 0,
+        "seconds": 1.8774432000063825
+      },
+      {
+        "label": "normal/test_json_protocol.py",
+        "returncode": 0,
+        "seconds": 1.656373200006783
+      },
+      {
+        "label": "normal/test_official_json_public.py",
+        "returncode": 0,
+        "seconds": 5.300547699996969
+      },
+      {
+        "label": "normal/test_primary_ranges.py",
+        "returncode": 0,
+        "seconds": 9.968046199996024
+      },
+      {
+        "label": "normal/test_transaction_spill.py",
+        "returncode": 0,
+        "seconds": 0.5384422999923117
+      },
+      {
+        "label": "scalar/run_public.py",
+        "returncode": 0,
+        "seconds": 1.4367295000120066
+      },
+      {
+        "label": "scalar/test_extended.py",
+        "returncode": 0,
+        "seconds": 0.2286282000131905
+      },
+      {
+        "label": "scalar/test_semantics.py",
+        "returncode": 0,
+        "seconds": 0.13114550002501346
+      },
+      {
+        "label": "scalar/test_disk_scan.py",
+        "returncode": 0,
+        "seconds": 0.6432579999964219
+      },
+      {
+        "label": "scalar/test_hidden_edges.py",
+        "returncode": 0,
+        "seconds": 3.2997957000043243
+      },
+      {
+        "label": "scalar/test_differential.py",
+        "returncode": 0,
+        "seconds": 2.9809668000089005
+      },
+      {
+        "label": "scalar/test_exact_distance.py",
+        "returncode": 0,
+        "seconds": 0.4475945000012871
+      },
+      {
+        "label": "scalar/test_selection_paths.py",
+        "returncode": 0,
+        "seconds": 1.9668900000106078
+      },
+      {
+        "label": "scalar/test_stdio_contract.py",
+        "returncode": 0,
+        "seconds": 0.4857043999945745
+      },
+      {
+        "label": "scalar/test_formal_sql_edges.py",
+        "returncode": 0,
+        "seconds": 0.4449451999971643
+      },
+      {
+        "label": "scalar/test_round6_sql_contract.py",
+        "returncode": 0,
+        "seconds": 0.41437059998861514
+      },
+      {
+        "label": "scalar/test_round6_stream_contract.py",
+        "returncode": 0,
+        "seconds": 6.865018399985274
+      },
+      {
+        "label": "scalar/test_stream_followup.py",
+        "returncode": 0,
+        "seconds": 0.5838482000108343
+      },
+      {
+        "label": "scalar/test_float32_literals.py",
+        "returncode": 0,
+        "seconds": 0.4831154000130482
+      },
+      {
+        "label": "scalar/test_sql_round11.py",
+        "returncode": 0,
+        "seconds": 0.2968430000182707
+      },
+      {
+        "label": "scalar/test_protocol_round11.py",
+        "returncode": 0,
+        "seconds": 2.150499300012598
+      },
+      {
+        "label": "scalar/test_selection_retention.py",
+        "returncode": 0,
+        "seconds": 1.485913399985293
+      },
+      {
+        "label": "scalar/test_large_results.py",
+        "returncode": 0,
+        "seconds": 5.511517000006279
+      },
+      {
+        "label": "scalar/test_json_protocol.py",
+        "returncode": 0,
+        "seconds": 1.4845779000024777
+      },
+      {
+        "label": "scalar/test_official_json_public.py",
+        "returncode": 0,
+        "seconds": 2.9835560000210535
+      },
+      {
+        "label": "scalar/test_primary_ranges.py",
+        "returncode": 0,
+        "seconds": 0.44430870001087897
+      },
+      {
+        "label": "scalar/test_transaction_spill.py",
+        "returncode": 0,
+        "seconds": 0.40344520000508055
+      },
+      {
+        "label": "public-adapter-regressions",
+        "returncode": 0,
+        "seconds": 0.472480500000529
+      },
+      {
+        "label": "commit-failure-regressions",
+        "returncode": 0,
+        "seconds": 0.5257431000063661
+      },
+      {
+        "label": "catalog-failure-regressions",
+        "returncode": 0,
+        "seconds": 0.756003199989209
+      },
+      {
+        "label": "result-replay-failure-regressions",
+        "returncode": 0,
+        "seconds": 0.3165483999764547
+      },
+      {
+        "label": "normal/long-random",
+        "returncode": 0,
+        "seconds": 8.619020199985243
+      },
+      {
+        "label": "allocation-normal",
+        "returncode": 0,
+        "seconds": 1.5348167000047397
+      },
+      {
+        "label": "allocation-scalar",
+        "returncode": 0,
+        "seconds": 1.4677754000003915
+      },
+      {
+        "label": "commit-allocation-normal",
+        "returncode": 0,
+        "seconds": 1.4556762000138406
+      },
+      {
+        "label": "commit-allocation-scalar",
+        "returncode": 0,
+        "seconds": 1.4233281000051647
+      },
+      {
+        "label": "catalog-allocation-normal",
+        "returncode": 0,
+        "seconds": 0.5412163000146393
+      },
+      {
+        "label": "catalog-allocation-scalar",
+        "returncode": 0,
+        "seconds": 0.5185277999844402
+      }
+    ]
+  },
+  "memory_probe": {
+    "before": {
+      "binary": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\timeout-20261111\\normal.exe",
+      "rows": 20000,
+      "dim": 4096,
+      "transaction": true,
+      "payload_bytes": 327680000,
+      "insert_seconds": 2.7631160000164527,
+      "after_insert": {
+        "available": true,
+        "pid": 54988,
+        "cpu_kernel_seconds": 0.953125,
+        "cpu_user_seconds": 1.0625,
+        "cpu_total_seconds": 2.015625,
+        "PeakWorkingSetSize_bytes": 19066880,
+        "PeakPagefileUsage_bytes": 16416768,
+        "WorkingSetSize_bytes": 12824576,
+        "io_counters": {
+          "ReadOperationCount": 40202,
+          "WriteOperationCount": 40608,
+          "OtherOperationCount": 3049,
+          "ReadTransferCount": 164194607,
+          "WriteTransferCount": 329376311,
+          "OtherTransferCount": 494904
+        }
+      },
+      "update_seconds": 0.21578360002604313,
+      "update_result": {
+        "id": 203,
+        "ok": true,
+        "affected_rows": 20000
+      },
+      "after_update": {
+        "available": true,
+        "pid": 54988,
+        "cpu_kernel_seconds": 1.109375,
+        "cpu_user_seconds": 1.109375,
+        "cpu_total_seconds": 2.21875,
+        "PeakWorkingSetSize_bytes": 347852800,
+        "PeakPagefileUsage_bytes": 353456128,
+        "WorkingSetSize_bytes": 347852800,
+        "io_counters": {
+          "ReadOperationCount": 80204,
+          "WriteOperationCount": 40610,
+          "OtherOperationCount": 3061,
+          "ReadTransferCount": 493554758,
+          "WriteTransferCount": 329376375,
+          "OtherTransferCount": 494936
+        }
+      },
+      "select_seconds": 0.0012393000070005655,
+      "select_result": {
+        "id": 204,
+        "ok": true,
+        "columns": [
+          "id",
+          "tag"
+        ],
+        "rows": [
+          [
+            1,
+            7
+          ],
+          [
+            2,
+            7
+          ],
+          [
+            3,
+            7
+          ]
+        ]
+      },
+      "after_rollback": {
+        "available": true,
+        "pid": 54988,
+        "cpu_kernel_seconds": 1.140625,
+        "cpu_user_seconds": 1.109375,
+        "cpu_total_seconds": 2.25,
+        "PeakWorkingSetSize_bytes": 348041216,
+        "PeakPagefileUsage_bytes": 353456128,
+        "WorkingSetSize_bytes": 9441280,
+        "io_counters": {
+          "ReadOperationCount": 80206,
+          "WriteOperationCount": 40612,
+          "OtherOperationCount": 3061,
+          "ReadTransferCount": 493554946,
+          "WriteTransferCount": 329376467,
+          "OtherTransferCount": 494936
+        }
+      }
+    },
+    "candidate": {
+      "binary": "D:\\Projects\\OceanBase\\seekdb-minivectordb\\build\\timeout-20261111\\transaction.exe",
+      "rows": 20000,
+      "dim": 4096,
+      "transaction": true,
+      "payload_bytes": 327680000,
+      "insert_seconds": 3.210494600003585,
+      "after_insert": {
+        "available": true,
+        "pid": 44352,
+        "cpu_kernel_seconds": 1.34375,
+        "cpu_user_seconds": 1.15625,
+        "cpu_total_seconds": 2.5,
+        "PeakWorkingSetSize_bytes": 19210240,
+        "PeakPagefileUsage_bytes": 16068608,
+        "WorkingSetSize_bytes": 9396224,
+        "io_counters": {
+          "ReadOperationCount": 68492,
+          "WriteOperationCount": 68208,
+          "OtherOperationCount": 7954,
+          "ReadTransferCount": 451691267,
+          "WriteTransferCount": 556193111,
+          "OtherTransferCount": 726794
+        }
+      },
+      "update_seconds": 0.5011459999950603,
+      "update_result": {
+        "id": 203,
+        "ok": true,
+        "affected_rows": 20000
+      },
+      "after_update": {
+        "available": true,
+        "pid": 44352,
+        "cpu_kernel_seconds": 1.78125,
+        "cpu_user_seconds": 1.21875,
+        "cpu_total_seconds": 3.0,
+        "PeakWorkingSetSize_bytes": 19210240,
+        "PeakPagefileUsage_bytes": 16068608,
+        "WorkingSetSize_bytes": 12087296,
+        "io_counters": {
+          "ReadOperationCount": 108494,
+          "WriteOperationCount": 108147,
+          "OtherOperationCount": 7974,
+          "ReadTransferCount": 781051418,
+          "WriteTransferCount": 884403607,
+          "OtherTransferCount": 886578
+        }
+      },
+      "select_seconds": 0.0010716999822761863,
+      "select_result": {
+        "id": 204,
+        "ok": true,
+        "columns": [
+          "id",
+          "tag"
+        ],
+        "rows": [
+          [
+            1,
+            7
+          ],
+          [
+            2,
+            7
+          ],
+          [
+            3,
+            7
+          ]
+        ]
+      },
+      "after_rollback": {
+        "available": true,
+        "pid": 44352,
+        "cpu_kernel_seconds": 1.8125,
+        "cpu_user_seconds": 1.21875,
+        "cpu_total_seconds": 3.03125,
+        "PeakWorkingSetSize_bytes": 19210240,
+        "PeakPagefileUsage_bytes": 16068608,
+        "WorkingSetSize_bytes": 12267520,
+        "io_counters": {
+          "ReadOperationCount": 108496,
+          "WriteOperationCount": 108150,
+          "OtherOperationCount": 7975,
+          "ReadTransferCount": 781051606,
+          "WriteTransferCount": 884403751,
+          "OtherTransferCount": 886578
+        }
+      }
+    }
+  },
+  "note": "Initial candidate memory probe used a cache-derived transaction budget; final candidate uses 8 MiB or cgroup/16 independently of row cache. Final bounded allocation regression used1MiB transaction payload budget and additional6MiB heap cap, peak2149104bytes."
+}
