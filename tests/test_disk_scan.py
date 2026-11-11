@@ -8,6 +8,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
 
@@ -30,7 +31,7 @@ class Client:
             env=environment,
         )
 
-    def execute(self, sql: str) -> list[str]:
+    def execute(self, sql: str, allow_error: bool = False) -> list[str]:
         assert self.process.stdin is not None
         assert self.process.stdout is not None
         self.process.stdin.write(sql.rstrip().rstrip(";") + ";\n")
@@ -44,6 +45,8 @@ class Client:
             line = line.rstrip("\r\n")
             if line == "__END__":
                 if output and output[-1].startswith("ERROR "):
+                    if allow_error:
+                        return output
                     raise AssertionError(output[-1])
                 return output
             output.append(line)
@@ -166,6 +169,25 @@ def run(executable: Path):
             index for index in range(1, row_count + 3)
             if index != 3
         ], ids[-20:]
+
+        # A verified unchanged file can reuse startup CRC results. An external
+        # modification must force checksum validation again before data is used.
+        table_file = next(data_dir.glob("t*.dat"))
+        with table_file.open("r+b") as stream:
+            stream.seek(-1, os.SEEK_END)
+            original = stream.read(1)
+            stream.seek(-1, os.SEEK_END)
+            stream.write(bytes([original[0] ^ 1]))
+            stream.flush()
+            os.fsync(stream.fileno())
+        future_ns = time.time_ns() + 2_000_000_000
+        os.utime(table_file, ns=(future_ns, future_ns))
+        result = client.execute(
+            "SELECT id FROM big WHERE cat='odd' ORDER BY "
+            "L2_DISTANCE(emb,'" + make_vector(0) + "') LIMIT 3",
+            allow_error=True,
+        )
+        assert result and result[-1].startswith("ERROR CORRUPT_DATA:"), result
     finally:
         client.close()
         if os.name != "nt":

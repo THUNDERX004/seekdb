@@ -1,0 +1,44 @@
+{
+  "scope": "paired Windows development measurements; not official cgroup E or ranking",
+  "parent": "9a3be67f8f0d5d186571ba111df90d4c7d47884e",
+  "candidate_source_sha256": "84088160be9db39ada63e734330778efd996d7897da580a81e66ceb21ea6fcd9",
+  "candidate_binary_sha256": "93b160dc83b613daba802ca4f4ee2ac772f668f4df12179c4cb8ef9e3e5a7e4b",
+  "workloads": [
+    {
+      "cache_limit_mib": null,
+      "rows": 10000,
+      "dimensions": 128,
+      "queries": 1000,
+      "k": 10,
+      "parent_query_median_seconds": 0.1531812,
+      "candidate_query_median_seconds": 0.1527003,
+      "paired_query_speedup_median": 0.9864263527969492
+    },
+    {
+      "cache_limit_mib": 1,
+      "rows": 3000,
+      "dimensions": 128,
+      "queries": 200,
+      "k": 10,
+      "parent_query_median_seconds": 0.2558869,
+      "candidate_query_median_seconds": 0.1996961,
+      "parent_filtered_query_median_seconds": 0.0839201,
+      "candidate_filtered_query_median_seconds": 0.0807694,
+      "parent_unfiltered_query_median_seconds": 0.1715112,
+      "candidate_unfiltered_query_median_seconds": 0.1189267,
+      "paired_query_speedup_median": 1.28138155927932,
+      "paired_filtered_query_speedup_median": 1.04464933502044,
+      "paired_unfiltered_query_speedup_median": 1.44215890964771
+    },
+    {
+      "cache_limit_mib": 1,
+      "rows": 1000,
+      "dimensions": 4096,
+      "queries": 8,
+      "k": 10,
+      "parent_query_median_seconds": 0.0662545,
+      "candidate_query_median_seconds": 0.0388928,
+      "paired_query_speedup_median": 1.70351581783775
+    }
+  ]
+}

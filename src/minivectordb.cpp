@@ -2279,6 +2279,7 @@ class Table {
     if (fs::exists(data_path_) && fs::file_size(data_path_) != valid_bytes) {
       fs::resize_file(data_path_, valid_bytes);
     }
+    rememberVerifiedFile();
   }
 
   const TableDef &definition() const { return definition_; }
@@ -2378,6 +2379,7 @@ class Table {
         std::ifstream input;
         uint64_t input_position = std::numeric_limits<uint64_t>::max();
         std::vector<uint8_t> payload;
+        const bool verify_crc = verifyCrcForScan();
         for (const auto &[offset, primary] : physicalOrder()) {
           const auto found = versions_.find(primary);
           if (found == versions_.end() || found->second.offset != offset) {
@@ -2387,7 +2389,8 @@ class Table {
           if (!input.is_open()) {
             input.open(data_path_, std::ios::binary);
           }
-          Row row = readRow(version.offset, input, &input_position, payload);
+          Row row = readRow(version.offset, input, &input_position, payload,
+                            verify_crc);
           if (!append(primary, version, row)) {
             return nullptr;
           }
@@ -2418,6 +2421,8 @@ class Table {
     std::ifstream input;
     uint64_t input_position = std::numeric_limits<uint64_t>::max();
     std::vector<uint8_t> payload;
+    bool verify_crc = true;
+    bool verification_checked = false;
     for (const IndexedRow &indexed : rows) {
       if (overlay != nullptr && overlay->contains(indexed.primary)) {
         continue;
@@ -2431,7 +2436,12 @@ class Table {
       if (!input.is_open()) {
         input.open(data_path_, std::ios::binary);
       }
-      Row row = readRow(indexed.offset, input, &input_position, payload);
+      if (!verification_checked) {
+        verify_crc = verifyCrcForScan();
+        verification_checked = true;
+      }
+      Row row = readRow(indexed.offset, input, &input_position, payload,
+                        verify_crc);
       if (!callback(indexed.primary, row, false)) {
         return false;
       }
@@ -2446,6 +2456,8 @@ class Table {
     std::ifstream input;
     uint64_t input_position = std::numeric_limits<uint64_t>::max();
     std::vector<uint8_t> payload;
+    bool verify_crc = true;
+    bool verification_checked = false;
     const auto visit = [&](int64_t primary, const Version &version) {
       // An overlay replacement/deletion makes the disk payload unnecessary.
       if (overlay != nullptr) {
@@ -2461,7 +2473,12 @@ class Table {
       if (!input.is_open()) {
         input.open(data_path_, std::ios::binary);
       }
-      Row row = readRow(version.offset, input, &input_position, payload);
+      if (!verification_checked) {
+        verify_crc = verifyCrcForScan();
+        verification_checked = true;
+      }
+      Row row = readRow(version.offset, input, &input_position, payload,
+                        verify_crc);
       return callback(primary, row, false);
     };
     if (!cache_enabled_ && ordered) {
@@ -2562,6 +2579,7 @@ class Table {
         disableCache();
       }
     }
+    rememberVerifiedFile();
   }
 
   size_t rowCount() const { return versions_.size(); }
@@ -2665,7 +2683,7 @@ class Table {
 
   DecodedRecord readRecordPayload(
       uint64_t offset, std::ifstream &input, uint64_t *input_position,
-      std::vector<uint8_t> &payload) const {
+      std::vector<uint8_t> &payload, bool verify_crc = true) const {
     if (offset > next_offset_ || next_offset_ - offset < 32) {
       fail("CORRUPT_DATA", "row offset exceeds committed file bounds");
     }
@@ -2688,7 +2706,7 @@ class Table {
     if (!payload.empty() && !readExact(input, payload.data(), payload.size())) {
       fail("CORRUPT_DATA", "row payload is truncated");
     }
-    if (crc32(payload) != rowPayloadChecksum(header)) {
+    if (verify_crc && crc32(payload) != rowPayloadChecksum(header)) {
       fail("CORRUPT_DATA", "invalid row payload");
     }
     if (input_position != nullptr) {
@@ -2698,9 +2716,9 @@ class Table {
   }
 
   Row readRow(uint64_t offset, std::ifstream &input, uint64_t *input_position,
-              std::vector<uint8_t> &payload) const {
+              std::vector<uint8_t> &payload, bool verify_crc = true) const {
     const DecodedRecord record =
-        readRecordPayload(offset, input, input_position, payload);
+        readRecordPayload(offset, input, input_position, payload, verify_crc);
     if (record.op == 3) {
       fail("CORRUPT_DATA", "invalid row payload");
     }
@@ -2717,13 +2735,15 @@ class Table {
     uint64_t input_position = std::numeric_limits<uint64_t>::max();
     std::vector<uint8_t> payload;
     std::vector<float> components;
+    const bool verify_crc = verifyCrcForScan();
     for (const auto &[offset, primary] : physicalOrder()) {
       const auto found = versions_.find(primary);
       if (found == versions_.end() || found->second.offset != offset) {
         continue;
       }
       const DecodedRecord record =
-          readRecordPayload(offset, input, &input_position, payload);
+          readRecordPayload(offset, input, &input_position, payload,
+                            verify_crc);
       if (record.op == 3) {
         fail("CORRUPT_DATA", "current row points to a delete record");
       }
@@ -2752,6 +2772,7 @@ class Table {
     uint64_t input_position = std::numeric_limits<uint64_t>::max();
     std::vector<uint8_t> payload;
     std::vector<float> components;
+    const bool verify_crc = verifyCrcForScan();
     const ColumnType predicate_type =
         definition_.columns[condition.column].type;
     for (const IndexedRow &indexed : rows) {
@@ -2761,7 +2782,7 @@ class Table {
         fail("CORRUPT_DATA", "equality index references a stale row version");
       }
       const DecodedRecord record = readRecordPayload(
-          indexed.offset, input, &input_position, payload);
+          indexed.offset, input, &input_position, payload, verify_crc);
       if (record.op == 3) {
         fail("CORRUPT_DATA", "equality index references a delete record");
       }
@@ -2786,6 +2807,51 @@ class Table {
     return true;
   }
 
+  bool verifyCrcForScan() const noexcept {
+    if (!file_verified_) {
+      return true;
+    }
+    std::error_code error;
+    if (!fs::exists(data_path_, error) || error) {
+      return next_offset_ != 0 || static_cast<bool>(error);
+    }
+    const uintmax_t size = fs::file_size(data_path_, error);
+    if (error || size != verified_file_bytes_) {
+      return true;
+    }
+    const fs::file_time_type modified =
+        fs::last_write_time(data_path_, error);
+    return error || modified != verified_write_time_;
+  }
+
+  void rememberVerifiedFile() noexcept {
+    std::error_code error;
+    if (!fs::exists(data_path_, error)) {
+      file_verified_ = !error && next_offset_ == 0;
+      verified_file_bytes_ = 0;
+      verified_write_time_ = fs::file_time_type{};
+      return;
+    }
+    if (error) {
+      file_verified_ = false;
+      return;
+    }
+    const uintmax_t size = fs::file_size(data_path_, error);
+    if (error || size != next_offset_) {
+      file_verified_ = false;
+      return;
+    }
+    const fs::file_time_type modified =
+        fs::last_write_time(data_path_, error);
+    if (error) {
+      file_verified_ = false;
+      return;
+    }
+    verified_file_bytes_ = size;
+    verified_write_time_ = modified;
+    file_verified_ = true;
+  }
+
   void disableCache() noexcept {
     clearEqualityIndex();
     cache_enabled_ = false;
@@ -2806,6 +2872,9 @@ class Table {
   size_t cache_bytes_ = 0;
   size_t cache_limit_bytes_ = cacheLimitBytes();
   uint64_t next_offset_ = 0;
+  bool file_verified_ = false;
+  uintmax_t verified_file_bytes_ = 0;
+  fs::file_time_type verified_write_time_{};
   size_t equality_column_ = std::numeric_limits<size_t>::max();
   bool equality_disabled_ = false;
   std::unordered_map<int64_t, IndexedRows> integer_equality_index_;

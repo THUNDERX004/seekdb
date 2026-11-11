@@ -191,6 +191,11 @@ available; MVD_CACHE_LIMIT_MB can override it with a positive integer. This is
 not a process/cgroup memory limit: PK metadata, transaction overlays, output
 rows and OS file caches also consume memory.
 
+Startup recovery verifies every valid row CRC. Subsequent disk scans reuse that
+verification while the data file size and modification time remain unchanged;
+an external modification invalidates the snapshot and restores per-record CRC
+checks. Cached scans do not inspect the data file solely for this optimization.
+
 Distance subtraction and accumulation use double precision. The exact TopK
 scan prepares the constant probe and chooses the CPU kernel once per query.
 When approximate distances are within a conservative rounding-error bound, a
