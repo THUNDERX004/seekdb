@@ -94,7 +94,7 @@ def main():
     environment = os.environ.copy()
     for key in ("MVD_TEST_FAIL_COMMIT_PUBLICATION", "MVD_TEST_FAIL_WAL_APPEND",
                 "MVD_TEST_FAIL_CATALOG_APPEND", "MVD_TEST_FAIL_CATALOG_PUBLICATION",
-                "MVD_TEST_FAIL_RESULT_READ", "MVD_CACHE_LIMIT_MB"):
+                "MVD_TEST_FAIL_RESULT_READ", "MVD_TEST_FAIL_RESULT_SYNC", "MVD_CACHE_LIMIT_MB"):
         environment.pop(key, None)
     transcript = []
     passed = True

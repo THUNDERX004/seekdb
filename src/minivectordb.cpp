@@ -3197,8 +3197,8 @@ class ResultSpool {
   }
 
   void prepare() {
-    if (std::fflush(file_.get()) != 0 ||
-        std::fseek(file_.get(), 0, SEEK_SET) != 0) {
+    releaseWrittenPages();
+    if (std::fseek(file_.get(), 0, SEEK_SET) != 0) {
       fail("IO_ERROR", "cannot prepare query result temporary stream");
     }
   }
@@ -3232,11 +3232,67 @@ class ResultSpool {
 
  private:
   void write(const char *bytes, size_t size) {
-    if (size != 0 && std::fwrite(bytes, 1, size, file_.get()) != size) {
-      fail("IO_ERROR", "cannot write query result temporary stream");
+    while (size != 0) {
+      const size_t chunk = std::min(size, kWritebackBytes - pending_bytes_);
+      if (std::fwrite(bytes, 1, chunk, file_.get()) != chunk) {
+        fail("IO_ERROR", "cannot write query result temporary stream");
+      }
+      pending_bytes_ += chunk;
+      bytes += chunk;
+      size -= chunk;
+      if (pending_bytes_ == kWritebackBytes) {
+        releaseWrittenPages();
+      }
     }
   }
 
+  void releaseWrittenPages() {
+    if (std::fflush(file_.get()) != 0) {
+      fail("IO_ERROR", "cannot flush query result temporary stream");
+    }
+    if (pending_bytes_ == 0) {
+      return;
+    }
+#ifdef MVD_TEST_FAULTS
+    const char *sync_fault = std::getenv("MVD_TEST_FAIL_RESULT_SYNC");
+    if (sync_fault != nullptr && (sync_fault[0] == '0' || writebacks_ != 0)) {
+      fail("IO_ERROR", "injected query result temporary sync failure");
+    }
+    ++writebacks_;
+#endif
+#ifdef __linux__
+    const int descriptor = fileno(file_.get());
+    const off_t end = ftello(file_.get());
+    if (descriptor < 0 || end < released_bytes_) {
+      fail("IO_ERROR", "cannot locate query result temporary stream");
+    }
+    // fflush only reaches the page cache, which is charged to the container.
+    // Bound dirty spool pages even when the response exceeds its memory limit.
+    int synced;
+    do {
+      synced = fdatasync(descriptor);
+    } while (synced != 0 && errno == EINTR);
+    if (synced != 0) {
+      fail("IO_ERROR", "cannot sync query result temporary stream");
+    }
+    // This is an optional cache hint: clean pages remain reclaimable if the
+    // filesystem does not support it. Full writeback blocks are page aligned;
+    // the final partial page is released when the temporary file is closed.
+    (void)posix_fadvise(descriptor, released_bytes_, end - released_bytes_,
+                        POSIX_FADV_DONTNEED);
+    released_bytes_ = end;
+#endif
+    pending_bytes_ = 0;
+  }
+
+  static constexpr size_t kWritebackBytes = 4ULL * 1024ULL * 1024ULL;
+  size_t pending_bytes_ = 0;
+#ifdef __linux__
+  off_t released_bytes_ = 0;
+#endif
+#ifdef MVD_TEST_FAULTS
+  size_t writebacks_ = 0;
+#endif
   std::unique_ptr<FILE, decltype(&std::fclose)> file_{nullptr, &std::fclose};
 };
 

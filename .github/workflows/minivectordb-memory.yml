@@ -1,0 +1,244 @@
+name: MiniVectorDB bounded memory controls
+
+on:
+  push:
+    branches: [codex/performance-round2-20261111]
+    paths:
+      - src/minivectordb.cpp
+      - tests/test_container_resources.py
+      - .github/workflows/minivectordb-memory.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: minivectordb-memory-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  memory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 110
+    env:
+      BASELINE_COMMIT: 3593447905bb00771d7d72ae341ba6a961f71639
+      ORIGINAL_COMMIT: ac126305eab6e0103006b29f34bbe18dfefea2db
+      COMPILER_IMAGE: gcc:14.3.0-bookworm@sha256:5e927c284bf55a7dc796262e311a0703344f62f41f5621eb56843111b1d37e15
+      RUNTIME_IMAGE: debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Snapshot pinned controls and HEAD source; build independent images
+        run: |
+          python3 -X utf8 -B - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import platform
+          import subprocess
+          import tempfile
+
+          evidence = Path('build/memory-diagnostics').resolve()
+          evidence.mkdir(parents=True, exist_ok=True)
+          snapshots = Path(tempfile.mkdtemp(prefix='mvd-memory-snapshots-', dir=os.environ['RUNNER_TEMP']))
+          objects = snapshots / 'commits.git'
+          subprocess.run(['git', 'init', '--bare', str(objects)], check=True)
+          remote = subprocess.check_output(['git', 'remote', 'get-url', 'origin'], text=True).strip()
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          current = Path('src/minivectordb.cpp').read_bytes()
+          if current != subprocess.check_output(['git', 'show', head + ':src/minivectordb.cpp']):
+              raise SystemExit('Fixed source is not the checked-out HEAD source')
+          compiler, runtime = os.environ['COMPILER_IMAGE'], os.environ['RUNTIME_IMAGE']
+          dockerfile = f'''FROM {compiler} AS build
+          WORKDIR /src
+          COPY src ./src
+          RUN mkdir -p /out && g++ -std=c++20 -O3 -DNDEBUG -Wall -Wextra -Wpedantic -static-libstdc++ -static-libgcc src/minivectordb.cpp -o /out/minivectordb
+          FROM {runtime}
+          RUN mkdir -p /app /data
+          COPY --from=build /out/minivectordb /app/minivectordb
+          VOLUME ["/data"]
+          WORKDIR /app
+          ENTRYPOINT ["/app/minivectordb"]
+          CMD ["--data-dir=/data"]
+          '''
+          manifest = {'head': head, 'compiler_image': compiler, 'runtime_image': runtime,
+                      'host': platform.uname()._asdict(), 'builds': {}}
+          for label, commit in [('baseline', os.environ['BASELINE_COMMIT']),
+                                ('original', os.environ['ORIGINAL_COMMIT']), ('fixed', head)]:
+              build = {'commit': commit, 'status': 'failed'}
+              manifest['builds'][label] = build
+              log_path = evidence / (label + '-build.log')
+              try:
+                  with log_path.open('wb') as log:
+                      if label == 'fixed':
+                          source = current
+                      else:
+                          subprocess.run(['git', '-C', str(objects), 'fetch', '--no-tags', '--depth=1',
+                                          remote, commit], stdout=log, stderr=subprocess.STDOUT,
+                                         check=True, timeout=120)
+                          source = subprocess.check_output(
+                              ['git', '-C', str(objects), 'show', commit + ':src/minivectordb.cpp'])
+                      context = snapshots / label
+                      (context / 'src').mkdir(parents=True)
+                      (context / 'src/minivectordb.cpp').write_bytes(source)
+                      (context / 'Dockerfile').write_text(dockerfile)
+                      build['source_sha256'] = hashlib.sha256(source).hexdigest()
+                      tag = f"minivectordb:memory-{os.environ['GITHUB_RUN_ID']}-{os.environ['GITHUB_RUN_ATTEMPT']}-{label}"
+                      build['image'] = tag
+                      print('SOURCE ' + json.dumps({'variant': label, **build}), flush=True)
+                      subprocess.run(['docker', 'build', '--pull', '--tag', tag, str(context)],
+                                     stdout=log, stderr=subprocess.STDOUT, check=True, timeout=600)
+                      build['image_id'] = subprocess.check_output(
+                          ['docker', 'image', 'inspect', '--format', '{{.Id}}', tag], text=True).strip()
+                      build['binary_sha256'] = subprocess.check_output(
+                          ['docker', 'run', '--rm', '--network=none', '--entrypoint', '/usr/bin/sha256sum',
+                           tag, '/app/minivectordb'], text=True, timeout=30).split()[0]
+                      build['status'] = 'built'
+                      print('BINARY ' + json.dumps({'variant': label, **build}), flush=True)
+              except (OSError, ValueError, subprocess.SubprocessError) as error:
+                  build['error'] = str(error)
+                  print('BUILD_FAILURE ' + json.dumps({'variant': label, **build}), flush=True)
+                  if log_path.exists():
+                      with log_path.open('rb') as log:
+                          log.seek(max(0, log_path.stat().st_size - 8192))
+                          print(log.read().decode('utf-8', errors='replace'), flush=True)
+              (evidence / 'builds.json').write_text(json.dumps(manifest, indent=2) + '\n')
+          print('BUILD_MANIFEST ' + json.dumps(manifest), flush=True)
+          PY
+
+      - name: Run six serial controls without stopping on control failures
+        run: |
+          python3 -X utf8 -B - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          import tempfile
+
+          evidence = Path('build/memory-diagnostics').resolve()
+          builds = json.loads((evidence / 'builds.json').read_text())['builds']
+          results = []
+          mount = subprocess.run(['findmnt', '--json', '--target', tempfile.gettempdir(),
+                                  '--output', 'TARGET,SOURCE,FSTYPE,OPTIONS'],
+                                 capture_output=True, text=True, check=False)
+          print('HOST_DATA_FINDMNT ' + mount.stdout.strip(), flush=True)
+          (evidence / 'host-findmnt.json').write_text(mount.stdout or json.dumps({'error': mount.stderr}))
+          for sequence, label in enumerate(('baseline', 'original', 'fixed', 'fixed', 'original', 'baseline'), 1):
+              name = f'{sequence:02d}-{label}'
+              report_path = evidence / (name + '.json')
+              log_path = evidence / (name + '.log')
+              result = {'sequence': sequence, 'variant': label, 'build': builds[label],
+                        'returncode': None, 'report': report_path.name, 'log': log_path.name}
+              results.append(result)
+              if builds[label]['status'] != 'built':
+                  result['error'] = 'image build failed; resource test was not run'
+              else:
+                  # sudo grants read access to /proc/PID/fd on the host only.
+                  # The DB container keeps its original limits, entrypoint, mount and arguments.
+                  command = ['sudo', '-n', 'python3', '-X', 'utf8', '-B',
+                             str(Path('tests/test_container_resources.py').resolve()),
+                             '--image', builds[label]['image'], '--rows', '20000',
+                             '--memory-mib', '64', '--cache-mib', '8', '--dim', '1024',
+                             '--memory-report', str(report_path), '--memory-sample-ms', '50']
+                  print('RUN_CONTROL ' + json.dumps({'name': name, 'command': command}), flush=True)
+                  try:
+                      with log_path.open('wb') as log:
+                          completed = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=False)
+                      result['returncode'] = completed.returncode
+                  except (OSError, subprocess.SubprocessError) as error:
+                      result['error'] = str(error)
+                  if log_path.exists():
+                      print(log_path.read_text(errors='replace'), flush=True)
+                  if report_path.exists():
+                      try:
+                          report = json.loads(report_path.read_text())
+                          result['validation_exit_code'] = report.get('validation_exit_code')
+                          result['session_count'] = len(report.get('sessions', []))
+                          result['sample_counts'] = [(session.get('memory') or {}).get('sample_count', 0)
+                                                     for session in report.get('sessions', [])]
+                      except (OSError, ValueError, TypeError, AttributeError) as error:
+                          result['report_error'] = str(error)
+              print('CONTROL_RESULT ' + json.dumps(result), flush=True)
+              (evidence / 'results.json').write_text(json.dumps(results, indent=2) + '\n')
+          PY
+
+      - name: Print compact evidence and key memory samples even on failure
+        if: always()
+        run: |
+          python3 -X utf8 -B - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path('build/memory-diagnostics')
+          for name in ('builds.json', 'results.json', 'host-findmnt.json'):
+              path = evidence / name
+              print('EVIDENCE ' + name + ' ' + (path.read_text() if path.exists() else 'MISSING'), flush=True)
+          for path in sorted(evidence.glob('[0-9][0-9]-*.json')):
+              if path.stem.endswith('-compact'):
+                  continue
+              try:
+                  report = json.loads(path.read_text())
+              except (OSError, ValueError) as error:
+                  print('REPORT_ERROR ' + json.dumps({'path': path.name, 'error': str(error)}), flush=True)
+                  continue
+              compact = {key: value for key, value in report.items() if key != 'sessions'}
+              compact['sessions'] = []
+              for session in report.get('sessions', []):
+                  item = {key: value for key, value in session.items() if key != 'memory'}
+                  memory = dict(session.get('memory') or {})
+                  samples = memory.pop('samples', [])
+                  memory['last_samples'] = samples[-5:]
+                  for metric in ('stat.file_dirty', 'stat.anon', 'spool_bytes'):
+                      available = [sample for sample in samples if metric in sample]
+                      memory['at_peak_' + metric] = max(available, key=lambda s: s[metric]) if available else None
+                  item['memory'] = memory
+                  compact['sessions'].append(item)
+                  print('MEMORY_SESSION ' + json.dumps({'report': path.name, **item}, separators=(',', ':')), flush=True)
+              (evidence / (path.stem + '-compact.json')).write_text(json.dumps(compact, indent=2) + '\n')
+          result_path = evidence / 'results.json'
+          if result_path.exists():
+              results = json.loads(result_path.read_text())
+              with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+                  summary.write('Memory controls: 64 MiB, cache 8 MiB, 20000 x 1024; 50 ms host sampling.\n\n')
+                  summary.write('| Run | Variant | Exit | Sessions | Samples by session |\n|---|---|---|---|---|\n')
+                  for item in results:
+                      summary.write(f"| {item['sequence']} | {item['variant']} | {item['returncode']} | {item.get('session_count', 0)} | {item.get('sample_counts', [])} |\n")
+                  summary.write('\nControls retain their actual outcomes. Missing telemetry is not evidence of low memory. Peaks are sampled, and per-metric peaks need not coincide.\n')
+          PY
+
+      - name: Preserve full samples, fingerprints and logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: minivectordb-memory-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/memory-diagnostics/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Require both fixed runs to pass; retain control failures as evidence
+        if: always()
+        run: |
+          python3 -B - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('build/memory-diagnostics/results.json')
+          if not path.exists():
+              raise SystemExit('Memory controls did not produce results')
+          results = json.loads(path.read_text())
+          expected = ['baseline', 'original', 'fixed', 'fixed', 'original', 'baseline']
+          if [item['variant'] for item in results] != expected:
+              raise SystemExit('All six ordered controls must be recorded')
+          fixed = [item for item in results if item['variant'] == 'fixed']
+          if any(item['returncode'] != 0 or item.get('validation_exit_code') != 0
+                 or item.get('session_count') != 3 for item in fixed):
+              raise SystemExit('Fixed candidate failed or lacks a complete validation report; see CONTROL_RESULT and MEMORY_SESSION')
+          if any(not item.get('sample_counts') or not all(item['sample_counts']) for item in fixed):
+              print('::warning::Fixed validation passed but some sessions lack memory samples; OOM cause remains unverified')
+          print('PASS both fixed resource tests; control outcomes are preserved independently')
+          PY
