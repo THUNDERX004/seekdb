@@ -2,7 +2,7 @@ name: MiniVectorDB quantized cache memory comparison
 
 on:
   push:
-    branches: [codex/performance-five-rounds-20261111]
+    branches: [codex/performance-breakthrough-20261111]
     paths:
       - src/minivectordb.cpp
       - src/*.hpp
@@ -24,11 +24,13 @@ jobs:
           fetch-depth: 1
       - name: Fetch the fixed comparison source
         run: |
-          git fetch --no-tags --depth=1 origin fad3a8945b3944aedd70d07be82b3bcf1941faba
+          git fetch --no-tags --depth=1 origin ed5b940d70d9ccc4f6ce4742ebe0847514ca3418
           mkdir -p build/quantized-memory
-          git show fad3a8945b3944aedd70d07be82b3bcf1941faba:src/minivectordb.cpp > build/quantized-memory/baseline.cpp
-          git show fad3a8945b3944aedd70d07be82b3bcf1941faba:src/compact_value.hpp > build/quantized-memory/compact_value.hpp
-          git show fad3a8945b3944aedd70d07be82b3bcf1941faba:src/quantized_block_scan.hpp > build/quantized-memory/quantized_block_scan.hpp
+          git show ed5b940d70d9ccc4f6ce4742ebe0847514ca3418:src/minivectordb.cpp > build/quantized-memory/baseline.cpp
+          git show ed5b940d70d9ccc4f6ce4742ebe0847514ca3418:src/compact_value.hpp > build/quantized-memory/compact_value.hpp
+          git show ed5b940d70d9ccc4f6ce4742ebe0847514ca3418:src/quantized_block_scan.hpp > build/quantized-memory/quantized_block_scan.hpp
+          git show ed5b940d70d9ccc4f6ce4742ebe0847514ca3418:src/decimal_float.hpp > build/quantized-memory/decimal_float.hpp
+          git show ed5b940d70d9ccc4f6ce4742ebe0847514ca3418:src/topk_heap.hpp > build/quantized-memory/topk_heap.hpp
       - name: Build with the submission compiler
         run: |
           docker run --rm --network=none --mount type=bind,src="$PWD",dst=/work --workdir /work \
@@ -46,16 +48,22 @@ jobs:
             --baseline build/quantized-memory/baseline --candidate build/quantized-memory/candidate \
             --runs 3 --rows 10000 --dim 128 --queries 1000 --batch 100 --k 10 \
             --seed 20261640 --report build/quantized-memory/result.json
+          python3 -X utf8 -B bench/evaluate_container_memory.py \
+            --baseline build/quantized-memory/baseline --candidate build/quantized-memory/candidate \
+            --runs 3 --rows 100000 --dim 128 --queries 1000 --batch 100 --k 10 \
+            --seed 20261810 --report build/quantized-memory/large.json
       - name: Print versioned memory evidence
         if: always()
         run: |
           git rev-parse HEAD
           sha256sum src/minivectordb.cpp src/*.hpp \
-            build/quantized-memory/baseline.cpp build/quantized-memory/compact_value.hpp build/quantized-memory/quantized_block_scan.hpp \
+            build/quantized-memory/baseline.cpp build/quantized-memory/*.hpp \
             build/quantized-memory/baseline build/quantized-memory/candidate
           python3 - <<'PY'
           import json
           from pathlib import Path
           result = json.loads(Path('build/quantized-memory/result.json').read_text())
           print('QUANTIZED_MEMORY_EVIDENCE ' + json.dumps(result, separators=(',', ':')))
+          result = json.loads(Path('build/quantized-memory/large.json').read_text())
+          print('QUANTIZED_LARGE_MEMORY_EVIDENCE ' + json.dumps(result, separators=(',', ':')))
           PY

@@ -286,6 +286,86 @@ void correctness(std::array<Entry, 5> &entries) {
   std::cout << "PASS " << cases << " fixtures; all row tails and byte alignments checked\n";
 }
 
+// Exercise the wide mask directly: the score kernels above cover one block,
+// while the scan hot path consumes four distinct blocks and eight dot chains.
+void check_mask64() {
+  const std::array<qb::MaskKernel, 2> entries{{
+      qb::mask64_kernel_for(qb::KernelKind::scalar),
+      qb::mask64_kernel_for(qb::KernelKind::vnni512)}};
+  std::mt19937 random(0x8ACC0064U);
+  std::size_t masks = 0;
+  for (const std::size_t dimension : {16U, 17U, 20U, 24U, 28U, 31U, 32U,
+                                      127U, 128U, 129U, 512U, 16384U}) {
+    const std::size_t padded = qb::padded_dimension(dimension);
+    for (unsigned pattern = 0; pattern < 3; ++pattern) {
+      GuardedBytes packed(64 * padded, (dimension + pattern) % 64);
+      GuardedBytes query_bytes(padded, 3);
+      GuardedBytes norms(64 * sizeof(std::uint32_t), 5);
+      std::fill_n(packed.data(), packed.size, std::uint8_t{128});
+      std::fill_n(query_bytes.data(), padded, std::uint8_t{0});
+      std::vector<std::int8_t> query(dimension);
+      std::vector<std::int8_t> row(dimension);
+      for (std::size_t axis = 0; axis < dimension; ++axis) {
+        const int value = pattern == 0
+            ? static_cast<int>(random() % 256) - 128
+            : pattern == 1 ? ((axis / 4) % 2 ? -128 : 127)
+                           : (axis + 1 == dimension ? -128 : 0);
+        query[axis] = static_cast<std::int8_t>(value);
+      }
+      std::memcpy(query_bytes.data(), query.data(), dimension);
+      std::array<std::uint64_t, 64> expected{};
+      for (std::size_t index = 0; index < 64; ++index) {
+        std::uint32_t norm = 0;
+        for (std::size_t axis = 0; axis < dimension; ++axis) {
+          const int value = pattern == 0
+              ? static_cast<int>(random() % 255) - 127
+              : pattern == 1 ? ((axis / 4 + index) % 2 ? -127 : 127)
+                             : (axis + 1 == dimension ? static_cast<int>(index) - 32 : 0);
+          row[axis] = static_cast<std::int8_t>(value);
+          norm += static_cast<std::uint32_t>(value * value);
+          packed.data()[(index / 16) * 16 * padded +
+                        (axis / 4) * 64 + (index % 16) * 4 + axis % 4] =
+              static_cast<std::uint8_t>(value + 128);
+        }
+        std::memcpy(norms.data() + index * sizeof(norm), &norm, sizeof(norm));
+        expected[index] = oracle(row.data(), query.data(), dimension);
+      }
+      const auto packed_before = packed.storage;
+      const auto query_before = query_bytes.storage;
+      const auto norms_before = norms.storage;
+      const auto correction = independent_correction(query.data(), dimension);
+      const auto *q = reinterpret_cast<const std::int8_t *>(query_bytes.data());
+      std::vector<std::uint32_t> boundaries{0, 1, 0x7fffffffU, 0x80000000U,
+                                           std::numeric_limits<std::uint32_t>::max()};
+      for (const std::size_t index : {0U, 15U, 16U, 31U, 32U, 47U, 48U, 63U}) {
+        const auto score = static_cast<std::uint32_t>(expected[index]);
+        boundaries.push_back(score);
+        if (score != 0) boundaries.push_back(score - 1);
+        boundaries.push_back(score + 1);
+      }
+      for (const auto boundary : boundaries) {
+        std::uint64_t wanted = 0;
+        for (std::size_t index = 0; index < 64; ++index) {
+          wanted |= std::uint64_t{expected[index] <= boundary} << index;
+        }
+        for (const auto kernel : entries) {
+          if (kernel == nullptr) continue;
+          require(kernel(packed.data(), q, padded, norms.data(), correction, boundary) == wanted,
+                  "wide mask mismatch: dimension=" + std::to_string(dimension) +
+                      ", pattern=" + std::to_string(pattern) +
+                      ", boundary=" + std::to_string(boundary));
+          ++masks;
+        }
+      }
+      require(packed.storage == packed_before && query_bytes.storage == query_before &&
+                  norms.storage == norms_before,
+              "wide mask modified an input");
+    }
+  }
+  std::cout << "PASS " << masks
+            << " wide masks: independent scores, alternating chains, four-axis tails and inclusive cutoffs\n";
+}
+
 // This intentionally measures prepacked, cache-resident blocks. Packing,
 // allocation and database cache/lifetime behavior are outside this experiment.
 void benchmark(const std::array<Entry, 5> &entries) {
@@ -349,6 +429,7 @@ int main(int argc, char **argv) {
     }
     auto entries = kernels();
     correctness(entries);
+    check_mask64();
     if (run_benchmark) benchmark(entries);
     return 0;
   } catch (const std::exception &error) {

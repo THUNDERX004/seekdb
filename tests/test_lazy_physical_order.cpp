@@ -104,7 +104,8 @@ mvd::Row makeRow(int64_t primary, int64_t revision) {
   return row;
 }
 
-void checkRow(const mvd::Row &row, int64_t primary, int64_t revision) {
+template <typename Row>
+void checkRow(const Row &row, int64_t primary, int64_t revision) {
   require(row.size() == 4 && row[0].integer() == primary &&
               row[1].text() == category(primary) &&
               row[2].text() == payload(primary, revision) &&
@@ -254,7 +255,7 @@ void checkLazyPhysicalOrder(const mvd::fs::path &directory) {
     commit(table, directory, next_txid++, {{23, 2}}, expected);
     checkUnmaterialized(table);
     size_t visited = 0;
-    table.forEachCached([&](int64_t primary, const mvd::Row &row, bool stable) {
+    table.forEachCached([&](int64_t primary, mvd::RowView row, bool stable) {
       require(stable, "cached fixture returned a temporary row");
       checkRow(row, primary, expected.at(primary).revision);
       ++visited;

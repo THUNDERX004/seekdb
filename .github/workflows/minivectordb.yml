@@ -2,7 +2,7 @@ name: MiniVectorDB Linux validation
 
 on:
   push:
-    branches: [2026-competition-round2, codex/performance-five-rounds-20261111]
+    branches: [2026-competition-round2, codex/performance-breakthrough-20261111]
     paths:
       - src/minivectordb.cpp
       - src/*.hpp
@@ -43,6 +43,8 @@ jobs:
               g++ $flags -O3 -DNDEBUG -Wall -Wextra -Wpedantic -DMVD_TEST_FAULTS src/minivectordb.cpp -o build/linux-fault/minivectordb
               g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_quantized_kernels.cpp -o build/test_quantized_kernels
               g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_quantized_block_scan.cpp -o build/test_quantized_block_scan
+              g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_quantized_prepare.cpp -o build/test_quantized_prepare
+              g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_packed_row.cpp -o build/test_packed_row
               g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_quantized_cutoff.cpp -o build/test_quantized_cutoff
               g++ $flags -O2 -Wall -Wextra -Wpedantic -DMVD_FORCE_SCALAR tests/test_quantized_cutoff.cpp -o build/test_quantized_cutoff_scalar
               g++ $flags -O1 tests/test_quantized_allocation.cpp -o build/test_quantized_allocation
@@ -60,7 +62,9 @@ jobs:
                 for kind in statement commit catalog; do
                   g++ $flags -O1 $extra tests/test_${kind}_allocation.cpp -o build/test_${kind}_allocation_${mode}
                 done
-                for test in select_templates commit_row_transfer lazy_physical_order; do
+                g++ $flags -O1 $extra -DMVD_OWNING_ROW_CACHE tests/test_commit_row_transfer.cpp -o build/test_commit_row_transfer_${mode}
+                g++ $flags -O1 $extra tests/test_packed_cache.cpp -o build/test_packed_cache_${mode}
+                for test in select_templates lazy_physical_order; do
                   g++ $flags -O1 $extra tests/test_${test}.cpp -o build/test_${test}_${mode}
                 done
               done
@@ -69,6 +73,8 @@ jobs:
         run: |
           build/test_quantized_kernels
           build/test_quantized_block_scan
+          build/test_quantized_prepare
+          build/test_packed_row
       - name: Verify exact TopK integer screening cutoffs in normal and scalar modes
         run: |
           build/test_quantized_cutoff
@@ -93,6 +99,7 @@ jobs:
         run: |
           for mode in normal scalar; do
             python3 -B tests/test_statement_allocation.py build/test_commit_row_transfer_${mode}
+            python3 -B tests/test_statement_allocation.py build/test_packed_cache_${mode}
           done
       - name: Verify lazy physical directories in normal and scalar modes
         run: |

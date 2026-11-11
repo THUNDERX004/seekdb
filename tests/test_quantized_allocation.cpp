@@ -38,6 +38,14 @@ namespace {
 constexpr std::size_t row_count = 257;
 constexpr std::size_t dimension = 17;
 
+mvd::TableDef fixtureDefinition() {
+  mvd::TableDef definition;
+  definition.columns = {{"id", mvd::ColumnType::BigInt, 0},
+                        {"v", mvd::ColumnType::Vector, dimension}};
+  definition.vector_column = 1;
+  return definition;
+}
+
 void require(bool condition, const char *message) {
   if (!condition) {
     throw std::runtime_error(message);
@@ -133,7 +141,7 @@ void checkResidualBound(const mvd::Table::IndexedRows &rows) {
 }
 
 void checkFailure(long long budget, bool blocked) {
-  mvd::Table table(mvd::TableDef{}, "unused-quantized-allocation.dat");
+  mvd::Table table(fixtureDefinition(), "unused-quantized-allocation.dat");
   table.setCacheLimit(1024 * 1024);
   Fixture fixture;
 
@@ -157,7 +165,7 @@ void checkFailure(long long budget, bool blocked) {
 }
 
 void checkSuccess(bool blocked) {
-  mvd::Table table(mvd::TableDef{}, "unused-quantized-allocation.dat");
+  mvd::Table table(fixtureDefinition(), "unused-quantized-allocation.dat");
   table.setCacheLimit(1024 * 1024);
   Fixture fixture;
   require(prepare(table, fixture.rows, -1, blocked), "fresh quantized cache did not build");
@@ -239,7 +247,7 @@ void checkResidualFixtures(bool blocked) {
       {{1, 2, 3, 0x00008001, 0x003FFFFF, 0x00400001, 0x007FFFFF, 0}}
   }};
   for (const auto &pattern : patterns) {
-    mvd::Table table(mvd::TableDef{}, "unused-quantized-allocation.dat");
+    mvd::Table table(fixtureDefinition(), "unused-quantized-allocation.dat");
     table.setCacheLimit(1024 * 1024);
     Fixture fixture;
     for (size_t row = 0; row < row_count; ++row) {
@@ -261,7 +269,7 @@ void checkResidualFixtures(bool blocked) {
 }
 
 void checkPaddingBudget() {
-  mvd::Table table(mvd::TableDef{}, "unused-quantized-allocation.dat");
+  mvd::Table table(fixtureDefinition(), "unused-quantized-allocation.dat");
   table.setCacheLimit(6000);  // 5397 row-major bytes fit; 6528 padded bytes do not.
   Fixture fixture;
   require(!prepare(table, fixture.rows, -1, true), "padding exceeded the cache budget");
@@ -365,7 +373,7 @@ void checkSharedDirectoryFailure(bool blocked) {
     expected.emplace_back(dimension * value * value, static_cast<int64_t>(i));
   }
   table.forEachIndexedBase(*full, nullptr,
-      [&](int64_t primary, const mvd::Row &row, bool stable) {
+      [&](int64_t primary, mvd::RowView row, bool stable) {
     require(stable && row[0].integer() == primary && row[2].vector().size() == dimension,
             "recovered full query lost a cached row");
     double squared = 0;
@@ -381,7 +389,11 @@ void checkSharedDirectoryFailure(bool blocked) {
 }
 void checkPreservedFullDirectory(bool blocked) {
   struct PreviousVersion { uint64_t offset; bool cached; mvd::Row row; };
+#ifdef MVD_OWNING_ROW_CACHE
   static_assert(sizeof(void *) != 8 || sizeof(mvd::Version) == sizeof(PreviousVersion));
+#else
+  static_assert(sizeof(void *) != 8 || sizeof(mvd::Version) == 24);
+#endif
   constexpr size_t total = 2049;
   mvd::TableDef definition;
   definition.oid = 1;
@@ -410,6 +422,8 @@ void checkPreservedFullDirectory(bool blocked) {
   const auto *full = table.cachedDistanceCandidates(3, nullptr);
   require(full != nullptr && table.prepareQuantizedRows(*full, dimension, blocked),
           "full-first fixture did not prepare its screening cache");
+  row_bytes = 0;
+  for (const auto &entry : *full) row_bytes += mvd::cachedRowBytes(*entry.cached);
   const auto *directory = full->data();
   const auto *codes = full->codes.data();
   const auto *norms = full->code_norms.data();
@@ -464,7 +478,7 @@ void checkPreservedFullDirectory(bool blocked) {
   require(bucket != nullptr && bucket->size() == total / 3,
           "predicate switch did not recover a complete equality directory");
   for (const auto &row : *bucket) {
-    require(row.cached != nullptr && (*row.cached)[2].integer() == 1,
+    require(row.cached != nullptr && table.view(row.primary, *row.cached)[2].integer() == 1,
             "recovered predicate returned a row from another bucket");
   }
   verifyPreserved();
@@ -524,7 +538,7 @@ void checkPreservedFullDirectory(bool blocked) {
     if (row.primary == 0) {
       found = true;
       require(row.cached != nullptr && row.vector_data[0] == 99.0f &&
-                  (*row.cached)[2].integer() == 1,
+                  table.view(row.primary, *row.cached)[2].integer() == 1,
               "rebuilt directory retained a replaced row address");
     }
   }

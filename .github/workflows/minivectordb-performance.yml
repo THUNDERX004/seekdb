@@ -2,12 +2,13 @@ name: MiniVectorDB paired Linux benchmark
 
 on:
   push:
-    branches: [codex/performance-five-rounds-20261111]
+    branches: [codex/performance-breakthrough-20261111]
     paths:
       - src/minivectordb.cpp
       - src/*.hpp
       - bench/evaluate.py
       - bench/evaluate_ordinary.py
+      - bench/evaluate_vector_phases.py
       - .github/workflows/minivectordb-performance.yml
   workflow_dispatch:
 
@@ -25,11 +26,13 @@ jobs:
           fetch-depth: 1
       - name: Fetch the fixed comparison source
         run: |
-          git fetch --no-tags --depth=1 origin fad3a8945b3944aedd70d07be82b3bcf1941faba
+          git fetch --no-tags --depth=1 origin ed5b940d70d9ccc4f6ce4742ebe0847514ca3418
           mkdir -p build/paired-linux
-          git show fad3a8945b3944aedd70d07be82b3bcf1941faba:src/minivectordb.cpp > build/paired-linux/baseline.cpp
-          git show fad3a8945b3944aedd70d07be82b3bcf1941faba:src/compact_value.hpp > build/paired-linux/compact_value.hpp
-          git show fad3a8945b3944aedd70d07be82b3bcf1941faba:src/quantized_block_scan.hpp > build/paired-linux/quantized_block_scan.hpp
+          git show ed5b940d70d9ccc4f6ce4742ebe0847514ca3418:src/minivectordb.cpp > build/paired-linux/baseline.cpp
+          git show ed5b940d70d9ccc4f6ce4742ebe0847514ca3418:src/compact_value.hpp > build/paired-linux/compact_value.hpp
+          git show ed5b940d70d9ccc4f6ce4742ebe0847514ca3418:src/quantized_block_scan.hpp > build/paired-linux/quantized_block_scan.hpp
+          git show ed5b940d70d9ccc4f6ce4742ebe0847514ca3418:src/decimal_float.hpp > build/paired-linux/decimal_float.hpp
+          git show ed5b940d70d9ccc4f6ce4742ebe0847514ca3418:src/topk_heap.hpp > build/paired-linux/topk_heap.hpp
       - name: Build both versions with the submission compiler
         run: |
           docker run --rm --network=none --mount type=bind,src="$PWD",dst=/work --workdir /work \
@@ -79,12 +82,21 @@ jobs:
             --baseline-protocol json --candidate-protocol json \
             --runs 3 --rows 100000 --dim 128 --queries 1000 --batch 100 --k 10 \
             --seed 20261670 --report build/paired-linux/large.json > build/paired-linux/large.stdout.txt
+      - name: Separate cold preparation and warm query measurements
+        run: |
+          for rows in 10000 100000; do
+            python3 -X utf8 -B bench/evaluate_vector_phases.py \
+              --baseline build/paired-linux/baseline --candidate build/paired-linux/candidate \
+              --rows "$rows" --dim 128 --queries 1000 --runs 5 --aa-runs 2 \
+              --seed 20261810 --report build/paired-linux/phases-$rows.json \
+              > build/paired-linux/phases-$rows.stdout.txt
+          done
       - name: Print comparison evidence
         if: always()
         run: |
           git rev-parse HEAD
           sha256sum src/minivectordb.cpp src/*.hpp \
-            build/paired-linux/baseline.cpp build/paired-linux/compact_value.hpp build/paired-linux/quantized_block_scan.hpp \
+            build/paired-linux/baseline.cpp build/paired-linux/*.hpp \
             build/paired-linux/baseline build/paired-linux/candidate
           lscpu | head -35
           python3 - <<'PY'
@@ -113,4 +125,7 @@ jobs:
                   result.pop('write_batch_ns', None)
                   result.pop('queries_raw', None)
           print('ORDINARY_LINUX_EVIDENCE ' + json.dumps(report, separators=(',', ':')))
+          for rows in (10000, 100000):
+              report = json.loads(Path(f'build/paired-linux/phases-{rows}.json').read_text())
+              print(f'PHASES_{rows}_EVIDENCE ' + json.dumps(report, separators=(',', ':')))
           PY
