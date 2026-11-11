@@ -36,7 +36,7 @@ jobs:
           docker run --rm --network=none --mount type=bind,src="$PWD",dst=/work --workdir /work \
             gcc:14.3.0-bookworm@sha256:5e927c284bf55a7dc796262e311a0703344f62f41f5621eb56843111b1d37e15 \
             bash -euc '
-              flags="-std=c++20 -O3 -DNDEBUG -Wall -Wextra -Wpedantic -static-libstdc++ -static-libgcc"
+              flags="-std=c++20 -O3 -DNDEBUG -Wall -Wextra -Wpedantic -static-libstdc++ -static-libgcc -pthread"
               g++ $flags build/quantized-memory/baseline.cpp -o build/quantized-memory/baseline
               g++ $flags src/minivectordb.cpp -o build/quantized-memory/candidate
             '

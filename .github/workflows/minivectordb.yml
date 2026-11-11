@@ -38,13 +38,14 @@ jobs:
           docker run --rm --network=none --mount type=bind,src="$PWD",dst=/work --workdir /work \
             gcc:14.3.0-bookworm@sha256:5e927c284bf55a7dc796262e311a0703344f62f41f5621eb56843111b1d37e15 \
             bash -euc '
-              flags="-std=c++20 -static-libstdc++ -static-libgcc"
+              flags="-std=c++20 -static-libstdc++ -static-libgcc -pthread"
               g++ $flags -O3 -DNDEBUG -Wall -Wextra -Wpedantic -DMVD_FORCE_SCALAR src/minivectordb.cpp -o build/linux-scalar/minivectordb
               g++ $flags -O3 -DNDEBUG -Wall -Wextra -Wpedantic -DMVD_TEST_FAULTS src/minivectordb.cpp -o build/linux-fault/minivectordb
               g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_quantized_kernels.cpp -o build/test_quantized_kernels
               g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_quantized_block_scan.cpp -o build/test_quantized_block_scan
               g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_quantized_prepare.cpp -o build/test_quantized_prepare
               g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_packed_row.cpp -o build/test_packed_row
+              g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_parallel_scan_worker.cpp -o build/test_parallel_scan_worker
               g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_quantized_cutoff.cpp -o build/test_quantized_cutoff
               g++ $flags -O2 -Wall -Wextra -Wpedantic -DMVD_FORCE_SCALAR tests/test_quantized_cutoff.cpp -o build/test_quantized_cutoff_scalar
               g++ $flags -O1 tests/test_quantized_allocation.cpp -o build/test_quantized_allocation
@@ -75,6 +76,9 @@ jobs:
           build/test_quantized_block_scan
           build/test_quantized_prepare
           build/test_packed_row
+          build/test_parallel_scan_worker
+      - name: Verify large exact TopK partition boundaries and mutation lifetime
+        run: python3 -X utf8 -B tests/test_parallel_topk.py build/linux-normal/minivectordb
       - name: Verify exact TopK integer screening cutoffs in normal and scalar modes
         run: |
           build/test_quantized_cutoff

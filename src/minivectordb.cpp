@@ -39,6 +39,7 @@
 #include "decimal_float.hpp"
 #include "topk_heap.hpp"
 #include "row_view.hpp"
+#include "parallel_scan_worker.hpp"
 
 #ifdef MVD_PROFILE
 #include <chrono>
@@ -5104,7 +5105,6 @@ class Database {
                 ? nullptr : &statement.conditions.front());
       }
       if (cached_candidates != nullptr) {
-        size_t i = 0;
         bool quantized = false;
 #if !defined(MVD_FORCE_SCALAR) && (defined(__GNUC__) || defined(__clang__)) && \
     (defined(__x86_64__) || defined(__i386__))
@@ -5139,8 +5139,11 @@ class Database {
               block_kernel != nullptr && prepared_probe.size() >= 64 &&
                   table.rowCount() >= 2048);
         }
+        size_t code_first = 0;
+        int64_t query_correction = 0;
+        int64_t query_norm = 0;
         if (code_rows != nullptr) {
-          const size_t code_first = code_rows == cached_candidates
+          code_first = code_rows == cached_candidates
               ? 0 : cached_candidates->code_first;
           // The reciprocal is also an exact power of two in double for every
           // finite binary32 row value, including a wholly subnormal table.
@@ -5155,8 +5158,6 @@ class Database {
             }
           }
           if (quantized) {
-            int64_t query_correction = 0;
-            int64_t query_norm = 0;
             double squared_query_error = 0;
             size_t axis = 0;
             for (double value : prepared_probe) {
@@ -5176,6 +5177,72 @@ class Database {
             quantized_error = code_rows->code_error +
                 std::sqrt(squared_query_error * rejection_multiplier) *
                     rejection_multiplier + 1;
+          }
+        }
+#endif
+        // Each range owns its heap and rejection boundaries. Cache layout and
+        // query codes are immutable until both synchronous scans have joined.
+        const auto scanRange = [&](size_t first_row, size_t last,
+                                    std::vector<Candidate> &heap) {
+          size_t i = first_row;
+          uint32_t quantized_above = std::numeric_limits<uint32_t>::max();
+          double reject_above = std::numeric_limits<double>::infinity();
+          double screening_above = std::numeric_limits<double>::infinity();
+          const auto updateRejectionBoundary = [&] {
+            reject_above = std::nextafter(
+                heap.front().squared_distance * rejection_multiplier,
+                std::numeric_limits<double>::infinity());
+            screening_above =
+                reject_above * screening_multiplier + screening_absolute;
+            if (quantized_scale > 0) {
+              // The triangle inequality bounds code-distance by true-distance /
+              // step plus the measured row/query residual norms. The extra whole
+              // unit covers floating evaluation roundoff (useful radii <32768);
+              // ceil rounds the integer squared-distance threshold outward.
+              const double radius = std::sqrt(reject_above) * quantized_scale +
+                                    quantized_error;
+              quantized_above = radius < 32768
+                  ? static_cast<uint32_t>(std::ceil(radius * radius))
+                  : std::numeric_limits<uint32_t>::max();
+            }
+          };
+          const auto consumeVector = [&](int64_t primary, const float *vector,
+                                         RowView row, bool stable,
+                                         const float *screen = nullptr) {
+            if (heap.size() == capacity &&
+                (screen != nullptr
+                     ? std::isfinite(*screen) &&
+                           static_cast<double>(*screen) > screening_above
+                     : clearlyWorse(vector, screening_above))) {
+              return true;
+            }
+            MVD_PROFILE_SCOPE(distance_profile, Distance, 255);
+            const double squared = distance_kernel(vector, prepared_probe.data(),
+                                                    prepared_probe.size());
+            MVD_PROFILE_END(distance_profile);
+            if (heap.size() < capacity) {
+              MVD_PROFILE_SCOPE(heap_profile, Heap, 31);
+              heap.push_back(Candidate{squared, primary, RetainedRow::keep(row, stable)});
+              std::push_heap(heap.begin(), heap.end(), candidateLess);
+              updateRejectionBoundary();
+            } else if (squared <= reject_above) {
+              const Candidate &worst = heap.front();
+              const int comparison = compareDistances(
+                  squared, row[distance_spec.column].vector(), worst.squared_distance,
+                  worst.row.get()[distance_spec.column].vector(), distance_spec.probe);
+              if (comparison < 0 || (comparison == 0 && primary < worst.primary)) {
+                MVD_PROFILE_SCOPE(heap_profile, Heap, 31);
+                replaceHeapRoot(heap,
+                    Candidate{squared, primary, RetainedRow::keep(row, stable)},
+                    candidateLess);
+                updateRejectionBoundary();
+              }
+            }
+            return true;
+          };
+#if !defined(MVD_FORCE_SCALAR) && (defined(__GNUC__) || defined(__clang__)) && \
+    (defined(__x86_64__) || defined(__i386__))
+          if (quantized) {
             // Gather only within this synchronous scan. Delaying consumption
             // leaves a safe older code boundary; consumeVector checks each
             // supplied float score against the current heap boundary.
@@ -5214,7 +5281,7 @@ class Database {
               }
             };
             if (code_rows->codes_blocked) {
-              for (; i < cached_candidates->size();) {
+              for (; i < last;) {
                 const size_t first = code_first + i;
                 const size_t lane = first % quantized_block::kBlockRows;
                 const size_t block_first = first - lane;
@@ -5224,7 +5291,7 @@ class Database {
                 // and never read past the shared matrix's padded row count.
                 const bool wide = heap.size() == capacity &&
                     block64_kernel != nullptr &&
-                    cached_candidates->size() - i >= 64 - lane &&
+                    last - i >= 64 - lane &&
                     code_rows->code_norms.size() - block_first >= 64;
                 const size_t width = wide ? 64 : quantized_block::kBlockRows;
                 const auto kernel = wide ? block64_kernel : block_kernel;
@@ -5235,7 +5302,7 @@ class Database {
                     query_correction, heap.size() == capacity
                         ? quantized_above : std::numeric_limits<uint32_t>::max());
                 const size_t count = std::min(width - lane,
-                                              cached_candidates->size() - i);
+                                              last - i);
                 survivors >>= lane;
                 if (count < 64) survivors &= (uint64_t{1} << count) - 1;
                 while (survivors != 0) {
@@ -5250,7 +5317,7 @@ class Database {
               const int64_t row_correction =
                   quantized_kernel == &quantizedDistanceBatchAvx2
                       ? query_norm : query_correction;
-              for (; cached_candidates->size() - i >= 4; i += 4) {
+              for (; last - i >= 4; i += 4) {
                 uint32_t scores[4];
                 quantized_kernel(code_rows->codes.data() +
                         (code_first + i) * prepared_probe.size(), quantized_probe.data(),
@@ -5269,33 +5336,63 @@ class Database {
             // Consume a partial group before any fallback or raw-vector tail.
             flushScreeningRows();
           }
-        }
 #endif
-        if (!quantized && screening_batch_kernel != nullptr) {
-          for (; cached_candidates->size() - i >= 4; i += 4) {
-            const auto *batch = cached_candidates->data() + i;
-            for (size_t j = 0; j < 4; ++j) {
-              if (batch[j].vector_data == nullptr) {
-                fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
+          if (!quantized && screening_batch_kernel != nullptr) {
+            for (; last - i >= 4; i += 4) {
+              const auto *batch = cached_candidates->data() + i;
+              for (size_t j = 0; j < 4; ++j) {
+                if (batch[j].vector_data == nullptr) {
+                  fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
+                }
+              }
+              float scores[4];
+              screening_batch_kernel(batch, distance_spec.probe.data(),
+                                     prepared_probe.size(), scores);
+              for (size_t j = 0; j < 4; ++j) {
+                consumeVector(batch[j].primary, batch[j].vector_data,
+                              table.view(batch[j].primary, *batch[j].cached), true, &scores[j]);
               }
             }
-            float scores[4];
-            screening_batch_kernel(batch, distance_spec.probe.data(),
-                                   prepared_probe.size(), scores);
-            for (size_t j = 0; j < 4; ++j) {
-              consumeVector(batch[j].primary, batch[j].vector_data,
-                            table.view(batch[j].primary, *batch[j].cached), true, &scores[j]);
+          }
+          for (; i < last; ++i) {
+            const Table::IndexedRow &indexed = (*cached_candidates)[i];
+            if (indexed.vector_data == nullptr) {
+              fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
+            }
+            consumeVector(indexed.primary, indexed.vector_data,
+                          table.view(indexed.primary, *indexed.cached), true);
+          }
+        };
+        bool parallel = false;
+#if !defined(MVD_PROFILE)
+        if (quantized && cached_candidates->size() >= 65536 && capacity <= 256 &&
+            std::thread::hardware_concurrency() >= 2) {
+          std::vector<Candidate> other_heap;
+          try {
+            other_heap.reserve(capacity);
+          } catch (const std::bad_alloc &) {
+          }
+          if (other_heap.capacity() >= capacity) {
+            // Every global TopK row belongs to a local TopK. Merge with the
+            // same exact distance and primary-key ordering as the serial path.
+            const size_t split = cached_candidates->size() / 2;
+            parallel = parallel_scan_worker_.run_pair(
+                [&] { scanRange(0, split, heap); },
+                [&] { scanRange(split, cached_candidates->size(), other_heap); });
+            if (parallel) {
+              for (auto &candidate : other_heap) {
+                if (heap.size() < capacity) {
+                  heap.push_back(std::move(candidate));
+                  std::push_heap(heap.begin(), heap.end(), candidateLess);
+                } else if (candidateLess(candidate, heap.front())) {
+                  replaceHeapRoot(heap, std::move(candidate), candidateLess);
+                }
+              }
             }
           }
         }
-        for (; i < cached_candidates->size(); ++i) {
-          const Table::IndexedRow &indexed = (*cached_candidates)[i];
-          if (indexed.vector_data == nullptr) {
-            fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
-          }
-          consumeVector(indexed.primary, indexed.vector_data,
-                        table.view(indexed.primary, *indexed.cached), true);
-        }
+#endif
+        if (!parallel) scanRange(0, cached_candidates->size(), heap);
       } else {
         size_t guaranteed_condition = std::numeric_limits<size_t>::max();
         forEachCandidateView(table, statement.conditions,
@@ -6176,6 +6273,7 @@ class Database {
   std::unordered_map<std::string, std::unique_ptr<Table>> tables_;
   std::unordered_map<std::string, const TableDef *> definitions_;
   SelectTemplateCache select_templates_;
+  ParallelScanWorker parallel_scan_worker_;
   std::unordered_map<uint32_t, std::map<int64_t, std::optional<Row>>> overlay_;
   std::unordered_map<uint32_t, std::map<int64_t, std::optional<Row>>>
       shutdown_overlay_;

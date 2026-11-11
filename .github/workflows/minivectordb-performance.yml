@@ -38,7 +38,7 @@ jobs:
           docker run --rm --network=none --mount type=bind,src="$PWD",dst=/work --workdir /work \
             gcc:14.3.0-bookworm@sha256:5e927c284bf55a7dc796262e311a0703344f62f41f5621eb56843111b1d37e15 \
             bash -euc '
-              flags="-std=c++20 -O3 -DNDEBUG -Wall -Wextra -Wpedantic -static-libstdc++ -static-libgcc"
+              flags="-std=c++20 -O3 -DNDEBUG -Wall -Wextra -Wpedantic -static-libstdc++ -static-libgcc -pthread"
               g++ $flags build/paired-linux/baseline.cpp -o build/paired-linux/baseline
               g++ $flags src/minivectordb.cpp -o build/paired-linux/candidate
             '
@@ -75,6 +75,10 @@ jobs:
             --baseline build/paired-linux/baseline --candidate build/paired-linux/candidate \
             --runs 3 --rows 10000 --dim 128 --queries 1000 --batch 100 --k 10 \
             --seed 20261660 --report build/paired-linux/ordinary.json > build/paired-linux/ordinary.stdout.txt
+          python3 -X utf8 -B bench/evaluate_ordinary.py \
+            --baseline build/paired-linux/candidate --candidate build/paired-linux/candidate \
+            --runs 3 --rows 10000 --dim 128 --queries 1000 --batch 100 --k 10 \
+            --seed 20261660 --report build/paired-linux/ordinary-aa.json > build/paired-linux/ordinary-aa.stdout.txt
       - name: Run serial large 100k x 128 JSON measurements and independent verification
         run: |
           python3 -X utf8 -B bench/evaluate.py \
@@ -125,6 +129,13 @@ jobs:
                   result.pop('write_batch_ns', None)
                   result.pop('queries_raw', None)
           print('ORDINARY_LINUX_EVIDENCE ' + json.dumps(report, separators=(',', ':')))
+          report = json.loads(Path('build/paired-linux/ordinary-aa.json').read_text())
+          report['workload'].pop('queries', None)
+          for run in report['runs']:
+              for result in run['results'].values():
+                  result.pop('write_batch_ns', None)
+                  result.pop('queries_raw', None)
+          print('ORDINARY_AA_EVIDENCE ' + json.dumps(report, separators=(',', ':')))
           for rows in (10000, 100000):
               report = json.loads(Path(f'build/paired-linux/phases-{rows}.json').read_text())
               print(f'PHASES_{rows}_EVIDENCE ' + json.dumps(report, separators=(',', ':')))

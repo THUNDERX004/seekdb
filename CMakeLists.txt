@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(minivectordb src/minivectordb.cpp)
+find_package(Threads REQUIRED)
+target_link_libraries(minivectordb PRIVATE Threads::Threads)
 
 if(MSVC)
   target_compile_options(minivectordb PRIVATE /O2 /W4)
