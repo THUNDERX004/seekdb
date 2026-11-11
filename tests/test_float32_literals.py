@@ -203,6 +203,22 @@ class Float32Literals(unittest.TestCase):
                 self.assertRegex(output[0], r"^ERROR [^\s:]+: .+")
                 self.expect("SELECT id FROM t ORDER BY id", ["1"])
 
+    def test_numeric_token_boundaries_preserve_error_codes_and_atomicity(self):
+        self.expect("CREATE TABLE t(id BIGINT PRIMARY KEY,v VECTOR(1))", ["OK"])
+        self.expect("INSERT INTO t VALUES(1,'[1]')", ["OK 1"])
+        cases = (("1e", "SQL_SYNTAX"), ("1.e+", "SQL_SYNTAX"),
+                 ("-1e-", "SQL_SYNTAX"), ("1e1e", "SQL_SYNTAX"),
+                 ("1.2.3", "SQL_SYNTAX"), ("1e-999e", "SQL_SYNTAX"),
+                 ("1e999e", "VALUE_OUT_OF_RANGE"),
+                 (".5", "TYPE_MISMATCH"), ("+", "TYPE_MISMATCH"))
+        for literal, code in cases:
+            with self.subTest(literal=literal):
+                output = self.session.execute(
+                    f"INSERT INTO t VALUES(2,'[2]'),(3,'[{literal}]')")
+                self.assertEqual(len(output), 1)
+                self.assertTrue(output[0].startswith(f"ERROR {code}:"), output)
+                self.expect("SELECT id FROM t ORDER BY id", ["1"])
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

@@ -102,7 +102,7 @@ class QuantizedScreenTests(unittest.TestCase):
                        predicate=predicate, limit=limit, offset=offset,
                        scores=scores)
 
-    def test_half_steps_clamping_ties_offsets_and_four_row_tails(self):
+    def test_half_steps_clamping_ties_offsets_and_block_tails(self):
         client = self.open_client()
         # Adjacent binary32 values on either side of half steps, including the
         # rounding/clamping boundary at +/-127.5 and the last value below 128.
@@ -221,7 +221,7 @@ class QuantizedScreenTests(unittest.TestCase):
 
     def warm_views(self, client, rows):
         rows = list(rows.values())
-        probe = (0.0,) * 17
+        probe = (0.0,) * len(rows[0].vector)
         scores = exact_scores(rows, probe)
         # Warm two real >=2048 buckets and the full view together, then switch
         # equality columns to invalidate/rebuild their shared cache accounting.
@@ -248,25 +248,28 @@ class QuantizedScreenTests(unittest.TestCase):
 
     def test_warm_views_mutations_rollback_commit_and_restart(self):
         client = self.open_client()
+        # A non-multiple of four above the VNNI layout gate exercises packed
+        # axis padding through every invalidation, overlay and restart path.
+        dimension = 65
         fixture = [Row((index * 73) % 4177 - 2088,
                        7 if index < 2080 else 8,
                        "red" if index < 2080 else "blue", f"initial {index}",
-                       (32.0 + index % 83,) + (0.0,) * 15
+                       (32.0 + index % 83,) + (0.0,) * (dimension - 2)
                        + (((index * 7) % 29 - 14) / 8,))
                    for index in range(4160)]
         rows = {row.primary: row for row in fixture}
-        self.create(client, "mutable", 17, fixture)
+        self.create(client, "mutable", dimension, fixture)
         self.warm_views(client, rows)
         self.sql(client, "CREATE VECTOR INDEX mutable_ix ON mutable(v)")
         self.warm_views(client, rows)
 
         changed = replace(fixture[20], tag=8, category="blue", payload="updated",
-                          vector=(0.0,) * 17)
+                          vector=(0.0,) * dimension)
         self.update_row(client, changed)
         rows[changed.primary] = changed
         self.warm_views(client, rows)
-        additions = [Row(-10001, 7, "red", "new nearest", (0.0,) * 17),
-                     Row(10001, 8, "blue", "new scale", (4096.0,) + (0.0,) * 16)]
+        additions = [Row(-10001, 7, "red", "new nearest", (0.0,) * dimension),
+                     Row(10001, 8, "blue", "new scale", (4096.0,) + (0.0,) * (dimension - 1))]
         self.insert(client, "mutable", additions)
         rows.update((row.primary, row) for row in additions)
         self.warm_views(client, rows)
@@ -280,14 +283,14 @@ class QuantizedScreenTests(unittest.TestCase):
                 pending = rows.copy()
                 moved = replace(rows[-10001], tag=8, category="blue",
                                 payload="committed" if commit else "rolled back",
-                                vector=(0.25,) + (0.0,) * 16)
+                                vector=(0.25,) + (0.0,) * (dimension - 1))
                 self.update_row(client, moved)
                 pending[moved.primary] = moved
                 # Remove the previous scale maximum, forcing a different code
                 # scale on commit while rollback must preserve the old view.
                 self.sql(client, "DELETE FROM mutable WHERE id=10001", 1)
                 del pending[10001]
-                inserted = Row(-10002, 7, "red", "transaction insert", (0.0,) * 17)
+                inserted = Row(-10002, 7, "red", "transaction insert", (0.0,) * dimension)
                 self.insert(client, "mutable", [inserted])
                 pending[inserted.primary] = inserted
                 self.warm_views(client, pending)

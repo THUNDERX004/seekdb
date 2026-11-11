@@ -77,12 +77,12 @@ struct Fixture {
 };
 
 bool prepare(mvd::Table &table, const mvd::Table::IndexedRows &rows,
-             long long budget) {
+             long long budget, bool blocked) {
   allocation_calls = 0;
   allocation_injected = false;
   allocation_budget = budget;
   try {
-    const bool ready = table.prepareQuantizedRows(rows, dimension);
+    const bool ready = table.prepareQuantizedRows(rows, dimension, blocked);
     allocation_budget = -1;
     return ready;
   } catch (...) {
@@ -95,17 +95,17 @@ void checkUnpublished(const mvd::Table::IndexedRows &rows) {
   require(rows.codes_attempted, "failed preparation was not remembered");
   require(rows.codes.empty() && rows.codes.capacity() == 0 &&
               rows.code_norms.empty() && rows.code_norms.capacity() == 0 &&
-              rows.code_step == 0,
+              rows.code_step == 0 && rows.code_stride == 0 && !rows.codes_blocked,
           "failed preparation published a partial quantized cache");
 }
 
-void checkFailure(long long budget) {
+void checkFailure(long long budget, bool blocked) {
   mvd::Table table(mvd::TableDef{}, "unused-quantized-allocation.dat");
   table.setCacheLimit(1024 * 1024);
   Fixture fixture;
 
   // Budget 0 fails codes; budget 1 allows codes and then fails norms.
-  require(!prepare(table, fixture.rows, budget),
+  require(!prepare(table, fixture.rows, budget, blocked),
           "allocation failure did not return the float-path fallback");
   require(allocation_injected &&
               allocation_calls == static_cast<std::size_t>(budget + 1),
@@ -113,44 +113,91 @@ void checkFailure(long long budget) {
   checkUnpublished(fixture.rows);
   fixture.checkDirectory();
 
-  require(!prepare(table, fixture.rows, 0),
+  require(!prepare(table, fixture.rows, 0, blocked),
           "failed cache unexpectedly became available on retry");
   require(!allocation_injected && allocation_calls == 0,
           "failed cache retried an allocation");
   checkUnpublished(fixture.rows);
   fixture.checkDirectory();
-  std::cout << "PASS quantized allocation failure budget=" << budget << '\n';
+  std::cout << "PASS quantized allocation failure budget=" << budget
+            << " blocked=" << blocked << '\n';
 }
 
-void checkSuccess() {
+void checkSuccess(bool blocked) {
   mvd::Table table(mvd::TableDef{}, "unused-quantized-allocation.dat");
   table.setCacheLimit(1024 * 1024);
   Fixture fixture;
-  require(prepare(table, fixture.rows, -1), "fresh quantized cache did not build");
+  require(prepare(table, fixture.rows, -1, blocked), "fresh quantized cache did not build");
+  const size_t stride = blocked ? 20 : dimension;
+  const size_t stored_rows = blocked ? 272 : row_count;
   require(fixture.rows.codes_attempted &&
-              fixture.rows.codes.size() == row_count * dimension &&
-              fixture.rows.code_norms.size() == row_count &&
+              fixture.rows.codes.size() == stored_rows * stride &&
+              fixture.rows.code_norms.size() == stored_rows &&
+              fixture.rows.code_stride == stride && fixture.rows.codes_blocked == blocked &&
               fixture.rows.code_step > 0 && std::isfinite(fixture.rows.code_step),
           "successful preparation did not publish a complete cache");
   fixture.checkDirectory();
 
   const auto *codes = fixture.rows.codes.data();
   const auto *norms = fixture.rows.code_norms.data();
-  require(prepare(table, fixture.rows, 0), "published cache could not be reused");
+  require(prepare(table, fixture.rows, 0, blocked), "published cache could not be reused");
   require(!allocation_injected && allocation_calls == 0 &&
               fixture.rows.codes.data() == codes &&
               fixture.rows.code_norms.data() == norms,
           "published cache was reallocated on reuse");
   fixture.checkDirectory();
-  std::cout << "PASS quantized cache construction and reuse\n";
+  if (blocked) {
+    std::array<int8_t, 20> query{};
+    for (size_t axis = 0; axis < dimension; ++axis) {
+      query[axis] = static_cast<int8_t>(int(axis % 5) * 31 - 60);
+    }
+    const auto correction = mvd::quantized_block::query_correction(query.data(), dimension);
+    for (size_t first = 0; first < stored_rows; first += 16) {
+      uint32_t scores[16];
+      mvd::quantized_block::scalar(
+          reinterpret_cast<const uint8_t *>(codes + first * stride), query.data(),
+          stride, norms + first, correction, scores);
+      for (size_t row = 0; row < 16; ++row) {
+        // This fixture's scale is exactly 1/16, so the independent expected
+        // code is an integer multiple of 16. Padded rows represent zero.
+        const int code = first + row < row_count ? int((first + row) % 7 + 1) * 16 : 0;
+        uint32_t expected = 0;
+        for (size_t axis = 0; axis < dimension; ++axis) {
+          const int delta = code - query[axis];
+          expected += static_cast<uint32_t>(delta * delta);
+        }
+        require(scores[row] == expected, "packed row/axis tails changed a squared score");
+      }
+    }
+  }
+  mvd::Table::IndexedRows empty;
+  fixture.rows.swap(empty);
+  require(fixture.rows.codes.empty() && fixture.rows.code_norms.empty() &&
+              fixture.rows.code_stride == 0 && !fixture.rows.codes_blocked &&
+              !fixture.rows.codes_attempted, "cache invalidation retained layout metadata");
+  std::cout << "PASS quantized cache construction, packing and reuse blocked=" << blocked << '\n';
+}
+
+void checkPaddingBudget() {
+  mvd::Table table(mvd::TableDef{}, "unused-quantized-allocation.dat");
+  table.setCacheLimit(6000);  // 5397 row-major bytes fit; 6528 padded bytes do not.
+  Fixture fixture;
+  require(!prepare(table, fixture.rows, -1, true), "padding exceeded the cache budget");
+  require(allocation_calls == 0, "padding budget was checked after allocation");
+  checkUnpublished(fixture.rows);
+  fixture.checkDirectory();
+  std::cout << "PASS padded allocation budget\n";
 }
 }  // namespace
 
 int main() {
   try {
-    checkFailure(0);
-    checkFailure(1);
-    checkSuccess();
+    for (bool blocked : {false, true}) {
+      checkFailure(0, blocked);
+      checkFailure(1, blocked);
+      checkSuccess(blocked);
+    }
+    checkPaddingBudget();
     return 0;
   } catch (const std::exception &error) {
     allocation_budget = -1;

@@ -33,6 +33,8 @@
 #include <variant>
 #include <vector>
 
+#include "quantized_block_scan.hpp"
+
 #ifdef MVD_PROFILE
 #include <chrono>
 #endif
@@ -1459,9 +1461,10 @@ class Parser {
     return value;
   }
 
-  std::vector<float> parseVectorBody() {
+  std::vector<float> parseVectorBody(size_t expected = 0) {
     expectSymbol("[");
     std::vector<float> result;
+    result.reserve(std::min<size_t>(expected, 4096));
     if (consumeSymbol("]")) {
       return result;
     }
@@ -1474,7 +1477,8 @@ class Parser {
     }
   }
 
-  static std::vector<float> parseVectorLiteralText(std::string_view text) {
+  static std::vector<float> parseVectorLiteralText(std::string_view text,
+                                                   size_t expected = 0) {
     size_t pos = 0;
     const auto space = [&] {
       while (pos < text.size() &&
@@ -1487,6 +1491,7 @@ class Parser {
       fail("TYPE_MISMATCH", "VECTOR requires a bracketed numeric array");
     }
     std::vector<float> result;
+    result.reserve(std::min<size_t>(expected, 4096));
     space();
     if (pos < text.size() && text[pos] == ']') {
       ++pos;
@@ -1497,37 +1502,32 @@ class Parser {
         if (pos < text.size() && (text[pos] == '+' || text[pos] == '-')) {
           ++pos;
         }
-        const size_t integer_start = pos;
-        while (pos < text.size() &&
-               std::isdigit(static_cast<unsigned char>(text[pos]))) {
-          ++pos;
-        }
-        if (pos == integer_start) {
+        if (pos == text.size() || text[pos] < '0' || text[pos] > '9') {
           fail("TYPE_MISMATCH", "vector component must be numeric");
         }
-        if (pos < text.size() && text[pos] == '.') {
-          ++pos;
-          while (pos < text.size() &&
-                 std::isdigit(static_cast<unsigned char>(text[pos]))) {
-            ++pos;
-          }
+        // from_chars already finds the end of the decimal. Avoid a separate
+        // digit-by-digit tokenization pass over every stored/query component.
+        const char *begin = text.data() + start;
+        if (*begin == '+') { ++begin; }
+        float component = 0;
+        auto parsed = std::from_chars(begin, text.data() + text.size(), component);
+        pos = static_cast<size_t>(parsed.ptr - text.data());
+        // A malformed exponent is left unconsumed by from_chars; retain the
+        // grammar and error classification used by the tokenized vector path.
+        if (pos < text.size() && (text[pos] == 'e' || text[pos] == 'E') &&
+            std::string_view(begin, parsed.ptr - begin).find_first_of("eE") ==
+                std::string_view::npos) {
+          fail("SQL_SYNTAX", "numeric exponent requires digits");
         }
-        if (pos < text.size() && (text[pos] == 'e' || text[pos] == 'E')) {
-          ++pos;
-          if (pos < text.size() && (text[pos] == '+' || text[pos] == '-')) {
-            ++pos;
-          }
-          const size_t exponent_start = pos;
-          while (pos < text.size() &&
-                 std::isdigit(static_cast<unsigned char>(text[pos]))) {
-            ++pos;
-          }
-          if (pos == exponent_start) {
-            fail("SQL_SYNTAX", "numeric exponent requires digits");
-          }
+        if (parsed.ec == std::errc::result_out_of_range &&
+            decimalMagnitudeBelowOne(std::string_view(begin, parsed.ptr - begin))) {
+          component = *begin == '-' ? -0.0f : 0.0f;
+          parsed.ec = std::errc();
         }
-        result.push_back(
-            parseFloat32Text(text.substr(start, pos - start)));
+        if (parsed.ec != std::errc() || !std::isfinite(component)) {
+          fail("VALUE_OUT_OF_RANGE", "vector component is not a finite float32");
+        }
+        result.push_back(component);
         space();
         if (pos < text.size() && text[pos] == ']') {
           ++pos;
@@ -1570,9 +1570,9 @@ class Parser {
       return value;
     }
     if (peek().kind == TokenKind::Symbol && peek().text == "[") {
-      value.vector = parseVectorBody();
+      value.vector = parseVectorBody(length);
     } else if (peek().kind == TokenKind::String) {
-      value.vector = parseVectorLiteralText(tokens_[pos_++].text);
+      value.vector = parseVectorLiteralText(tokens_[pos_++].text, length);
     } else {
       fail("TYPE_MISMATCH", "VECTOR requires a bracketed numeric array");
     }
@@ -2193,6 +2193,7 @@ class FileWriter {
       fail("IO_ERROR", "cannot determine size of " + path.string());
     }
     offset_ = static_cast<uint64_t>(current);
+    sync_start_ = offset_;
   }
 
   FileWriter(const FileWriter &) = delete;
@@ -2214,7 +2215,7 @@ class FileWriter {
     return start;
   }
 
-  void sync() {
+  void sync(bool discard_appended_pages = false) {
     if (std::fflush(file_) != 0) {
       fail("IO_ERROR", "flush failed for " + path_.string());
     }
@@ -2230,15 +2231,52 @@ class FileWriter {
       fail("IO_ERROR", "fsync failed for " + path_.string());
     }
 #endif
+#ifdef __linux__
+    if (discard_appended_pages && sync_start_ < offset_) {
+      discardSyncedAppends(descriptor);
+    }
+#else
+    (void)discard_appended_pages;
+#endif
+    sync_start_ = offset_;
   }
 
   uint64_t offset() const { return offset_; }
 
  private:
+#ifdef __linux__
+  void discardSyncedAppends(int descriptor) noexcept {
+    // Advice is optional and must not change either durability or the caller's
+    // errno. Never advise the whole file: only newly completed pages, including
+    // the previous partial tail when this append finishes that page.
+    const int saved_errno = errno;
+    constexpr uint64_t maximum_chunk = 64ULL * 1024ULL;
+    const long detected_page_size = sysconf(_SC_PAGESIZE);
+    if (detected_page_size > 0 &&
+        static_cast<uint64_t>(detected_page_size) <= maximum_chunk &&
+        offset_ <= static_cast<uint64_t>(std::numeric_limits<off_t>::max())) {
+      const uint64_t page_size = static_cast<uint64_t>(detected_page_size);
+      const uint64_t chunk = maximum_chunk - maximum_chunk % page_size;
+      uint64_t begin = sync_start_ - sync_start_ % page_size;
+      const uint64_t end = offset_ - offset_ % page_size;
+      while (begin < end) {
+        const uint64_t length = std::min(chunk, end - begin);
+        if (posix_fadvise(descriptor, static_cast<off_t>(begin),
+                          static_cast<off_t>(length), POSIX_FADV_DONTNEED) != 0) {
+          break;
+        }
+        begin += length;
+      }
+    }
+    errno = saved_errno;
+  }
+#endif
+
   fs::path path_;
   std::array<char, 65536> buffer_;
   FILE *file_ = nullptr;
   uint64_t offset_ = 0;
+  uint64_t sync_start_ = 0;
 };
 
 struct Version {
@@ -2394,6 +2432,8 @@ class Table {
     mutable std::vector<int8_t> codes;
     mutable std::vector<uint32_t> code_norms;
     mutable double code_step = 0;
+    mutable size_t code_stride = 0;
+    mutable bool codes_blocked = false;
     mutable bool codes_attempted = false;
 
     auto begin() { return rows.begin(); }
@@ -2412,6 +2452,8 @@ class Table {
       codes.swap(other.codes);
       code_norms.swap(other.code_norms);
       std::swap(code_step, other.code_step);
+      std::swap(code_stride, other.code_stride);
+      std::swap(codes_blocked, other.codes_blocked);
       std::swap(codes_attempted, other.codes_attempted);
     }
   };
@@ -2582,7 +2624,8 @@ class Table {
     return &cached_distance_rows_;
   }
 
-  bool prepareQuantizedRows(const IndexedRows &rows, size_t dimension) {
+  bool prepareQuantizedRows(const IndexedRows &rows, size_t dimension,
+                            bool blocked = false) {
     if (rows.codes_attempted) {
       return !rows.codes.empty();
     }
@@ -2599,6 +2642,17 @@ class Table {
     const size_t available = std::min(maximum,
         unused > metadata ? unused - metadata : 0);
     if (rows.size() > available / (dimension + sizeof(uint32_t))) {
+      return false;
+    }
+    // One representation per directory. Include row/axis padding in the same
+    // optional-cache budget, before allocating either codes or norms.
+    const size_t stride = blocked
+        ? quantized_block::padded_dimension(dimension) : dimension;
+    const size_t stored_rows = blocked
+        ? (rows.size() + quantized_block::kBlockRows - 1) /
+              quantized_block::kBlockRows * quantized_block::kBlockRows
+        : rows.size();
+    if (stored_rows > available / (stride + sizeof(uint32_t))) {
       return false;
     }
     double maximum_absolute = 0;
@@ -2623,8 +2677,9 @@ class Table {
     std::vector<int8_t> codes;
     std::vector<uint32_t> norms;
     try {
-      codes.resize(rows.size() * dimension);
-      norms.resize(rows.size());
+      codes.resize(stored_rows * stride,
+                   blocked ? std::numeric_limits<int8_t>::min() : 0);
+      norms.resize(stored_rows);
     } catch (const std::bad_alloc &) {
       // This cache is optional; the borrowed rows remain valid for exact scan.
       return false;
@@ -2633,7 +2688,6 @@ class Table {
     if (allocated > available) {
       return false;
     }
-    size_t out = 0;
     size_t row_index = 0;
     for (const IndexedRow &row : rows) {
       uint32_t norm = 0;
@@ -2641,7 +2695,15 @@ class Table {
         const int code = static_cast<int>(std::clamp(
             std::round(static_cast<double>(row.vector_data[axis]) / step),
             -127.0, 127.0));
-        codes[out++] = static_cast<int8_t>(code);
+        if (blocked) {
+          const size_t block = row_index / quantized_block::kBlockRows;
+          const size_t lane = row_index % quantized_block::kBlockRows;
+          const size_t offset = block * quantized_block::kBlockRows * stride +
+              (axis / 4) * quantized_block::kBlockRows * 4 + lane * 4 + axis % 4;
+          codes[offset] = std::bit_cast<int8_t>(static_cast<uint8_t>(code + 128));
+        } else {
+          codes[row_index * stride + axis] = static_cast<int8_t>(code);
+        }
         norm += static_cast<uint32_t>(code * code);
       }
       norms[row_index++] = norm;
@@ -2649,6 +2711,8 @@ class Table {
     // Publish only complete codes; reuse the directory's invalidation rules.
     quantized_bytes_ += allocated;
     rows.code_step = step;
+    rows.code_stride = stride;
+    rows.codes_blocked = blocked;
     rows.codes.swap(codes);
     rows.code_norms.swap(norms);
     return true;
@@ -3764,7 +3828,10 @@ class Database {
         std::vector<PendingRecord> records =
             table->appendChanges(txid, *writer, changes);
         pending.insert(pending.end(), records.begin(), records.end());
-        writer->sync();
+        // Base rows are cached and pending rows remain in the overlay. Dropping
+        // duplicate clean pages is safe; later cache eviction/recovery rereads
+        // the same durable file. WAL and catalog streams never use this hint.
+        writer->sync(table->fullyCached());
         written_tables.insert(oid);
         // The synced file needs no further writes in this commit. Closing it
         // here bounds append buffers and descriptors even for many tables.
@@ -4496,39 +4563,66 @@ class Database {
         // Keep their existing float scan and reserve codes for broader scans.
         const bool quantized_worthwhile = statement.conditions.empty() ||
                                           cached_candidates->size() >= 2048;
+        // VNNI can accumulate sixteen independent rows without horizontal
+        // reductions. Keep the existing row layout on other CPUs.
+        const auto block_kernel = quantized_block::kernel_for(
+            quantized_block::KernelKind::vnni512);
         if (quantized_worthwhile && __builtin_cpu_supports("avx2") &&
-            table.prepareQuantizedRows(*cached_candidates, prepared_probe.size())) {
+            table.prepareQuantizedRows(*cached_candidates, prepared_probe.size(),
+                block_kernel != nullptr && prepared_probe.size() >= 64)) {
           const double step = cached_candidates->code_step;
           quantized = std::all_of(prepared_probe.begin(), prepared_probe.end(),
               [&](double value) { return std::abs(value / step) < 128; });
           if (quantized) {
             try {
-              quantized_probe.reserve(prepared_probe.size());
+              quantized_probe.resize(cached_candidates->code_stride, 0);
             } catch (const std::bad_alloc &) {
               quantized = false;
             }
           }
           if (quantized) {
             int64_t query_correction = 0;
+            size_t axis = 0;
             for (double value : prepared_probe) {
               const int code = static_cast<int>(
                   std::clamp(std::round(value / step), -127.0, 127.0));
-              quantized_probe.push_back(static_cast<int8_t>(code));
+              quantized_probe[axis++] = static_cast<int8_t>(code);
               query_correction += code * code + 256 * code;
             }
             quantized_step = step;
-            for (; cached_candidates->size() - i >= 4; i += 4) {
-              uint32_t scores[4];
-              quantized_kernel(cached_candidates->codes.data() +
-                      i * prepared_probe.size(), quantized_probe.data(),
-                  prepared_probe.size(), scores,
-                  cached_candidates->code_norms.data() + i, query_correction);
-              for (size_t j = 0; j < 4; ++j) {
-                if (heap.size() == capacity && scores[j] > quantized_above) {
-                  continue;
+            if (cached_candidates->codes_blocked) {
+              for (; i < cached_candidates->size(); i += quantized_block::kBlockRows) {
+                uint32_t scores[quantized_block::kBlockRows];
+                block_kernel(reinterpret_cast<const uint8_t *>(
+                        cached_candidates->codes.data() +
+                        i * cached_candidates->code_stride),
+                    quantized_probe.data(), cached_candidates->code_stride,
+                    cached_candidates->code_norms.data() + i,
+                    query_correction, scores);
+                const size_t count = std::min(quantized_block::kBlockRows,
+                                              cached_candidates->size() - i);
+                for (size_t j = 0; j < count; ++j) {
+                  if (heap.size() == capacity && scores[j] > quantized_above) {
+                    continue;
+                  }
+                  const auto &row = (*cached_candidates)[i + j];
+                  consumeVector(row.primary, row.vector_data, row.cached, true);
                 }
-                const auto &row = (*cached_candidates)[i + j];
-                consumeVector(row.primary, row.vector_data, row.cached, true);
+              }
+            } else {
+              for (; cached_candidates->size() - i >= 4; i += 4) {
+                uint32_t scores[4];
+                quantized_kernel(cached_candidates->codes.data() +
+                        i * prepared_probe.size(), quantized_probe.data(),
+                    prepared_probe.size(), scores,
+                    cached_candidates->code_norms.data() + i, query_correction);
+                for (size_t j = 0; j < 4; ++j) {
+                  if (heap.size() == capacity && scores[j] > quantized_above) {
+                    continue;
+                  }
+                  const auto &row = (*cached_candidates)[i + j];
+                  consumeVector(row.primary, row.vector_data, row.cached, true);
+                }
               }
             }
           }

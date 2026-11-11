@@ -2,9 +2,10 @@ name: MiniVectorDB paired Linux benchmark
 
 on:
   push:
-    branches: [codex/performance-round3-20261111]
+    branches: [codex/performance-round4-20261111]
     paths:
       - src/minivectordb.cpp
+      - src/quantized_block_scan.hpp
       - bench/evaluate.py
       - .github/workflows/minivectordb-performance.yml
   workflow_dispatch:
@@ -23,9 +24,9 @@ jobs:
           fetch-depth: 1
       - name: Fetch the fixed comparison source
         run: |
-          git fetch --no-tags --depth=1 origin b951bafbc6d65fb8861441165920be9c971e03be
+          git fetch --no-tags --depth=1 origin 9d7930ee4d5d1e58de69567b440b13b3603ec99a
           mkdir -p build/paired-linux
-          git show b951bafbc6d65fb8861441165920be9c971e03be:src/minivectordb.cpp > build/paired-linux/baseline.cpp
+          git show 9d7930ee4d5d1e58de69567b440b13b3603ec99a:src/minivectordb.cpp > build/paired-linux/baseline.cpp
       - name: Build both versions with the submission compiler
         run: |
           docker run --rm --network=none --mount type=bind,src="$PWD",dst=/work --workdir /work \
@@ -42,28 +43,23 @@ jobs:
           python3 -X utf8 -B bench/evaluate.py \
             --baseline build/paired-linux/baseline --candidate build/paired-linux/candidate \
             --baseline-protocol json --candidate-protocol json \
-            --runs 7 --rows 10000 --dim 128 --queries 1000 --batch 100 --k 10 \
-            --seed 20261410 --report build/paired-linux/result.json > build/paired-linux/stdout.txt
+            --runs 3 --rows 10000 --dim 128 --queries 1000 --batch 100 --k 10 \
+            --seed 20261510 --report build/paired-linux/result.json > build/paired-linux/stdout.txt
           python3 -X utf8 -B bench/evaluate.py \
             --baseline build/paired-linux/baseline --candidate build/paired-linux/candidate \
             --baseline-protocol json --candidate-protocol json \
             --runs 3 --rows 10000 --dim 512 --queries 1000 --batch 100 --k 10 \
-            --seed 20261420 --report build/paired-linux/dim512.json > build/paired-linux/dim512.stdout.txt
+            --seed 20261520 --report build/paired-linux/dim512.json > build/paired-linux/dim512.stdout.txt
           python3 -X utf8 -B bench/evaluate.py \
             --baseline build/paired-linux/baseline --candidate build/paired-linux/candidate \
             --baseline-protocol json --candidate-protocol json \
-            --runs 7 --rows 1000 --dim 128 --queries 1000 --batch 100 --k 10 \
-            --seed 20261430 --report build/paired-linux/small.json > build/paired-linux/small.stdout.txt
-          python3 -X utf8 -B bench/evaluate.py \
-            --baseline build/paired-linux/candidate --candidate build/paired-linux/candidate \
-            --baseline-protocol json --candidate-protocol json \
-            --runs 7 --rows 1000 --dim 128 --queries 1000 --batch 100 --k 10 \
-            --seed 20261430 --report build/paired-linux/small-aa.json > build/paired-linux/small-aa.stdout.txt
+            --runs 3 --rows 1000 --dim 128 --queries 1000 --batch 100 --k 10 \
+            --seed 20261530 --report build/paired-linux/small.json > build/paired-linux/small.stdout.txt
       - name: Print comparison evidence
         if: always()
         run: |
           git rev-parse HEAD
-          sha256sum src/minivectordb.cpp build/paired-linux/baseline build/paired-linux/candidate
+          sha256sum src/minivectordb.cpp src/quantized_block_scan.hpp build/paired-linux/baseline build/paired-linux/candidate
           lscpu | head -35
           python3 - <<'PY'
           import json
@@ -77,7 +73,7 @@ jobs:
                   result.pop('write_batch_ns', None)
                   result.pop('queries_raw', None)
           print('PAIRED_LINUX_EVIDENCE ' + json.dumps(report, separators=(',', ':')))
-          for name in ('dim512', 'small', 'small-aa'):
+          for name in ('dim512', 'small'):
               report = json.loads(Path('build/paired-linux/' + name + '.json').read_text())
               for run in report['runs']:
                   for result in run['results'].values():

@@ -80,7 +80,8 @@ def main():
                 commands.append((key, [sys.executable, "-X", "utf8", "-B",
                                        str(root / "tests/test_statement_allocation.py"),
                                        str(binaries[key])]))
-    paths = [root / "src/minivectordb.cpp", root / "CMakeLists.txt", root / "Dockerfile",
+    paths = [root / "src/minivectordb.cpp", *sorted((root / "src").glob("*.hpp")),
+             root / "CMakeLists.txt", root / "Dockerfile",
              root / "STDIO_PROTOCOL.md", *sorted((root / "protocol_check").glob("*.py")),
              root / "protocol_check/config.json",
              *sorted((root / "tests").glob("*.py")),
