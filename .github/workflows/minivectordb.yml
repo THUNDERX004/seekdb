@@ -2,7 +2,7 @@ name: MiniVectorDB Linux validation
 
 on:
   push:
-    branches: [2026-competition-round2, codex/performance-round7-20261111]
+    branches: [2026-competition-round2, codex/performance-round8-20261111]
     paths:
       - src/minivectordb.cpp
       - src/*.hpp
@@ -43,6 +43,8 @@ jobs:
               g++ $flags -O3 -DNDEBUG -Wall -Wextra -Wpedantic -DMVD_TEST_FAULTS src/minivectordb.cpp -o build/linux-fault/minivectordb
               g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_quantized_kernels.cpp -o build/test_quantized_kernels
               g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_quantized_block_scan.cpp -o build/test_quantized_block_scan
+              g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_quantized_cutoff.cpp -o build/test_quantized_cutoff
+              g++ $flags -O2 -Wall -Wextra -Wpedantic -DMVD_FORCE_SCALAR tests/test_quantized_cutoff.cpp -o build/test_quantized_cutoff_scalar
               g++ $flags -O1 tests/test_quantized_allocation.cpp -o build/test_quantized_allocation
               g++ $flags -O1 tests/test_value_storage.cpp -o build/test_value_storage
               g++ $flags -O1 tests/test_query_ownership.cpp -o build/test_query_ownership
@@ -61,6 +63,10 @@ jobs:
         run: |
           build/test_quantized_kernels
           build/test_quantized_block_scan
+      - name: Verify exact TopK integer screening cutoffs in normal and scalar modes
+        run: |
+          build/test_quantized_cutoff
+          build/test_quantized_cutoff_scalar
       - name: Verify optional quantized cache allocation fallback
         run: |
           build/test_quantized_allocation

@@ -142,6 +142,23 @@ struct QuantizedKernelTest {
                 ", correction=" + std::to_string(correction));
           }
         }
+        std::vector<uint32_t> boundaries{0, 0x7fffffffU, 0x80000000U,
+                                       std::numeric_limits<uint32_t>::max()};
+        for (const uint64_t score : expected) {
+          boundaries.push_back(static_cast<uint32_t>(score));
+          if (score > 0) boundaries.push_back(static_cast<uint32_t>(score - 1));
+          boundaries.push_back(static_cast<uint32_t>(score + 1));
+        }
+        for (const uint32_t boundary : boundaries) {
+          unsigned mask = 0;
+          for (size_t row = 0; row < 4; ++row) {
+            if (expected[row] <= boundary) mask |= 1U << row;
+          }
+          if (Database::quantizedScoreMask4(output.data() + 1, boundary) != mask) {
+            throw std::runtime_error(std::string(entry.name) +
+                " four-row boundary mask mismatch: " + label);
+          }
+        }
         ++entry.batches;
       }
     };

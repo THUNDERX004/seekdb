@@ -4809,7 +4809,9 @@ class Database {
         // VNNI can accumulate sixteen independent rows without horizontal
         // reductions. Retain the existing layout on other CPUs and for small
         // scans, where packing/setup does not reliably amortize its cost.
-        const auto block_kernel = quantized_block::kernel_for(
+        const auto block_kernel = quantized_block::mask_kernel_for(
+            quantized_block::KernelKind::vnni512);
+        const auto block64_kernel = quantized_block::mask64_kernel_for(
             quantized_block::KernelKind::vnni512);
         const Table::IndexedRows *code_rows = nullptr;
         if (quantized_worthwhile && __builtin_cpu_supports("avx2")) {
@@ -4860,18 +4862,29 @@ class Database {
                 const size_t first = code_first + i;
                 const size_t lane = first % quantized_block::kBlockRows;
                 const size_t block_first = first - lane;
-                uint32_t scores[quantized_block::kBlockRows];
-                block_kernel(reinterpret_cast<const uint8_t *>(
+                // Small warm-up batches let the exact heap tighten its
+                // boundary. Once full, scan four blocks per query broadcast.
+                // A bucket may start/end inside a block; mask those lanes,
+                // and never read past the shared matrix's padded row count.
+                const bool wide = heap.size() == capacity &&
+                    block64_kernel != nullptr &&
+                    cached_candidates->size() - i >= 64 - lane &&
+                    code_rows->code_norms.size() - block_first >= 64;
+                const size_t width = wide ? 64 : quantized_block::kBlockRows;
+                const auto kernel = wide ? block64_kernel : block_kernel;
+                uint64_t survivors = kernel(reinterpret_cast<const uint8_t *>(
                         code_rows->codes.data() + block_first * code_rows->code_stride),
                     quantized_probe.data(), code_rows->code_stride,
                     code_rows->code_norms.data() + block_first,
-                    query_correction, scores);
-                const size_t count = std::min(quantized_block::kBlockRows - lane,
+                    query_correction, heap.size() == capacity
+                        ? quantized_above : std::numeric_limits<uint32_t>::max());
+                const size_t count = std::min(width - lane,
                                               cached_candidates->size() - i);
-                for (size_t j = 0; j < count; ++j) {
-                  if (heap.size() == capacity && scores[lane + j] > quantized_above) {
-                    continue;
-                  }
+                survivors >>= lane;
+                if (count < 64) survivors &= (uint64_t{1} << count) - 1;
+                while (survivors != 0) {
+                  const size_t j = std::countr_zero(survivors);
+                  survivors &= survivors - 1;
                   const auto &row = (*cached_candidates)[i + j];
                   consumeVector(row.primary, row.vector_data, row.cached, true);
                 }
@@ -4887,10 +4900,11 @@ class Database {
                         (code_first + i) * prepared_probe.size(), quantized_probe.data(),
                     prepared_probe.size(), scores,
                     code_rows->code_norms.data() + code_first + i, row_correction);
-                for (size_t j = 0; j < 4; ++j) {
-                  if (heap.size() == capacity && scores[j] > quantized_above) {
-                    continue;
-                  }
+                unsigned survivors = heap.size() == capacity
+                    ? quantizedScoreMask4(scores, quantized_above) : 15U;
+                while (survivors != 0) {
+                  const size_t j = std::countr_zero(survivors);
+                  survivors &= survivors - 1;
                   const auto &row = (*cached_candidates)[i + j];
                   consumeVector(row.primary, row.vector_data, row.cached, true);
                 }
@@ -5310,6 +5324,17 @@ class Database {
 
 #if (defined(__GNUC__) || defined(__clang__)) && \
     (defined(__x86_64__) || defined(__i386__))
+  __attribute__((target("sse2"))) static unsigned quantizedScoreMask4(
+      const uint32_t *scores, uint32_t above) {
+    const __m128i bias = _mm_set1_epi32(std::numeric_limits<int32_t>::min());
+    const __m128i values = _mm_xor_si128(
+        _mm_loadu_si128(reinterpret_cast<const __m128i *>(scores)), bias);
+    const __m128i boundary = _mm_xor_si128(
+        _mm_set1_epi32(static_cast<int32_t>(above)), bias);
+    return static_cast<unsigned>(~_mm_movemask_ps(_mm_castsi128_ps(
+        _mm_cmpgt_epi32(values, boundary)))) & 15U;
+  }
+
   __attribute__((target("avx512f,avx512bw,avx512vnni")))
   static void quantizedDistanceBatchVnni(
       const int8_t *rows, const int8_t *probe, size_t size, uint32_t *scores,

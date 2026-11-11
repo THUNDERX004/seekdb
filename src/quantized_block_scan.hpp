@@ -71,6 +71,16 @@ using Kernel = void (*)(const std::uint8_t *packed, const std::int8_t *query,
                        std::size_t padded_dimension, const void *row_norms,
                        std::int64_t correction, void *scores) noexcept;
 
+// Return one bit for each code distance <= above. The 16-row API consumes
+// one packed block; the 64-row API consumes four consecutive packed blocks.
+// A stale (larger) boundary may admit extra rows, but cannot drop a survivor.
+using MaskKernel = std::uint64_t (*)(const std::uint8_t *packed,
+                                    const std::int8_t *query,
+                                    std::size_t padded_dimension,
+                                    const void *row_norms,
+                                    std::int64_t correction,
+                                    std::uint32_t above) noexcept;
+
 inline void scalar(const std::uint8_t *packed, const std::int8_t *query,
                    std::size_t padded_dimension, const void *row_norms,
                    std::int64_t correction, void *scores) noexcept {
@@ -93,6 +103,38 @@ inline void scalar(const std::uint8_t *packed, const std::int8_t *query,
         static_cast<std::int64_t>(norm) + correction - 2LL * dot);
     std::memcpy(score_bytes + row * sizeof(score), &score, sizeof(score));
   }
+}
+
+inline std::uint64_t mask_scalar(const std::uint8_t *packed,
+                                 const std::int8_t *query,
+                                 std::size_t padded_dimension,
+                                 const void *row_norms,
+                                 std::int64_t correction,
+                                 std::uint32_t above) noexcept {
+  std::uint32_t scores[kBlockRows];
+  scalar(packed, query, padded_dimension, row_norms, correction, scores);
+  std::uint64_t mask = 0;
+  for (std::size_t row = 0; row < kBlockRows; ++row) {
+    mask |= std::uint64_t{scores[row] <= above} << row;
+  }
+  return mask;
+}
+
+inline std::uint64_t mask64_scalar(const std::uint8_t *packed,
+                                   const std::int8_t *query,
+                                   std::size_t padded_dimension,
+                                   const void *row_norms,
+                                   std::int64_t correction,
+                                   std::uint32_t above) noexcept {
+  std::uint64_t mask = 0;
+  const auto *norm_bytes = static_cast<const std::uint8_t *>(row_norms);
+  for (std::size_t block = 0; block < 4; ++block) {
+    mask |= mask_scalar(packed + block * packed_bytes(padded_dimension),
+                        query, padded_dimension,
+                        norm_bytes + block * kBlockRows * sizeof(std::uint32_t),
+                        correction, above) << (block * kBlockRows);
+  }
+  return mask;
 }
 
 enum class KernelKind { scalar, avx2, avx512bw, vnni512 };
@@ -273,6 +315,93 @@ __attribute__((target("avx512f,avx512bw,avx512vnni"))) inline void scan_vnni512(
                      _mm512_sub_epi32(base, _mm512_add_epi32(dot, dot)));
 }
 
+__attribute__((target("avx2"))) inline std::uint64_t mask_avx2(
+    const std::uint8_t *packed, const std::int8_t *query,
+    std::size_t padded_dimension, const void *row_norms,
+    std::int64_t correction, std::uint32_t above) noexcept {
+  alignas(32) std::uint32_t scores[kBlockRows];
+  scan_avx2(packed, query, padded_dimension, row_norms, correction, scores);
+  // Biasing both operands gives an unsigned comparison even for a boundary
+  // of UINT32_MAX. Code distances themselves fit below 2^30.
+  const __m256i bias = _mm256_set1_epi32(-2147483647 - 1);
+  const __m256i boundary = _mm256_xor_si256(
+      _mm256_set1_epi32(static_cast<std::int32_t>(above)), bias);
+  const __m256i value0 = _mm256_xor_si256(
+      _mm256_loadu_si256(reinterpret_cast<const __m256i *>(scores)), bias);
+  const __m256i value1 = _mm256_xor_si256(
+      _mm256_loadu_si256(reinterpret_cast<const __m256i *>(scores + 8)), bias);
+  const unsigned rejected0 = static_cast<unsigned>(_mm256_movemask_ps(
+      _mm256_castsi256_ps(_mm256_cmpgt_epi32(value0, boundary))));
+  const unsigned rejected1 = static_cast<unsigned>(_mm256_movemask_ps(
+      _mm256_castsi256_ps(_mm256_cmpgt_epi32(value1, boundary))));
+  return static_cast<std::uint64_t>(
+      (~(rejected0 | (rejected1 << 8))) & 0xffffU);
+}
+
+__attribute__((target("avx512f,avx512bw"))) inline std::uint64_t mask_avx512bw(
+    const std::uint8_t *packed, const std::int8_t *query,
+    std::size_t padded_dimension, const void *row_norms,
+    std::int64_t correction, std::uint32_t above) noexcept {
+  alignas(64) std::uint32_t scores[kBlockRows];
+  scan_avx512bw(packed, query, padded_dimension, row_norms, correction, scores);
+  return _mm512_cmple_epu32_mask(_mm512_loadu_si512(scores),
+      _mm512_set1_epi32(static_cast<std::int32_t>(above)));
+}
+
+__attribute__((target("avx512f,avx512bw,avx512vnni")))
+inline std::uint64_t mask_vnni512(
+    const std::uint8_t *packed, const std::int8_t *query,
+    std::size_t padded_dimension, const void *row_norms,
+    std::int64_t correction, std::uint32_t above) noexcept {
+  alignas(64) std::uint32_t scores[kBlockRows];
+  scan_vnni512(packed, query, padded_dimension, row_norms, correction, scores);
+  return _mm512_cmple_epu32_mask(_mm512_loadu_si512(scores),
+      _mm512_set1_epi32(static_cast<std::int32_t>(above)));
+}
+
+__attribute__((target("avx512f,avx512bw,avx512vnni")))
+inline std::uint64_t mask64_vnni512(
+    const std::uint8_t *packed, const std::int8_t *query,
+    std::size_t padded_dimension, const void *row_norms,
+    std::int64_t correction, std::uint32_t above) noexcept {
+  assert(valid_padded_dimension(padded_dimension));
+  assert(packed != nullptr && query != nullptr && row_norms != nullptr);
+  const std::size_t stride = packed_bytes(padded_dimension);
+  __m512i dot0 = _mm512_setzero_si512();
+  __m512i dot1 = _mm512_setzero_si512();
+  __m512i dot2 = _mm512_setzero_si512();
+  __m512i dot3 = _mm512_setzero_si512();
+  // Reuse each query broadcast for four blocks. These four independent
+  // accumulators hide dpbusd latency without horizontal row reductions.
+  for (std::size_t axis = 0; axis < padded_dimension; axis += 4) {
+    std::int32_t word = 0;
+    std::memcpy(&word, query + axis, sizeof(word));
+    const __m512i q = _mm512_set1_epi32(word);
+    const auto *group = packed + axis * kBlockRows;
+    dot0 = _mm512_dpbusd_epi32(dot0, _mm512_loadu_si512(group), q);
+    dot1 = _mm512_dpbusd_epi32(dot1, _mm512_loadu_si512(group + stride), q);
+    dot2 = _mm512_dpbusd_epi32(dot2, _mm512_loadu_si512(group + 2 * stride), q);
+    dot3 = _mm512_dpbusd_epi32(dot3, _mm512_loadu_si512(group + 3 * stride), q);
+  }
+  const auto *norm_bytes = static_cast<const std::uint8_t *>(row_norms);
+  const __m512i adjustment =
+      _mm512_set1_epi32(static_cast<std::int32_t>(correction));
+  const __m512i boundary = _mm512_set1_epi32(static_cast<std::int32_t>(above));
+  const __m512i base0 = _mm512_add_epi32(_mm512_loadu_si512(norm_bytes), adjustment);
+  const __m512i base1 = _mm512_add_epi32(_mm512_loadu_si512(norm_bytes + 64), adjustment);
+  const __m512i base2 = _mm512_add_epi32(_mm512_loadu_si512(norm_bytes + 128), adjustment);
+  const __m512i base3 = _mm512_add_epi32(_mm512_loadu_si512(norm_bytes + 192), adjustment);
+  const std::uint64_t mask0 = _mm512_cmple_epu32_mask(
+      _mm512_sub_epi32(base0, _mm512_add_epi32(dot0, dot0)), boundary);
+  const std::uint64_t mask1 = _mm512_cmple_epu32_mask(
+      _mm512_sub_epi32(base1, _mm512_add_epi32(dot1, dot1)), boundary);
+  const std::uint64_t mask2 = _mm512_cmple_epu32_mask(
+      _mm512_sub_epi32(base2, _mm512_add_epi32(dot2, dot2)), boundary);
+  const std::uint64_t mask3 = _mm512_cmple_epu32_mask(
+      _mm512_sub_epi32(base3, _mm512_add_epi32(dot3, dot3)), boundary);
+  return mask0 | (mask1 << 16) | (mask2 << 32) | (mask3 << 48);
+}
+
 #endif
 
 }  // namespace detail
@@ -314,6 +443,34 @@ inline Kernel best_kernel() noexcept {
   if (features.avx2) return &detail::scan_avx2;
 #endif
   return &scalar;
+}
+
+inline MaskKernel mask_kernel_for(KernelKind kind) noexcept {
+  if (kind == KernelKind::scalar) return &mask_scalar;
+#if MVD_QUANTIZED_BLOCK_X86_TARGETS
+  const CpuFeatures features = cpu_features();
+  switch (kind) {
+    case KernelKind::avx2:
+      return features.avx2 ? &detail::mask_avx2 : nullptr;
+    case KernelKind::avx512bw:
+      return features.avx512bw ? &detail::mask_avx512bw : nullptr;
+    case KernelKind::vnni512:
+      return features.vnni512 ? &detail::mask_vnni512 : nullptr;
+    default:
+      break;
+  }
+#endif
+  return nullptr;
+}
+
+inline MaskKernel mask64_kernel_for(KernelKind kind) noexcept {
+  if (kind == KernelKind::scalar) return &mask64_scalar;
+#if MVD_QUANTIZED_BLOCK_X86_TARGETS
+  if (kind == KernelKind::vnni512 && cpu_features().vnni512) {
+    return &detail::mask64_vnni512;
+  }
+#endif
+  return nullptr;
 }
 
 }  // namespace mvd::quantized_block
