@@ -303,6 +303,112 @@ class QuantizedScreenTests(unittest.TestCase):
         self.warm_views(client, rows)
         client.shutdown()
 
+    def test_shared_matrix_bucket_slices_and_transaction_invalidation(self):
+        client = self.open_client()
+        dimension, step = 65, 256.0
+        sizes = (257, 258, 511, 1022, 5)
+        categories = ("red", "blue", "green", "amber", "scale")
+        groups = [group for group, size in enumerate(sizes) for _ in range(size)]
+        # Each tested bucket is below 2048 while the full table exceeds that
+        # gate. Uneven bucket lengths force shared slices across block and
+        # four-row boundaries, regardless of the equality map's bucket order.
+        self.assertEqual(sum(sizes[:4]), 2048)
+        values = [sign * from_bits(center + delta)
+                  for center in (0x3F000000, 0x42FF0000)
+                  for sign in (1, -1) for delta in (-1, 0, 1)]
+        values += [0.0, 17.0, -63.0, 96.0]
+
+        def dense(value, tail):
+            return tuple(value * (-1 if axis % 2 else 1)
+                         for axis in range(dimension - 1)) + (tail,)
+
+        vectors = [[dense(value * unit,
+                          ((pattern * 13 + group * 17) % 127 - 63) * unit)
+                    for pattern, value in enumerate(values)]
+                   for group, unit in enumerate((1.0, step, step, step))]
+        large = from_bits(0x42FFFFFF) * step
+        fixture = []
+        for index, group in enumerate(groups):
+            # Permute only the first 2048 rows: text has the same bucket sizes
+            # with different memberships, while the scale maximum stays out
+            # of every tested equality subset on either column.
+            text_group = groups[(index * 73) % 2048] if index < 2048 else 4
+            vector = (vectors[group][(index * 5 + group * 3) % len(values)]
+                      if group < 4 else (large,) + (0.0,) * (dimension - 1))
+            fixture.append(Row((index * 73) % len(groups) - len(groups) // 2,
+                               7 + group, categories[text_group],
+                               f"shared {index}", vector))
+        for group, size in enumerate(sizes):
+            self.assertEqual(sum(row.tag == 7 + group for row in fixture), size)
+            self.assertEqual(sum(row.category == categories[group]
+                                 for row in fixture), size)
+        self.assertGreater(large, 128 * max(abs(value) for row in fixture
+                                          if row.tag == 7 for value in row.vector))
+        rows = {row.primary: row for row in fixture}
+        self.create(client, "shared_matrix", dimension, fixture)
+
+        def verify(expected, probe, selected=(0, 1, 2, 3), offset=2):
+            expected = list(expected.values())
+            scores = exact_scores(expected, probe)
+            for column in ("tag", "category"):
+                for group in selected:
+                    if column == "tag":
+                        where = f"tag={7 + group}"
+                        predicate = lambda row, tag=7 + group: row.tag == tag
+                    else:
+                        category = categories[group]
+                        where = f"category={quoted(category)}"
+                        predicate = lambda row, category=category: row.category == category
+                    self.check(client, "shared_matrix", expected, probe,
+                               where=where, predicate=predicate, limit=7,
+                               offset=offset, scores=scores)
+                self.check(client, "shared_matrix", expected, probe,
+                           limit=7, offset=offset, scores=scores)
+            # Rebuild integer equality after text regrouped the shared matrix.
+            self.check(client, "shared_matrix", expected, probe, where="tag=7",
+                       predicate=lambda row: row.tag == 7, limit=7,
+                       offset=offset, scores=scores)
+
+        # Adjacent binary32 probes straddle a full-matrix half step. Alternating
+        # signs also put the clamping probe just beyond both +/-127.5 edges.
+        probes = [dense(value * step, value * step) for value in
+                  (from_bits(0x3EFFFFFF), from_bits(0x3F000001),
+                   from_bits(0x42FF0001))]
+        for probe in probes:
+            verify(rows, probe)
+
+        moving = next(row.primary for row in fixture
+                      if row.tag == 7 and row.category == "red")
+        scale_row = fixture[2048].primary
+        for commit in (False, True):
+            with self.subTest(commit=commit):
+                self.sql(client, "BEGIN")
+                pending = rows.copy()
+                changes = (
+                    replace(rows[moving], tag=8, category="blue", vector=probes[0],
+                            payload="committed" if commit else "rolled back"),
+                    replace(rows[scale_row], vector=(large * 4,)
+                            + (0.0,) * (dimension - 1)),
+                )
+                for row in changes:
+                    self.sql(client, "UPDATE shared_matrix SET "
+                             f"tag={row.tag},category={quoted(row.category)},"
+                             f"payload={quoted(row.payload)},"
+                             f"v={quoted(vector_sql(row.vector))} "
+                             f"WHERE id={row.primary}", 1)
+                    pending[row.primary] = row
+                verify(pending, probes[0], selected=(0, 1), offset=0)
+                self.sql(client, "COMMIT" if commit else "ROLLBACK")
+                if commit:
+                    rows = pending
+                # Moving one row takes the smallest source buckets to exactly
+                # 256; rollback restores 257 and its original vectors/scale.
+                verify(rows, probes[0], selected=(0, 1), offset=0)
+        client.shutdown()
+        client = self.open_client()
+        verify(rows, probes[0], selected=(0, 1), offset=0)
+        client.shutdown()
+
     def test_small_cache_budget_shared_views_and_eviction_fallback(self):
         client = self.open_client(cache_mb=1)
         dimension = 672

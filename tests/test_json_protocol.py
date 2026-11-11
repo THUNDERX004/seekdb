@@ -368,6 +368,65 @@ class LegacyTextCompatibility(ExecutableCase):
 class OptionalRobustness(ExecutableCase):
     """Extra local recovery checks, not frozen official invalid-input semantics."""
 
+    def test_decoded_duplicate_keys_preserve_error_order_and_id(self):
+        client = self.client()
+        self.success(client.execute("CREATE TABLE request_keys(id BIGINT PRIMARY KEY)"))
+        self.affected(client.execute("INSERT INTO request_keys VALUES(1)"), 1)
+        fields = [
+            (b'"id"', br'"\u0069d"', b'9007199254740993'),
+            (b'"op"', br'"o\u0070"', b'"execute"'),
+            (b'"sql"', br'"s\u0071l"', b'"INSERT INTO request_keys VALUES(2)"'),
+            (b'"search_mode"', br'"search_\u006dode"', b'"exact"'),
+            (b'"metadata"', br'"meta\u0064ata"', b'null'),
+        ]
+        for index, (plain, escaped, _) in enumerate(fields):
+            for escaped_first in (False, True):
+                parts = [
+                    (encoded if position == index and escaped_first else key)
+                    + b":" + value
+                    for position, (key, encoded, value) in enumerate(fields)
+                ]
+                duplicate = plain if escaped_first else escaped
+                # Duplicate detection precedes both ':' and value validation.
+                for tail in (b":null}", b"}"):
+                    with self.subTest(key=plain, escaped_first=escaped_first, tail=tail):
+                        client.send_bytes(b"{" + b",".join(parts) + b","
+                                          + duplicate + tail + b"\n")
+                        response = client.read_message()
+                        self.failure(response)
+                        self.assertTrue(same_json(response.get("id"), 9007199254740993))
+                        self.assertEqual(response["error"], {
+                            "code": "INVALID_REQUEST", "message": "duplicate JSON key",
+                        })
+                        self.rows(client.execute("SELECT id FROM request_keys"),
+                                  ["id"], [[1]])
+        client.shutdown()
+
+    def test_decoded_keys_preserve_required_field_errors(self):
+        client = self.client()
+        required = "request requires id and op in one JSON object"
+        cases = [
+            (b'{}', None, required),
+            (br'{"o\u0070":"execute","s\u0071l":""}', None, required),
+            (br'{"i\u0064":7,"s\u0071l":"","search_mode":"bad"}', 7, required),
+            (br'{"i\u0064":7,"o\u0070":"execute","search_mode":"bad"}', 7,
+             "execute requires a SQL string"),
+        ]
+        for payload, ident, message in cases:
+            with self.subTest(payload=payload):
+                client.send_bytes(payload + b"\n")
+                response = client.read_message()
+                self.failure(response)
+                self.assertTrue(same_json(response.get("id"), ident))
+                self.assertEqual(response["error"], {
+                    "code": "INVALID_REQUEST", "message": message,
+                })
+        client.send_bytes(br'{"i\u0064":7,"o\u0070":"execute","s\u0071l":"",'
+                          br'"search_\u006dode":"exact","ID":8}' + b"\n")
+        response = self.success(client.read_message())
+        self.assertTrue(same_json(response.get("id"), 7))
+        client.shutdown()
+
     def test_unknown_operation_returns_error_and_accepts_next_request(self):
         client = self.client()
         self.failure(client.request({"id": [None, "unknown🌊"], "op": "unknown-operation"}))

@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "quantized_block_scan.hpp"
+#include "compact_value.hpp"
 
 #ifdef MVD_PROFILE
 #include <chrono>
@@ -403,20 +404,14 @@ struct TableDef {
   }
 };
 
-struct Value {
-  int64_t integer = 0;
-  std::string text;
-  std::vector<float> vector;
-};
-
 using Row = std::vector<Value>;
 
 size_t serializedRowSize(const Row &row) {
   size_t size = 4;
   for (const Value &value : row) {
     size += 16;
-    size += value.text.size();
-    size += value.vector.size() * sizeof(float);
+    size += value.text().size();
+    size += value.vector().size() * sizeof(float);
   }
   return size;
 }
@@ -425,10 +420,10 @@ size_t cachedRowBytes(const Row &row) {
   size_t size = sizeof(Row) + row.capacity() * sizeof(Value);
   const size_t inline_text_capacity = std::string{}.capacity();
   for (const Value &value : row) {
-    if (value.text.capacity() > inline_text_capacity) {
-      size += value.text.capacity() + 1;
+    if (value.text().capacity() > inline_text_capacity) {
+      size += value.text().capacity() + 1;
     }
-    size += value.vector.capacity() * sizeof(float);
+    size += value.vector().capacity() * sizeof(float);
   }
   return size;
 }
@@ -444,13 +439,13 @@ void serializeRowInto(const Row &row, std::vector<uint8_t> &out) {
   }
   appendScalar<uint32_t>(out, static_cast<uint32_t>(row.size()));
   for (const Value &value : row) {
-    appendScalar<int64_t>(out, value.integer);
-    appendString(out, value.text);
-    appendScalar<uint32_t>(out, static_cast<uint32_t>(value.vector.size()));
+    appendScalar<int64_t>(out, value.integer());
+    appendString(out, value.text());
+    appendScalar<uint32_t>(out, static_cast<uint32_t>(value.vector().size()));
     if constexpr (std::endian::native == std::endian::little) {
-      appendBytes(out, value.vector.data(), value.vector.size() * sizeof(float));
+      appendBytes(out, value.vector().data(), value.vector().size() * sizeof(float));
     } else {
-      for (float component : value.vector) {
+      for (float component : value.vector()) {
         appendScalar<uint32_t>(out, std::bit_cast<uint32_t>(component));
       }
     }
@@ -463,18 +458,18 @@ std::vector<uint8_t> serializeRow(const Row &row) {
   return out;
 }
 
-Row deserializeRow(const std::vector<uint8_t> &data) {
+Row deserializeRow(const std::vector<uint8_t> &data, const TableDef &definition) {
   size_t pos = 0;
   uint32_t count = readScalar<uint32_t>(data, pos);
-  if (count > 65535) {
+  if (count > 65535 || count != definition.columns.size()) {
     fail("CORRUPT_DATA", "row column count is invalid");
   }
   Row row;
   row.reserve(count);
   for (uint32_t i = 0; i < count; ++i) {
     Value value;
-    value.integer = readScalar<int64_t>(data, pos);
-    value.text = readString(data, pos);
+    const int64_t integer = readScalar<int64_t>(data, pos);
+    std::string text = readString(data, pos);
     uint32_t vector_size = readScalar<uint32_t>(data, pos);
     if (vector_size > (1U << 20U)) {
       fail("CORRUPT_DATA", "vector dimension is invalid");
@@ -482,19 +477,25 @@ Row deserializeRow(const std::vector<uint8_t> &data) {
     if (vector_size > (data.size() - pos) / sizeof(float)) {
       fail("CORRUPT_DATA", "truncated vector value");
     }
-    if constexpr (std::endian::native == std::endian::little) {
-      value.vector.resize(vector_size);
-      if (vector_size != 0) {
-        std::memcpy(value.vector.data(), data.data() + pos,
-                    vector_size * sizeof(float));
+    const ColumnType type = definition.columns[i].type;
+    if (type == ColumnType::Vector) {
+      std::vector<float> vector(vector_size);
+      if constexpr (std::endian::native == std::endian::little) {
+        if (vector_size != 0) {
+          std::memcpy(vector.data(), data.data() + pos,
+                      vector_size * sizeof(float));
+        }
+        pos += vector_size * sizeof(float);
+      } else {
+        for (float &component : vector) {
+          component = std::bit_cast<float>(readScalar<uint32_t>(data, pos));
+        }
       }
-      pos += vector_size * sizeof(float);
+      value.setVector(std::move(vector));
     } else {
-      value.vector.reserve(vector_size);
-      for (uint32_t j = 0; j < vector_size; ++j) {
-        value.vector.push_back(
-            std::bit_cast<float>(readScalar<uint32_t>(data, pos)));
-      }
+      pos += vector_size * sizeof(float);
+      if (type == ColumnType::VarChar) { value.setText(std::move(text)); }
+      else { value.setInteger(integer); }
     }
     row.push_back(std::move(value));
   }
@@ -681,11 +682,11 @@ std::string formatVector(const std::vector<float> &vector) {
 std::string valueToString(const Value &value, ColumnType type) {
   switch (type) {
     case ColumnType::BigInt:
-      return std::to_string(value.integer);
+      return std::to_string(value.integer());
     case ColumnType::VarChar:
-      return value.text;
+      return value.text();
     case ColumnType::Vector:
-      return formatVector(value.vector);
+      return formatVector(value.vector());
   }
   return {};
 }
@@ -751,26 +752,39 @@ class JsonRequestParser {
   void parse(JsonRequest &request) {
     space();
     expect('{');
-    std::set<std::string> keys;
+    constexpr unsigned id_key = 1U;
+    constexpr unsigned op_key = 2U;
+    constexpr unsigned sql_key = 4U;
+    constexpr unsigned mode_key = 8U;
+    unsigned seen_keys = 0;
+    std::set<std::string> unknown_keys;
     bool has_sql = false;
     if (!take('}')) {
       do {
         const std::string key = string();
-        if (!keys.insert(key).second) {
+        const unsigned key_bit = key == "id" ? id_key
+            : key == "op" ? op_key : key == "sql" ? sql_key
+            : key == "search_mode" ? mode_key : 0U;
+        if (key_bit != 0) {
+          if ((seen_keys & key_bit) != 0) {
+            invalid("duplicate JSON key");
+          }
+          seen_keys |= key_bit;
+        } else if (!unknown_keys.insert(key).second) {
           invalid("duplicate JSON key");
         }
         expect(':');
         space();
-        if (key == "id") {
+        if (key_bit == id_key) {
           const size_t start = pos_;
           value(0);
           request.id = std::string(input_.substr(start, pos_ - start));
-        } else if (key == "op") {
+        } else if (key_bit == op_key) {
           request.op = string();
-        } else if (key == "sql") {
+        } else if (key_bit == sql_key) {
           request.sql = string();
           has_sql = true;
-        } else if (key == "search_mode") {
+        } else if (key_bit == mode_key) {
           request.mode = string();
         } else {
           value(0);
@@ -779,7 +793,8 @@ class JsonRequestParser {
       expect('}');
     }
     space();
-    if (pos_ != input_.size() || !keys.contains("id") || !keys.contains("op")) {
+    if (pos_ != input_.size() ||
+        (seen_keys & (id_key | op_key)) != (id_key | op_key)) {
       invalid("request requires id and op in one JSON object");
     }
     if (request.op == "execute" && !has_sql) {
@@ -1001,6 +1016,7 @@ class Lexer {
 
   std::vector<Token> tokenize() {
     std::vector<Token> tokens;
+    tokens.reserve(32);
     while (true) {
       skipSpaceAndComments();
       if (pos_ >= input_.size()) {
@@ -1560,7 +1576,7 @@ class Parser {
       fail("UNSUPPORTED", "NULL values are not supported");
     }
     if (type == ColumnType::BigInt) {
-      value.integer = parseBigIntToken();
+      value.setInteger(parseBigIntToken());
       return value;
     }
     if (type == ColumnType::VarChar) {
@@ -1568,20 +1584,20 @@ class Parser {
           peek().kind != TokenKind::Number) {
         fail("TYPE_MISMATCH", "VARCHAR requires a string literal");
       }
-      value.text = tokens_[pos_++].text;
-      if (countCodepointsStrict(value.text) > length) {
+      value.setText(tokens_[pos_++].text);
+      if (countCodepointsStrict(value.text()) > length) {
         fail("VALUE_TOO_LONG", "VARCHAR value exceeds declared length");
       }
       return value;
     }
     if (peek().kind == TokenKind::Symbol && peek().text == "[") {
-      value.vector = parseVectorBody(length);
+      value.setVector(parseVectorBody(length));
     } else if (peek().kind == TokenKind::String) {
-      value.vector = parseVectorLiteralText(tokens_[pos_++].text, length);
+      value.setVector(parseVectorLiteralText(tokens_[pos_++].text, length));
     } else {
       fail("TYPE_MISMATCH", "VECTOR requires a bracketed numeric array");
     }
-    if (value.vector.size() != length) {
+    if (value.vector().size() != length) {
       fail("VECTOR_DIMENSION_MISMATCH", "vector dimension does not match schema");
     }
     return value;
@@ -2314,7 +2330,7 @@ PrimaryKeyRange primaryKeyRange(const TableDef &definition,
       continue;
     }
     range.constrained = true;
-    const int64_t key = condition.value.integer;
+    const int64_t key = condition.value.integer();
     switch (condition.op) {
       case CompareOp::Eq:
         range.minimum = std::max(range.minimum, key);
@@ -2437,9 +2453,14 @@ class Table {
     mutable std::vector<int8_t> codes;
     mutable std::vector<uint32_t> code_norms;
     mutable double code_step = 0;
+    mutable double code_error = 0;
     mutable size_t code_stride = 0;
     mutable bool codes_blocked = false;
     mutable bool codes_attempted = false;
+    // Equality directories borrow a contiguous range of the full directory's
+    // codes. Both directories are invalidated together before any row changes.
+    const IndexedRows *code_source = nullptr;
+    size_t code_first = 0;
 
     auto begin() { return rows.begin(); }
     auto end() { return rows.end(); }
@@ -2457,9 +2478,12 @@ class Table {
       codes.swap(other.codes);
       code_norms.swap(other.code_norms);
       std::swap(code_step, other.code_step);
+      std::swap(code_error, other.code_error);
       std::swap(code_stride, other.code_stride);
       std::swap(codes_blocked, other.codes_blocked);
       std::swap(codes_attempted, other.codes_attempted);
+      std::swap(code_source, other.code_source);
+      std::swap(code_first, other.code_first);
     }
   };
 
@@ -2513,9 +2537,9 @@ class Table {
                         version.cached ? &version.row : nullptr,
                         version.cached &&
                                 vector_column != std::numeric_limits<size_t>::max() &&
-                                version.row[vector_column].vector.size() ==
+                                version.row[vector_column].vector().size() ==
                                     definition_.columns[vector_column].length
-                            ? version.row[vector_column].vector.data() : nullptr});
+                            ? version.row[vector_column].vector().data() : nullptr});
         allocated += (rows.capacity() - old_capacity) * sizeof(IndexedRows::value_type);
         if (allocated + staged_integer.bucket_count() * sizeof(void *) +
                 staged_text.bucket_count() * sizeof(void *) > available) {
@@ -2528,9 +2552,9 @@ class Table {
       const auto append = [&](int64_t primary, const Version &version,
                               const Row &row) {
         if (text) {
-          return appendTo(staged_text, row[column].text, primary, version);
+          return appendTo(staged_text, row[column].text(), primary, version);
         }
-        return appendTo(staged_integer, row[column].integer, primary, version);
+        return appendTo(staged_integer, row[column].integer(), primary, version);
       };
       if (cache_enabled_) {
         // The fully cached path already has every payload and can avoid a
@@ -2584,11 +2608,11 @@ class Table {
     }
     static const IndexedRows empty;
     if (text) {
-      const auto found = text_equality_index_.find(condition.value.text);
+      const auto found = text_equality_index_.find(condition.value.text());
       return found == text_equality_index_.end() ? &empty : &found->second;
     }
     const auto found =
-        integer_equality_index_.find(condition.value.integer);
+        integer_equality_index_.find(condition.value.integer());
     return found == integer_equality_index_.end() ? &empty : &found->second;
   }
 
@@ -2616,17 +2640,79 @@ class Table {
       if (staged.capacity() > available / sizeof(IndexedRow)) {
         return nullptr;
       }
-      for (const auto &[primary, version] : versions_) {
-        const auto &vector = version.row[vector_column].vector;
-        staged.push_back({primary, version.offset, &version.row,
-                          vector.size() == definition_.columns[vector_column].length
-                              ? vector.data() : nullptr});
+      if (equality_column_ != std::numeric_limits<size_t>::max() &&
+          !equality_disabled_) {
+        // Keep each equality bucket contiguous so filtered and full scans can
+        // share one code matrix. Buckets already visit nearby raw allocations.
+        for (const auto &[key, bucket] : integer_equality_index_) {
+          (void)key;
+          for (const IndexedRow &row : bucket) { staged.push_back(row); }
+        }
+        for (const auto &[key, bucket] : text_equality_index_) {
+          (void)key;
+          for (const IndexedRow &row : bucket) { staged.push_back(row); }
+        }
+      } else {
+        for (const auto &[primary, version] : versions_) {
+          const auto &vector = version.row[vector_column].vector();
+          staged.push_back({primary, version.offset, &version.row,
+                            vector.size() == definition_.columns[vector_column].length
+                                ? vector.data() : nullptr});
+        }
+        orderCachedVectors(staged);
       }
-      orderCachedVectors(staged);
       cached_distance_rows_.swap(staged);
       cached_distance_ready_ = true;
+      size_t first = 0;
+      const auto bind = [&](auto &index) {
+        for (auto &[key, bucket] : index) {
+          (void)key;
+          bucket.code_source = &cached_distance_rows_;
+          bucket.code_first = first;
+          first += bucket.size();
+        }
+      };
+      bind(integer_equality_index_);
+      bind(text_equality_index_);
     }
     return &cached_distance_rows_;
+  }
+
+  const IndexedRows *quantizedDistanceRows(const IndexedRows &rows,
+                                           size_t vector_column,
+                                           size_t dimension, bool blocked) {
+    if (!cache_enabled_ || dimension < 16 || dimension > 16384) {
+      return nullptr;
+    }
+    const IndexedRows *source = &rows;
+    if (&rows != &cached_distance_rows_ && versions_.size() >= 2048) {
+      constexpr size_t maximum = 16ULL * 1024ULL * 1024ULL;
+      const size_t stride = blocked
+          ? quantized_block::padded_dimension(dimension) : dimension;
+      // Don't construct a full directory that cannot possibly have codes.
+      // Large filtered subsets can still prepare their own bounded matrix.
+      if (versions_.size() > maximum / (stride + sizeof(uint32_t))) {
+        return rows.size() >= 2048 && prepareQuantizedRows(rows, dimension, blocked)
+            ? &rows : nullptr;
+      }
+      try {
+        const IndexedRows *full = cachedDistanceCandidates(vector_column, nullptr);
+        if (full != nullptr && rows.code_source == full) {
+          source = full;
+        } else if (rows.size() < 2048) {
+          return nullptr;
+        }
+      } catch (const std::bad_alloc &) {
+        // A shared directory is optional, just like its code matrix.
+        return nullptr;
+      }
+    }
+    if (prepareQuantizedRows(*source, dimension, blocked)) {
+      return source;
+    }
+    return source != &rows && rows.size() >= 2048 &&
+            prepareQuantizedRows(rows, dimension, blocked)
+        ? &rows : nullptr;
   }
 
   bool prepareQuantizedRows(const IndexedRows &rows, size_t dimension,
@@ -2694,12 +2780,14 @@ class Table {
       return false;
     }
     size_t row_index = 0;
+    double maximum_squared_error = 0;
     for (const IndexedRow &row : rows) {
       uint32_t norm = 0;
+      double squared_error = 0;
       for (size_t axis = 0; axis < dimension; ++axis) {
+        const double scaled = static_cast<double>(row.vector_data[axis]) / step;
         const int code = static_cast<int>(std::clamp(
-            std::round(static_cast<double>(row.vector_data[axis]) / step),
-            -127.0, 127.0));
+            std::round(scaled), -127.0, 127.0));
         if (blocked) {
           const size_t block = row_index / quantized_block::kBlockRows;
           const size_t lane = row_index % quantized_block::kBlockRows;
@@ -2710,12 +2798,23 @@ class Table {
           codes[row_index * stride + axis] = static_cast<int8_t>(code);
         }
         norm += static_cast<uint32_t>(code * code);
+        const double error = scaled - code;
+        squared_error += error * error;
       }
       norms[row_index++] = norm;
+      maximum_squared_error = std::max(maximum_squared_error, squared_error);
     }
     // Publish only complete codes; reuse the directory's invalidation rules.
     quantized_bytes_ += allocated;
     rows.code_step = step;
+    // Scaling a binary32 by a power of two is exact in double. Residual squares
+    // are positive, normal doubles; this outward envelope exceeds their
+    // accumulation and square-root rounding error for at most 16384 axes.
+    const double error_margin = 1 + (static_cast<double>(dimension) + 16) * 16 *
+        std::numeric_limits<double>::epsilon();
+    rows.code_error = std::nextafter(
+        std::sqrt(maximum_squared_error * error_margin) * error_margin,
+        std::numeric_limits<double>::infinity());
     rows.code_stride = stride;
     rows.codes_blocked = blocked;
     rows.codes.swap(codes);
@@ -3021,8 +3120,8 @@ class Table {
       versions_.erase(primary);
       return;
     }
-    Row row = deserializeRow(payload);
-    int64_t primary = row.at(definition_.primary_key).integer;
+    Row row = deserializeRow(payload, definition_);
+    int64_t primary = row.at(definition_.primary_key).integer();
     Version version;
     version.offset = offset;
     version.cached = cache_enabled_;
@@ -3107,7 +3206,7 @@ class Table {
     if (record.op == 3) {
       fail("CORRUPT_DATA", "invalid row payload");
     }
-    return deserializeRow(payload);
+    return deserializeRow(payload, definition_);
   }
 
   template <typename Callback>
@@ -3179,8 +3278,8 @@ class Table {
           stored_primary, predicate_integer, predicate_text, components);
       const bool predicate_matches =
           predicate_type == ColumnType::BigInt
-              ? predicate_integer == condition.value.integer
-              : predicate_text == condition.value.text;
+              ? predicate_integer == condition.value.integer()
+              : predicate_text == condition.value.text();
       if (stored_primary != indexed.primary || !predicate_matches) {
         fail("CORRUPT_DATA",
              "equality index does not match the stored row payload");
@@ -3512,11 +3611,11 @@ bool valuesCompare(const Value &left, const Value &right, CompareOp op,
                    ColumnType type) {
   int comparison = 0;
   if (type == ColumnType::BigInt) {
-    comparison = left.integer < right.integer
+    comparison = left.integer() < right.integer()
                      ? -1
-                     : (left.integer > right.integer ? 1 : 0);
+                     : (left.integer() > right.integer() ? 1 : 0);
   } else if (type == ColumnType::VarChar) {
-    comparison = left.text < right.text ? -1 : (left.text > right.text ? 1 : 0);
+    comparison = left.text() < right.text() ? -1 : (left.text() > right.text() ? 1 : 0);
   } else {
     fail("UNSUPPORTED", "VECTOR values are not comparable with WHERE operators");
   }
@@ -3979,7 +4078,7 @@ class Database {
     std::unordered_set<int64_t> batch_keys;
     batch_keys.reserve(statement.rows.size());
     for (const Row &row : statement.rows) {
-      int64_t primary = row[definition.primary_key].integer;
+      int64_t primary = row[definition.primary_key].integer();
       if (!batch_keys.insert(primary).second) {
         fail("DUPLICATE_PRIMARY_KEY", "duplicate primary key in INSERT");
       }
@@ -3990,7 +4089,7 @@ class Database {
     }
     std::map<int64_t, std::optional<Row>> changes;
     for (Row &row : statement.rows) {
-      const int64_t primary = row[definition.primary_key].integer;
+      const int64_t primary = row[definition.primary_key].integer();
       changes.emplace(primary, std::move(row));
     }
     const uint64_t affected = static_cast<uint64_t>(changes.size());
@@ -4020,8 +4119,8 @@ class Database {
           *guaranteed_condition = index;
         }
         Row row;
-        if (currentRow(table, condition.value.integer, row)) {
-          return callback(condition.value.integer, row, false);
+        if (currentRow(table, condition.value.integer(), row)) {
+          return callback(condition.value.integer(), row, false);
         }
         return true;
       }
@@ -4213,15 +4312,15 @@ class Database {
           for (size_t column = 0; column < definition.columns.size(); ++column) {
             const ColumnType type = definition.columns[column].type;
             output.push_back(json_output_ && type == ColumnType::VarChar
-                ? jsonString(row[column].text) : valueToString(row[column], type));
+                ? jsonString(row[column].text()) : valueToString(row[column], type));
           }
         } else if (item.distance) {
           output.push_back(formatFixed(
-              l2Distance(row[item.column].vector, item.probe), 6));
+              l2Distance(row[item.column].vector(), item.probe), 6));
         } else {
           const ColumnType type = definition.columns[item.column].type;
           output.push_back(json_output_ && type == ColumnType::VarChar
-              ? jsonString(row[item.column].text) : valueToString(row[item.column], type));
+              ? jsonString(row[item.column].text()) : valueToString(row[item.column], type));
         }
       }
       return output;
@@ -4307,8 +4406,8 @@ class Database {
         const std::vector<float> *probe;
         bool operator()(const Candidate &left, const Candidate &right) const {
           const int comparison = compareDistances(
-              left.squared_distance, left.row.get()[column].vector,
-              right.squared_distance, right.row.get()[column].vector, *probe);
+              left.squared_distance, left.row.get()[column].vector(),
+              right.squared_distance, right.row.get()[column].vector(), *probe);
           return comparison != 0 ? comparison < 0 : left.primary < right.primary;
         }
       };
@@ -4388,8 +4487,8 @@ class Database {
           bool operator()(const PayloadCandidate &left,
                           const PayloadCandidate &right) const {
             const int comparison = compareDistances(
-                left.squared_distance, left.row[column].vector,
-                right.squared_distance, right.row[column].vector, *probe);
+                left.squared_distance, left.row[column].vector(),
+                right.squared_distance, right.row[column].vector(), *probe);
             return comparison != 0 ? comparison < 0
                                    : left.primary < right.primary;
           }
@@ -4427,7 +4526,7 @@ class Database {
           if (payload_heap.size() < capacity) {
             MVD_PROFILE_SCOPE(heap_profile, Heap, 31);
             payload_heap.push_back(
-                {squared, primary, deserializeRow(payload)});
+                {squared, primary, deserializeRow(payload, definition)});
             std::push_heap(payload_heap.begin(), payload_heap.end(),
                            payload_less);
             updateRejectionBoundary();
@@ -4435,7 +4534,7 @@ class Database {
             const PayloadCandidate &worst = payload_heap.front();
             const int comparison = compareDistances(
                 squared, vector, worst.squared_distance,
-                worst.row[distance_spec.column].vector,
+                worst.row[distance_spec.column].vector(),
                 distance_spec.probe);
             if (comparison < 0 ||
                 (comparison == 0 && primary < worst.primary)) {
@@ -4443,7 +4542,7 @@ class Database {
               std::pop_heap(payload_heap.begin(), payload_heap.end(),
                             payload_less);
               payload_heap.back() = PayloadCandidate{
-                  squared, primary, deserializeRow(payload)};
+                  squared, primary, deserializeRow(payload, definition)};
               std::push_heap(payload_heap.begin(), payload_heap.end(),
                              payload_less);
               updateRejectionBoundary();
@@ -4482,7 +4581,7 @@ class Database {
       double quantized_step = 0;
       std::vector<int8_t> quantized_probe;
       uint32_t quantized_above = std::numeric_limits<uint32_t>::max();
-      const double quantized_error = std::sqrt(
+      double quantized_error = std::sqrt(
           static_cast<double>(prepared_probe.size())) + 1;
       const double rejection_multiplier =
           1 + (static_cast<double>(prepared_probe.size()) + 16) * 16 *
@@ -4496,10 +4595,10 @@ class Database {
         screening_above =
             reject_above * screening_multiplier + screening_absolute;
         if (quantized_step > 0) {
-          // Clamp is nonexpansive; rounding adds at most one code unit to
-          // each component difference. Hence code-distance <= true-distance
-          // / step + sqrt(d). The extra whole unit covers floating evaluation
-          // roundoff (all useful radii are below32768); ceil rounds outward.
+          // The triangle inequality bounds code-distance by true-distance /
+          // step plus the measured row/query residual norms. The extra whole
+          // unit covers floating evaluation roundoff (useful radii <32768);
+          // ceil rounds the integer squared-distance threshold outward.
           const double radius = std::sqrt(reject_above) / quantized_step +
                                 quantized_error;
           quantized_above = radius < 32768
@@ -4529,8 +4628,8 @@ class Database {
         } else if (squared <= reject_above) {
           const Candidate &worst = heap.front();
           const int comparison = compareDistances(
-              squared, (*row)[distance_spec.column].vector, worst.squared_distance,
-              worst.row.get()[distance_spec.column].vector, distance_spec.probe);
+              squared, (*row)[distance_spec.column].vector(), worst.squared_distance,
+              worst.row.get()[distance_spec.column].vector(), distance_spec.probe);
           if (comparison < 0 || (comparison == 0 && primary < worst.primary)) {
             MVD_PROFILE_SCOPE(heap_profile, Heap, 31);
             std::pop_heap(heap.begin(), heap.end(), candidateLess);
@@ -4564,65 +4663,82 @@ class Database {
             quantized_kernel = &quantizedDistanceBatchVnni;
           }
         }
-        // Small filtered lists rarely amortize their own code-cache build.
-        // Keep their existing float scan and reserve codes for broader scans.
+        // Medium equality lists borrow the full matrix rather than allocating
+        // a second set of codes. Tiny lists retain the direct float scan.
         const bool quantized_worthwhile = statement.conditions.empty() ||
-                                          cached_candidates->size() >= 2048;
+            cached_candidates->size() >= 2048 ||
+            (cached_candidates->size() >= 256 && table.rowCount() >= 2048);
         // VNNI can accumulate sixteen independent rows without horizontal
         // reductions. Retain the existing layout on other CPUs and for small
         // scans, where packing/setup does not reliably amortize its cost.
         const auto block_kernel = quantized_block::kernel_for(
             quantized_block::KernelKind::vnni512);
-        if (quantized_worthwhile && __builtin_cpu_supports("avx2") &&
-            table.prepareQuantizedRows(*cached_candidates, prepared_probe.size(),
-                block_kernel != nullptr && prepared_probe.size() >= 64 &&
-                    cached_candidates->size() >= 2048)) {
-          const double step = cached_candidates->code_step;
+        const Table::IndexedRows *code_rows = nullptr;
+        if (quantized_worthwhile && __builtin_cpu_supports("avx2")) {
+          code_rows = table.quantizedDistanceRows(*cached_candidates,
+              distance_spec.column, prepared_probe.size(),
+              block_kernel != nullptr && prepared_probe.size() >= 64 &&
+                  table.rowCount() >= 2048);
+        }
+        if (code_rows != nullptr) {
+          const size_t code_first = code_rows == cached_candidates
+              ? 0 : cached_candidates->code_first;
+          const double step = code_rows->code_step;
           quantized = std::all_of(prepared_probe.begin(), prepared_probe.end(),
               [&](double value) { return std::abs(value / step) < 128; });
           if (quantized) {
             try {
-              quantized_probe.resize(cached_candidates->code_stride, 0);
+              quantized_probe.resize(code_rows->code_stride, 0);
             } catch (const std::bad_alloc &) {
               quantized = false;
             }
           }
           if (quantized) {
             int64_t query_correction = 0;
+            double squared_query_error = 0;
             size_t axis = 0;
             for (double value : prepared_probe) {
+              const double scaled = value / step;
               const int code = static_cast<int>(
-                  std::clamp(std::round(value / step), -127.0, 127.0));
+                  std::clamp(std::round(scaled), -127.0, 127.0));
               quantized_probe[axis++] = static_cast<int8_t>(code);
               query_correction += code * code + 256 * code;
+              const double error = scaled - code;
+              squared_query_error += error * error;
             }
             quantized_step = step;
-            if (cached_candidates->codes_blocked) {
-              for (; i < cached_candidates->size(); i += quantized_block::kBlockRows) {
+            quantized_error = code_rows->code_error +
+                std::sqrt(squared_query_error * rejection_multiplier) *
+                    rejection_multiplier + 1;
+            if (code_rows->codes_blocked) {
+              for (; i < cached_candidates->size();) {
+                const size_t first = code_first + i;
+                const size_t lane = first % quantized_block::kBlockRows;
+                const size_t block_first = first - lane;
                 uint32_t scores[quantized_block::kBlockRows];
                 block_kernel(reinterpret_cast<const uint8_t *>(
-                        cached_candidates->codes.data() +
-                        i * cached_candidates->code_stride),
-                    quantized_probe.data(), cached_candidates->code_stride,
-                    cached_candidates->code_norms.data() + i,
+                        code_rows->codes.data() + block_first * code_rows->code_stride),
+                    quantized_probe.data(), code_rows->code_stride,
+                    code_rows->code_norms.data() + block_first,
                     query_correction, scores);
-                const size_t count = std::min(quantized_block::kBlockRows,
+                const size_t count = std::min(quantized_block::kBlockRows - lane,
                                               cached_candidates->size() - i);
                 for (size_t j = 0; j < count; ++j) {
-                  if (heap.size() == capacity && scores[j] > quantized_above) {
+                  if (heap.size() == capacity && scores[lane + j] > quantized_above) {
                     continue;
                   }
                   const auto &row = (*cached_candidates)[i + j];
                   consumeVector(row.primary, row.vector_data, row.cached, true);
                 }
+                i += count;
               }
             } else {
               for (; cached_candidates->size() - i >= 4; i += 4) {
                 uint32_t scores[4];
-                quantized_kernel(cached_candidates->codes.data() +
-                        i * prepared_probe.size(), quantized_probe.data(),
+                quantized_kernel(code_rows->codes.data() +
+                        (code_first + i) * prepared_probe.size(), quantized_probe.data(),
                     prepared_probe.size(), scores,
-                    cached_candidates->code_norms.data() + i, query_correction);
+                    code_rows->code_norms.data() + code_first + i, query_correction);
                 for (size_t j = 0; j < 4; ++j) {
                   if (heap.size() == capacity && scores[j] > quantized_above) {
                     continue;
@@ -4666,7 +4782,7 @@ class Database {
           if (!matches(definition, row, statement.conditions, guaranteed_condition)) {
             return true;
           }
-          const auto &vector = row[distance_spec.column].vector;
+          const auto &vector = row[distance_spec.column].vector();
           if (vector.size() != prepared_probe.size()) {
             fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
           }
@@ -4838,9 +4954,9 @@ class Database {
         if (key.distance) {
           const SelectItem &item = statement.items[key.distance_index];
           comparison = compareDistances(left.distances[key.distance_index],
-                                        a[item.column].vector,
+                                        a[item.column].vector(),
                                         right.distances[key.distance_index],
-                                        b[item.column].vector, item.probe);
+                                        b[item.column].vector(), item.probe);
         } else {
           comparison = compareValues(a[key.column], b[key.column], key.column_type);
         }
@@ -4848,7 +4964,7 @@ class Database {
           return key.descending ? comparison > 0 : comparison < 0;
         }
       }
-      return a[definition.primary_key].integer < b[definition.primary_key].integer;
+      return a[definition.primary_key].integer() < b[definition.primary_key].integer();
     };
     const auto makeSelected = [&](const Row &row) {
       SelectedRow candidate;
@@ -4864,7 +4980,7 @@ class Database {
           double &value = candidate.distances[key.distance_index];
           if (std::isnan(value)) {
             const SelectItem &item = statement.items[key.distance_index];
-            value = squaredDistance(row[item.column].vector, item.probe);
+            value = squaredDistance(row[item.column].vector(), item.probe);
           }
         }
       }
@@ -5396,10 +5512,10 @@ class Database {
   static int compareValues(const Value &left, const Value &right,
                            ColumnType type) {
     if (type == ColumnType::VarChar) {
-      if (left.text < right.text) {
+      if (left.text() < right.text()) {
         return -1;
       }
-      if (left.text > right.text) {
+      if (left.text() > right.text()) {
         return 1;
       }
       return 0;
@@ -5407,10 +5523,10 @@ class Database {
     if (type == ColumnType::Vector) {
       fail("UNSUPPORTED", "VECTOR columns cannot be ordered directly");
     }
-    if (left.integer < right.integer) {
+    if (left.integer() < right.integer()) {
       return -1;
     }
-    if (left.integer > right.integer) {
+    if (left.integer() > right.integer()) {
       return 1;
     }
     return 0;
@@ -5571,28 +5687,51 @@ void printJsonResult(const ExecResult &result, const std::string &id) {
       header += jsonString(result.columns[i]);
     }
     header += "],\"rows\":[";
-    std::cout << header;
-    if (result.spool) {
-      result.spool->print(std::cout);
-    } else {
+    constexpr size_t small_response_bytes = 4096;
+    // buffered_bytes includes field capacities and container overhead, so it
+    // also bounds the row body's JSON punctuation. Coalesce small responses
+    // without adding another unbounded copy of large or spooled results.
+    if (!result.spool && header.size() <= small_response_bytes - 3 &&
+        result.buffered_bytes <= small_response_bytes - 3 - header.size()) {
+      header.reserve(header.size() + result.buffered_bytes + 3);
       bool first = true;
       for (const auto &row : result.rows) {
-        if (!first) { std::cout.put(','); }
+        if (!first) { header.push_back(','); }
         first = false;
-        std::cout.put('[');
+        header.push_back('[');
         for (size_t i = 0; i < row.size(); ++i) {
-          if (i != 0) { std::cout.put(','); }
-          std::cout << row[i];
+          if (i != 0) { header.push_back(','); }
+          header += row[i];
         }
-        std::cout.put(']');
+        header.push_back(']');
       }
+      header += "]}\n";
+      std::cout.write(header.data(), static_cast<std::streamsize>(header.size()));
+    } else {
+      std::cout << header;
+      if (result.spool) {
+        result.spool->print(std::cout);
+      } else {
+        bool first = true;
+        for (const auto &row : result.rows) {
+          if (!first) { std::cout.put(','); }
+          first = false;
+          std::cout.put('[');
+          for (size_t i = 0; i < row.size(); ++i) {
+            if (i != 0) { std::cout.put(','); }
+            std::cout << row[i];
+          }
+          std::cout.put(']');
+        }
+      }
+      std::cout << "]}\n";
     }
-    std::cout << "]}\n";
   } else {
     if (result.affected) {
       header += ",\"affected_rows\":" + std::to_string(*result.affected);
     }
-    std::cout << header << "}\n";
+    header += "}\n";
+    std::cout.write(header.data(), static_cast<std::streamsize>(header.size()));
   }
   std::cout.flush();
   if (!std::cout) {

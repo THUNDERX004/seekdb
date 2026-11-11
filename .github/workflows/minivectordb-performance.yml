@@ -2,10 +2,10 @@ name: MiniVectorDB paired Linux benchmark
 
 on:
   push:
-    branches: [codex/performance-round4-20261111]
+    branches: [codex/performance-round5-20261111]
     paths:
       - src/minivectordb.cpp
-      - src/quantized_block_scan.hpp
+      - src/*.hpp
       - bench/evaluate.py
       - .github/workflows/minivectordb-performance.yml
   workflow_dispatch:
@@ -24,9 +24,10 @@ jobs:
           fetch-depth: 1
       - name: Fetch the fixed comparison source
         run: |
-          git fetch --no-tags --depth=1 origin 9d7930ee4d5d1e58de69567b440b13b3603ec99a
+          git fetch --no-tags --depth=1 origin 85502ab28912655fe7c8d550e942ca50eeb3e636
           mkdir -p build/paired-linux
-          git show 9d7930ee4d5d1e58de69567b440b13b3603ec99a:src/minivectordb.cpp > build/paired-linux/baseline.cpp
+          git show 85502ab28912655fe7c8d550e942ca50eeb3e636:src/minivectordb.cpp > build/paired-linux/baseline.cpp
+          git show 85502ab28912655fe7c8d550e942ca50eeb3e636:src/quantized_block_scan.hpp > build/paired-linux/quantized_block_scan.hpp
       - name: Build both versions with the submission compiler
         run: |
           docker run --rm --network=none --mount type=bind,src="$PWD",dst=/work --workdir /work \
@@ -64,7 +65,7 @@ jobs:
         if: always()
         run: |
           git rev-parse HEAD
-          sha256sum src/minivectordb.cpp src/quantized_block_scan.hpp build/paired-linux/baseline build/paired-linux/candidate
+          sha256sum src/minivectordb.cpp src/*.hpp build/paired-linux/baseline build/paired-linux/candidate
           lscpu | head -35
           python3 - <<'PY'
           import json

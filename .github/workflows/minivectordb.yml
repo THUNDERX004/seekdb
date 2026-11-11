@@ -2,10 +2,10 @@ name: MiniVectorDB Linux validation
 
 on:
   push:
-    branches: [2026-competition-round2, codex/performance-round4-20261111]
+    branches: [2026-competition-round2, codex/performance-round5-20261111]
     paths:
       - src/minivectordb.cpp
-      - src/quantized_block_scan.hpp
+      - src/*.hpp
       - tests/**
       - mysqltest/**
       - protocol_check/**
@@ -44,6 +44,7 @@ jobs:
               g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_quantized_kernels.cpp -o build/test_quantized_kernels
               g++ $flags -O2 -Wall -Wextra -Wpedantic tests/test_quantized_block_scan.cpp -o build/test_quantized_block_scan
               g++ $flags -O1 tests/test_quantized_allocation.cpp -o build/test_quantized_allocation
+              g++ $flags -O1 tests/test_value_storage.cpp -o build/test_value_storage
               g++ $flags -O0 -DMVD_FORCE_SCALAR tests/test_durable_page_cache.cpp \
                 -Wl,--wrap=fsync -Wl,--wrap=sysconf -Wl,--wrap=posix_fadvise \
                 -o build/test_durable_page_cache
@@ -60,7 +61,9 @@ jobs:
           build/test_quantized_kernels
           build/test_quantized_block_scan
       - name: Verify optional quantized cache allocation fallback
-        run: build/test_quantized_allocation
+        run: |
+          build/test_quantized_allocation
+          build/test_value_storage
       - name: Verify durable page advice preserves sync and restart semantics
         run: python3 -B tests/test_statement_allocation.py build/test_durable_page_cache
       - name: Run the full local correctness contract on Linux
@@ -129,7 +132,7 @@ jobs:
         if: always()
         run: |
           git rev-parse HEAD
-          sha256sum src/minivectordb.cpp src/quantized_block_scan.hpp build/linux-normal/minivectordb
+          sha256sum src/minivectordb.cpp src/*.hpp build/linux-normal/minivectordb
           if [ -f refine-logs/linux-validation.json ]; then
             python3 -c 'import json; p="refine-logs/linux-validation.json"; r=json.load(open(p)); print(r["status"],len(r["runs"])); print([(x["label"],x["returncode"]) for x in r["runs"]])'
           fi
