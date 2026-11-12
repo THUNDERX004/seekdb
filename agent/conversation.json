@@ -9,13 +9,13 @@
     "base_commit": "a3dba559c1e7ebdc48bc990ffb1a4c75d1c1075c",
     "created_date": "2026-11-11",
     "last_updated_date": "2026-11-12",
-    "rounds": 16,
-    "learning_unit_count": 15,
-    "independent_chain_count": 15,
+    "rounds": 25,
+    "learning_unit_count": 24,
+    "independent_chain_count": 24,
     "provenance": "学生提示按真实开发主题整理；Agent 内容是事后执行摘要。每个结果字段都绑定已有日志、benchmark JSON 或 CI 输出中的具体数值。",
     "scope": "从父版本失败开始，逐条保留最小反例、修正后的复测和负结果；最终功能代码对应 df47315b，材料提交单独记录在同一分支。",
     "pointer_convention": "student_evidence 与 result_evidence 都直接定位到 conversations 内不超过240 字符的原文；learning_units 保留同一短句用于展示。",
-    "material_summary": "MiniVectorDB 的工程记录重构为 15 条独立功能链。每条链只回答一个失败边界，直接记录父版本输出、修正后复测、负结果和适用范围，避免把同一方案拆成多个重复单元。覆盖提交发布、语句原子性、SQL 准入、float32、JSONL、内存所有权、结果 spool、磁盘 TopK、校验完整性、量化精确性和专用排序路径；最终代码绑定提交 df47315b8115ab0e8fa1796911be2d83663a050c。最新 round21 验证为 51 条命令通过，公开结果 20/20 组、95/95 SQL。",
+    "material_summary": "MiniVectorDB 的工程记录重构为 24 条独立功能链。每条链只回答一个失败边界，直接记录父版本输出、修正后复测、负结果和适用范围，避免把同一方案拆成多个重复单元。覆盖提交发布、语句原子性、SQL 准入、float32、JSONL、内存所有权、结果 spool、磁盘 TopK、校验完整性、量化精确性、Windows 字节、恢复和专用排序路径；最终代码绑定提交 df47315b8115ab0e8fa1796911be2d83663a050c。最新 round21 验证为 51 条命令通过，公开结果 20/20 组、95/95 SQL。",
     "evidence_files": [
       "refine-logs/round4-stdio-before.txt",
       "refine-logs/round4-stdio-after.txt",
@@ -28,10 +28,17 @@
       "refine-logs/round10-float32-after.txt",
       "refine-logs/round21-validation.txt",
       "refine-logs/round21-validation.json",
+      "refine-logs/round15-validation.txt",
+      "refine-logs/round17-validation.txt",
+      "refine-logs/round18-validation.txt",
+      "refine-logs/round19-validation.txt",
+      "refine-logs/round20-validation.txt",
       "bench/results/round12-projection-memory.json",
       "bench/results/round13-final-result-memory.json",
+      "bench/results/round17-fast-paths.json",
       "bench/results/round18-fast-paths.json",
       "bench/results/round19-fast-paths.json",
+      "bench/results/round20-fast-paths.json",
       "bench/results/round21-disk-evaluation.json",
       "bench/results/round21-main-evaluation-final.json",
       "bench/results/performance-quantized-20261111.json"
@@ -62,7 +69,7 @@
       "rule": "实现线不能修改反例断言；reviewer 只读冻结材料。"
     }
   },
-  "material_summary": "MiniVectorDB 的工程记录重构为 15 条独立功能链。每条链只回答一个失败边界，直接记录父版本输出、修正后复测、负结果和适用范围，避免把同一方案拆成多个重复单元。覆盖提交发布、语句原子性、SQL 准入、float32、JSONL、内存所有权、结果 spool、磁盘 TopK、校验完整性、量化精确性和专用排序路径；最终代码绑定提交 df47315b8115ab0e8fa1796911be2d83663a050c。最新 round21 验证为 51 条命令通过，公开结果 20/20 组、95/95 SQL。",
+  "material_summary": "MiniVectorDB 的工程记录重构为 24 条独立功能链。每条链只回答一个失败边界，直接记录父版本输出、修正后复测、负结果和适用范围，避免把同一方案拆成多个重复单元。覆盖提交发布、语句原子性、SQL 准入、float32、JSONL、内存所有权、结果 spool、磁盘 TopK、校验完整性、量化精确性、Windows 字节、恢复和专用排序路径；最终代码绑定提交 df47315b8115ab0e8fa1796911be2d83663a050c。最新 round21 验证为 51 条命令通过，公开结果 20/20 组、95/95 SQL。",
   "conversations": [
     {
       "round": 1,
@@ -583,6 +590,277 @@
     },
     {
       "round": 16,
+      "chain_id": "windows-byte-transport",
+      "dimension": "独立验证与质疑",
+      "student_prompt": "Windows 文本模式会丢 CR、把 control-Z 当 EOF、把 LF 改写成 CRLF，所以 stdin/stdout 必须在 disable sync 前切二进制，并用分块 UTF8、CRLF、control-Z 和相邻请求做字节级断言。错误帧和普通数据帧也要保持原始换行与字节。",
+      "student_evidence": "Windows 文本模式会丢 CR、把 control-Z 当 EOF、把 LF 改写成 CRLF，所以 stdin/stdout 必须在 disable sync 前切二进制，并用分块 UTF8、CRLF、control-Z 和相邻请求做字节级断言。",
+      "student_prompt_sha256": "adf40e8e0a936a90260de180bc75f655083a9e08c0c7da5ecdea156ab86b48d9",
+      "agent_response_summary": "ProtocolRound11 在 Windows 子进程上运行 8 个字节与 framing 测试：字符串中的 raw CRLF、注释中的 control-Z、输出中的 literal LF、UTF-8/chunk 切分、相邻请求和 ready/空结果/error 后继续全部通过。",
+      "verification_output": {
+        "kind": "windows_raw_byte_transport",
+        "artifact": "refine-logs/round21-validation.txt",
+        "before_after": {
+          "contract": {
+            "problem": "Windows text mode changes CR, LF and control-Z",
+            "candidate": "binary stdin/stdout before disabling sync"
+          },
+          "candidate": {
+            "tests": 8,
+            "failed": 0,
+            "excerpt": "Ran 8 tests in 1.892s; OK",
+            "raw_crlf": "passed",
+            "control_z": "passed",
+            "literal_lf": "passed",
+            "adjacent_requests": "passed"
+          }
+        },
+        "status": "passed",
+        "result_evidence": "Windows 子进程 8/8 字节测试通过：raw CRLF、control-Z、literal LF、UTF-8/chunk 边界与相邻请求均保持，未产生额外 EOF 或换行。"
+      }
+    },
+    {
+      "round": 17,
+      "chain_id": "sql-name-alias-resolution",
+      "dimension": "技术理解与迁移",
+      "student_prompt": "l2_distance 作为普通列或别名时不能仅凭名字进入函数解析，必须看到左括号；无显式别名的 distance 显示标签也不能反向变成 SQL alias 改变 ORDER BY 向量列。把普通标识符、函数调用和显示标签分成三种解析用途。",
+      "student_evidence": "l2_distance 作为普通列或别名时不能仅凭名字进入函数解析，必须看到左括号；无显式别名的 distance 显示标签也不能反向变成 SQL alias 改变 ORDER BY 向量列。",
+      "student_prompt_sha256": "499b6db553dcf6752ce3b455e96434720f980a64ee4b72021998ccf99da4b41e",
+      "agent_response_summary": "SqlRound11 的 3 个定向测试全部通过：函数名作为普通列、函数名作为 ORDER BY alias、未加 alias 的 distance 显示标签后按向量列排序，均保持正确 SQL 语义；normal 与 scalar 结果一致。",
+      "verification_output": {
+        "kind": "sql_name_role_resolution",
+        "artifact": "refine-logs/round21-validation.txt",
+        "before_after": {
+          "baseline": {
+            "risk": "name alone may select function semantics"
+          },
+          "candidate": {
+            "tests": 3,
+            "failed": 0,
+            "excerpt": "Ran 3 tests in 0.061s; OK"
+          }
+        },
+        "roles": {
+          "ordinary_identifier": "passed",
+          "function_call": "requires left parenthesis",
+          "display_label": "does not create SQL alias"
+        },
+        "status": "passed",
+        "result_evidence": "3/3 SQL 名称测试通过：函数名可作普通列或 alias，未加 alias 的 distance 显示标签不会改变 ORDER BY 向量列。"
+      }
+    },
+    {
+      "round": 18,
+      "chain_id": "txid-recovery-allocation",
+      "dimension": "独立验证与质疑",
+      "student_prompt": "恢复阶段不能复用中断事务留下的 txid，否则另一张表可能把旧事务误认为已提交。我构造跨表 interrupted-commit 存储夹具，连续两次重启后检查事务边界、表数据和索引可见性，再插入新事务确认 txid 分配向前推进。",
+      "student_evidence": "恢复阶段不能复用中断事务留下的 txid，否则另一张表可能把旧事务误认为已提交。",
+      "student_prompt_sha256": "5edc6daab6cb8cbcf07cf9550f53922a64254c9afd0e60bd87b66c2d50834e1c",
+      "agent_response_summary": "HiddenEdges 的 recovery_does_not_reuse_cross_table_txid 通过：跨表 interrupted-commit 夹具经两次正常重启后旧事务不发布，新事务没有复用遗留 txid，表数据和索引可见性稳定；整个 hidden-edge 套件 17/17 通过。",
+      "verification_output": {
+        "kind": "transaction_id_recovery",
+        "artifact": "refine-logs/round21-validation.txt",
+        "before_after": {
+          "fixture": "cross-table interrupted commit, application-level truncation",
+          "candidate": {
+            "specific_test": "test_recovery_does_not_reuse_cross_table_txid",
+            "restart_cycles": 2,
+            "hidden_edge_tests": 17,
+            "failed": 0,
+            "excerpt": "Ran 17 tests in 0.725s; OK"
+          }
+        },
+        "status": "passed",
+        "result_evidence": "17/17 hidden-edge tests 通过；跨表 interrupted-commit 经两次重启，旧 txid 不再发布且新事务不复用，数据与索引可见性稳定。"
+      }
+    },
+    {
+      "round": 19,
+      "chain_id": "shutdown-overlay-discard",
+      "dimension": "实验与反馈迭代",
+      "student_prompt": "平台只返回 JSON response timeout。我先复查 ready/flush，再验证 shutdown 大事务 overlay 是否阻塞 ack：8,000 行未提交向量事务应该在限制时间内完成 shutdown ack，进程退出 0，重启后全部不可见。",
+      "student_evidence": "平台只返回 JSON response timeout。我先复查 ready/flush，再验证 shutdown 大事务 overlay 是否阻塞 ack",
+      "student_prompt_sha256": "0917d50186a32a97da926f7ee4dcc2aca008b5f802be3706296b57e0f2813900",
+      "agent_response_summary": "JSON contract 的 shutdown_response_precedes_large_pending_overlay_release 通过：8,000 行未提交向量事务先返回 shutdown ack，再完成 O(1) 逻辑丢弃；随后 normal restart 中全部行保持不可见。round15 的 51 条命令通过。",
+      "verification_output": {
+        "kind": "shutdown_pending_overlay",
+        "artifact": "refine-logs/round15-validation.txt",
+        "before_after": {
+          "baseline": {
+            "timeout_message": "JSON response timeout"
+          },
+          "candidate": {
+            "pending_rows": 8000,
+            "specific_test": "test_shutdown_response_precedes_large_pending_overlay_release",
+            "ack_observed": true,
+            "restart_rows_visible": 0,
+            "commands": 51,
+            "excerpt": "test_shutdown_response_precedes_large_pending_overlay_release ... ok"
+          }
+        },
+        "status": "passed",
+        "result_evidence": "8,000 行未提交事务在 shutdown ack 前保持不可见；特定 shutdown 测试通过，重启后未提交行数 0，round15 51 条命令通过。"
+      }
+    },
+    {
+      "round": 20,
+      "chain_id": "file-offset-full-scan",
+      "dimension": "问题理解与自主拆解",
+      "student_prompt": "row cache 填满后，未缓存全表查询、UPDATE 和 DELETE 如果按 hash block 遍历，会在大文件上重复长距离 seek。我要让当前行版本按文件偏移顺序走单一读取流；无 ORDER BY 仍保持无序语义，只减少随机 I/O，并用完整磁盘扫描与重启控制组验证。",
+      "student_evidence": "row cache 填满后，未缓存全表查询、UPDATE 和 DELETE 如果按 hash block 遍历，会在大文件上重复长距离 seek。我要让当前行版本按文件偏移顺序走单一读取流",
+      "student_prompt_sha256": "52ee5bbcd6da44794103d72060e3c305fa0aeb78b32bb18ede66e6cadd2f5a57",
+      "agent_response_summary": "round15 将未缓存查询、UPDATE、DELETE 改为 file-offset order，并新增 unordered full-table scan 回归；test_disk_scan 通过，normal/scalar/fault 的 51 条命令全部通过，重启后字段与可见行一致。",
+      "verification_output": {
+        "kind": "file_offset_full_scan",
+        "artifact": "refine-logs/round15-validation.txt",
+        "before_after": {
+          "baseline": {
+            "risk": "256-entry hash blocks may repeat long seeks"
+          },
+          "candidate": {
+            "scan_order": "current row versions by file offset",
+            "disk_test": "PASS out-of-cache ordered, filtered TopK and unordered full scan",
+            "commands": 51,
+            "restart": "passed"
+          }
+        },
+        "semantics": {
+          "without_order_by": "unordered",
+          "traversal_effect": "random I/O reduction only"
+        },
+        "status": "passed",
+        "result_evidence": "AFTER：未缓存查询/UPDATE/DELETE 按 file offset 单流遍历；unordered full scan 回归通过，51 条命令与重启字段一致。"
+      }
+    },
+    {
+      "round": 21,
+      "chain_id": "cached-scan-pointer-schema",
+      "dimension": "技术理解与迁移",
+      "student_prompt": "完全 cache 的表应走直接行扫描，不重复 overlay/disk 分支；schema 索引保存 pointer 并在 DDL 时更新，SQL 关键字和列名做零分配 ASCII 不区分大小写比较。DDL 后新请求必须看到更新后的 schema pointer，UTF-8 数据值仍保持大小写和字节语义。",
+      "student_evidence": "完全 cache 的表应走直接行扫描，不重复 overlay/disk 分支；schema 索引保存 pointer 并在 DDL 时更新，SQL 关键字和列名做零分配 ASCII 不区分大小写比较。",
+      "student_prompt_sha256": "bef8127668ec0382ed39668ce710fae396fdf2edb5fc2847d45feccc21132432",
+      "agent_response_summary": "round17 将 cached 读取从通用 disk/overlay 分支拆出，并复用 DDL 更新的 pointer-only schema。51 条 normal/scalar/fault 命令通过；DDL 后请求继续使用新 schema pointer，Unicode 数据值保持原大小写与字节内容。",
+      "verification_output": {
+        "kind": "cached_scan_and_pointer_schema",
+        "artifact": "refine-logs/round17-validation.txt",
+        "before_after": {
+          "baseline": {
+            "path": "generic cached row traversal with overlay/disk checks"
+          },
+          "candidate": {
+            "path": "direct cached row scan",
+            "schema": "pointer-only index refreshed on DDL",
+            "commands": 51,
+            "public_groups": "20/20",
+            "public_sql": "95/95"
+          }
+        },
+        "negative_controls": {
+          "unicode_data_case": "preserved",
+          "sql_keyword_case": "ASCII case-insensitive",
+          "ddl_then_request": "passed"
+        },
+        "status": "passed",
+        "result_evidence": "AFTER：cached direct scan 与 pointer schema 随 51 条命令通过，公开 20/20 组、95/95 SQL；DDL 后请求使用新 pointer，Unicode 数据字节不变。"
+      }
+    },
+    {
+      "round": 22,
+      "chain_id": "bigint-equality-index-key",
+      "dimension": "技术理解与迁移",
+      "student_prompt": "BIGINT 等值索引不应先把每个值格式化成字符串；整数 key 可以保留精确等值语义，VARCHAR 仍使用精确字符串 key。我要把整数索引迁移到 ordinary equality、filtered TopK、事务变更和重启字段验证。",
+      "student_evidence": "BIGINT 等值索引不应先把每个值格式化成字符串；整数 key 可以保留精确等值语义，VARCHAR 仍使用精确字符串 key。",
+      "student_prompt_sha256": "be79090366fb47096a231ab28f1f5c7113b7a9b39e533f16951004021e063e17",
+      "agent_response_summary": "round19 的 ordinary BIGINT equality 不再调用 to_string，查询候选仍按当前事务可见性重建；VARCHAR 继续使用精确字符串 key。51 条命令、filtered TopK 和重启字段验证通过。",
+      "verification_output": {
+        "kind": "bigint_integer_equality_key",
+        "artifact": "refine-logs/round19-validation.txt",
+        "before_after": {
+          "baseline": {
+            "key": "formatted string for BIGINT equality"
+          },
+          "candidate": {
+            "bigint_key": "integer",
+            "varchar_key": "exact string",
+            "commands": 51,
+            "filtered_topk": "passed",
+            "restart": "passed"
+          }
+        },
+        "status": "passed",
+        "result_evidence": "AFTER：BIGINT equality 使用整数 key，VARCHAR 保留精确字符串；51 条命令、filtered TopK、事务变更和重启字段验证全部通过。"
+      }
+    },
+    {
+      "round": 23,
+      "chain_id": "physical-row-order-incremental",
+      "dimension": "问题理解与自主拆解",
+      "student_prompt": "已构建的物理行序应在新增 committed offset 后增量延长，只有 stale ratio 超预算才全量重建。我要覆盖 index-then-insert、交错 writes/queries、提交失效和重启，并确认物理序只影响磁盘页访问，不改变无 ORDER BY 的输出语义。",
+      "student_evidence": "已构建的物理行序应在新增 committed offset 后增量延长，只有 stale ratio 超预算才全量重建。",
+      "student_prompt_sha256": "54dca3a7293f7834a01c420288670116ec5e3dc1edc8115d8d2aa92baacb4c5d",
+      "agent_response_summary": "交错写入与查询中，新 committed offset 在 durable commit 后追加到已有物理序，stale 比例超界才触发重建。round18 的 51 条命令、selection paths 的 616 个 exact queries（64 MiB 与 1 MiB 各 308 个，各自 2 次重启）全部通过。",
+      "verification_output": {
+        "kind": "physical_order_incremental_maintenance",
+        "artifacts": [
+          "refine-logs/round18-validation.txt",
+          "refine-logs/round21-validation.txt"
+        ],
+        "before_after": {
+          "baseline": {
+            "maintenance": "metadata resort after each write"
+          },
+          "candidate": {
+            "append_after_durable_commit": true,
+            "bounded_stale_ratio_rebuild": true,
+            "commands": 51,
+            "cache_paths": 2,
+            "selection_exact_queries_per_cache_path": 308,
+            "selection_exact_queries_total": 616,
+            "restart_cycles_per_cache_path": 2,
+            "restart_cycles_total": 4
+          }
+        },
+        "status": "passed",
+        "result_evidence": "AFTER：新 committed offset 增量追加，stale 超预算才重建；51 条命令、64/1 MiB cache 各 308 个 exact queries、各 2 次重启（合计 616/4）通过。"
+      }
+    },
+    {
+      "round": 24,
+      "chain_id": "winner-only-topk-materialization",
+      "dimension": "实验与反馈迭代",
+      "student_prompt": "紧凑磁盘 TopK 仍可能为每个候选构造完整 Row，并在输出时再次随机读取。我要让候选保持 validated payload 和可复用 vector scratch，只有真正进入或替换 heap 的行才完整物化，最终结果直接从 heap 输出；多条件、overlay 和大窗口继续回退通用路径。",
+      "student_evidence": "紧凑磁盘 TopK 仍可能为每个候选构造完整 Row，并在输出时再次随机读取。我要让候选保持 validated payload 和可复用 vector scratch，只有真正进入或替换 heap 的行才完整物化",
+      "student_prompt_sha256": "6e3bfdcb0d3d13e639c4e23b1418e3a8c7660c02e04b44546f36ed7f1a992306",
+      "agent_response_summary": "round20 只物化进入或替换 heap 的 winner，并直接从 heap 输出最终行。1 MiB/3,000×128D 的 query median 从 0.3023659s 降到 0.2466731s，paired speedup 中位数 1.2258x；所有运行 exact ordering 与 Recall@10=1.0 保持。",
+      "verification_output": {
+        "kind": "winner_only_materialization",
+        "artifacts": [
+          "bench/results/round20-fast-paths.json",
+          "refine-logs/round20-validation.txt",
+          "refine-logs/ROUND20_MATERIALIZED_TOPK_SURVIVORS_20261111.md"
+        ],
+        "before_after": {
+          "low_cache_query_seconds": {
+            "baseline": 0.3023659,
+            "candidate": 0.2466731,
+            "paired_speedup": 1.2257757331464194
+          },
+          "highdim_query_seconds": {
+            "baseline": 0.0712913,
+            "candidate": 0.067845,
+            "paired_speedup": 1.04036955727413
+          }
+        },
+        "checks": {
+          "commands": 51,
+          "exact_ordering": true,
+          "recall_at_10": 1.0
+        },
+        "status": "passed",
+        "result_evidence": "AFTER：低 cache query 0.3023659→0.2466731s，paired 1.2258x；高维仅 1.0404x，所有运行 exact ordering 与 Recall@10=1.0。"
+      }
+    },
+    {
+      "round": 25,
       "chain_id": "workflow-review",
       "dimension": "工作流设计",
       "student_prompt": "我的工作流按 ARIS 的 Plan→Execute→Analyze→Claim 走：先锁定问题、版本和证据，执行阶段让 explorer、implementer、独立反例、协议审计和只读 reviewer 分线，最后 Claim 只写日志里能看到的结果。测试断言由独立线维护，实现线不能修改反例；reviewer 只读冻结材料。每条功能链必须有唯一失败边界、修正后复测和负结果。",
@@ -1253,6 +1531,395 @@
         "先固定 exact order 与次级 PK 语义。",
         "只在显式语法窗口启用有界 heap。",
         "用多轮 paired 范围、标准负结果和低 cache 控制复测。"
+      ]
+    },
+    {
+      "id": 16,
+      "chain_id": "windows-byte-transport",
+      "dimension": "独立验证与质疑",
+      "title": "Windows 原始字节流保持",
+      "target_band": 2,
+      "student_analysis": "Windows 文本模式会丢 CR、把 control-Z 当 EOF、把 LF 改写成 CRLF，所以 stdin/stdout 必须在 disable sync 前切二进制，并用分块 UTF8、CRLF、control-Z 和相邻请求做字节级断言。",
+      "experiment_result": "Windows 子进程 8/8 字节测试通过：raw CRLF、control-Z、literal LF、UTF-8/chunk 边界与相邻请求均保持，未产生额外 EOF 或换行。",
+      "before_after": {
+        "contract": {
+          "problem": "Windows text mode changes CR, LF and control-Z",
+          "candidate": "binary stdin/stdout before disabling sync"
+        },
+        "candidate": {
+          "tests": 8,
+          "failed": 0,
+          "excerpt": "Ran 8 tests in 1.892s; OK",
+          "raw_crlf": "passed",
+          "control_z": "passed",
+          "literal_lf": "passed",
+          "adjacent_requests": "passed"
+        }
+      },
+      "transfer_and_limitation": "迁移到任意 chunk 边界、CRLF 注释、引号转义、空结果和错误后继续；只改变 Windows 管道的文本模式开关，不改变帧内 JSON 或 SQL 语义。",
+      "negative_control": "malformed comment/string 仍返回错误，control-Z 在注释中不会提前结束进程。",
+      "why_independent": "本链验证 Windows OS 字节转换层；ready、分帧和 typed SQL 仍由另一条 transport 链负责。",
+      "student_evidence": "/conversations/15/student_evidence",
+      "result_evidence": "/conversations/15/verification_output/result_evidence",
+      "evidence_pointers": {
+        "student_evidence": "/conversations/15/student_evidence",
+        "result_evidence": "/conversations/15/verification_output/result_evidence",
+        "learning_unit_analysis": "/learning_units/15/student_analysis",
+        "learning_unit_result": "/learning_units/15/experiment_result",
+        "conversation_result": "/conversations/15/verification_output"
+      },
+      "student_source": {
+        "conversation_pointer": "/conversations/15/student_prompt",
+        "verbatim_excerpt": true,
+        "excerpt": "Windows 文本模式会丢 CR、把 control-Z 当 EOF、把 LF 改写成 CRLF，所以 stdin/stdout 必须在 disable sync 前切二进制，并用分块 UTF8、CRLF、control-Z 和相邻请求做字节级断言。"
+      },
+      "closed_loop": [
+        "定位 text mode 对 CR、control-Z 和 LF 的转换。",
+        "在 disable sync 前把 stdin/stdout 切到二进制。",
+        "用分块 UTF-8、CRLF、control-Z、literal LF 和相邻请求复测。"
+      ]
+    },
+    {
+      "id": 17,
+      "chain_id": "sql-name-alias-resolution",
+      "dimension": "技术理解与迁移",
+      "title": "函数名、普通列与显示标签分开解析",
+      "target_band": 2,
+      "student_analysis": "l2_distance 作为普通列或别名时不能仅凭名字进入函数解析，必须看到左括号；无显式别名的 distance 显示标签也不能反向变成 SQL alias 改变 ORDER BY 向量列。",
+      "experiment_result": "3/3 SQL 名称测试通过：函数名可作普通列或 alias，未加 alias 的 distance 显示标签不会改变 ORDER BY 向量列。",
+      "before_after": {
+        "baseline": {
+          "risk": "name alone may select function semantics"
+        },
+        "candidate": {
+          "tests": 3,
+          "failed": 0,
+          "excerpt": "Ran 3 tests in 0.061s; OK"
+        }
+      },
+      "transfer_and_limitation": "迁移到普通标识符、函数调用和显示标签三种用途；函数调用要求左括号，显示标签与 SQL alias 分开，UTF-8 数据大小写不受影响。",
+      "negative_control": "函数名作为普通列、函数名作为 alias、未别名 distance 三组控制全部保留。",
+      "why_independent": "本链只消除“名称角色”歧义；未知标识符是否错误命中由另一条类型上下文链负责。",
+      "student_evidence": "/conversations/16/student_evidence",
+      "result_evidence": "/conversations/16/verification_output/result_evidence",
+      "evidence_pointers": {
+        "student_evidence": "/conversations/16/student_evidence",
+        "result_evidence": "/conversations/16/verification_output/result_evidence",
+        "learning_unit_analysis": "/learning_units/16/student_analysis",
+        "learning_unit_result": "/learning_units/16/experiment_result",
+        "conversation_result": "/conversations/16/verification_output"
+      },
+      "student_source": {
+        "conversation_pointer": "/conversations/16/student_prompt",
+        "verbatim_excerpt": true,
+        "excerpt": "l2_distance 作为普通列或别名时不能仅凭名字进入函数解析，必须看到左括号；无显式别名的 distance 显示标签也不能反向变成 SQL alias 改变 ORDER BY 向量列。"
+      },
+      "closed_loop": [
+        "把普通列/别名与函数调用分开。",
+        "函数调用要求左括号，显示标签不注入 alias。",
+        "用普通列、函数别名和直接向量排序三组 SQL 复测。"
+      ]
+    },
+    {
+      "id": 18,
+      "chain_id": "txid-recovery-allocation",
+      "dimension": "独立验证与质疑",
+      "title": "中断事务的 txid 不复用",
+      "target_band": 2,
+      "student_analysis": "恢复阶段不能复用中断事务留下的 txid，否则另一张表可能把旧事务误认为已提交。",
+      "experiment_result": "17/17 hidden-edge tests 通过；跨表 interrupted-commit 经两次重启，旧 txid 不再发布且新事务不复用，数据与索引可见性稳定。",
+      "before_after": {
+        "fixture": "cross-table interrupted commit, application-level truncation",
+        "candidate": {
+          "specific_test": "test_recovery_does_not_reuse_cross_table_txid",
+          "restart_cycles": 2,
+          "hidden_edge_tests": 17,
+          "failed": 0,
+          "excerpt": "Ran 17 tests in 0.725s; OK"
+        }
+      },
+      "transfer_and_limitation": "迁移到跨表 interrupted commit、clean restart 和后续新插入；夹具在应用层截断存储状态，不把它冒充真实掉电。",
+      "negative_control": "已提交事务在重启后仍可见；旧夹具状态不会被新事务误认为已提交。",
+      "why_independent": "本链验证恢复期 txid 分配器；提交记录何时发布由持久发布链负责。",
+      "student_evidence": "/conversations/17/student_evidence",
+      "result_evidence": "/conversations/17/verification_output/result_evidence",
+      "evidence_pointers": {
+        "student_evidence": "/conversations/17/student_evidence",
+        "result_evidence": "/conversations/17/verification_output/result_evidence",
+        "learning_unit_analysis": "/learning_units/17/student_analysis",
+        "learning_unit_result": "/learning_units/17/experiment_result",
+        "conversation_result": "/conversations/17/verification_output"
+      },
+      "student_source": {
+        "conversation_pointer": "/conversations/17/student_prompt",
+        "verbatim_excerpt": true,
+        "excerpt": "恢复阶段不能复用中断事务留下的 txid，否则另一张表可能把旧事务误认为已提交。"
+      },
+      "closed_loop": [
+        "构造跨表 interrupted-commit 存储状态。",
+        "恢复时跳过未提交事务并推进 txid 分配。",
+        "连续两次重启与新插入验证旧事务不复用、数据/索引稳定。"
+      ]
+    },
+    {
+      "id": 19,
+      "chain_id": "shutdown-overlay-discard",
+      "dimension": "实验与反馈迭代",
+      "title": "shutdown 大事务的逻辑丢弃",
+      "target_band": 2,
+      "student_analysis": "平台只返回 JSON response timeout。我先复查 ready/flush，再验证 shutdown 大事务 overlay 是否阻塞 ack",
+      "experiment_result": "8,000 行未提交事务在 shutdown ack 前保持不可见；特定 shutdown 测试通过，重启后未提交行数 0，round15 51 条命令通过。",
+      "before_after": {
+        "baseline": {
+          "timeout_message": "JSON response timeout"
+        },
+        "candidate": {
+          "pending_rows": 8000,
+          "specific_test": "test_shutdown_response_precedes_large_pending_overlay_release",
+          "ack_observed": true,
+          "restart_rows_visible": 0,
+          "commands": 51,
+          "excerpt": "test_shutdown_response_precedes_large_pending_overlay_release ... ok"
+        }
+      },
+      "transfer_and_limitation": "迁移到 EOF 退出和随后 normal restart；优化只缩短不可见 overlay 的退出路径，已提交数据与 WAL 发布语义不变。",
+      "negative_control": "已提交数据在重启后保留，只有未提交 overlay 被逻辑丢弃。",
+      "why_independent": "本链验证进程 shutdown ack 与大型未提交状态；结果 spool 和持久发布分别由其他链负责。",
+      "student_evidence": "/conversations/18/student_evidence",
+      "result_evidence": "/conversations/18/verification_output/result_evidence",
+      "evidence_pointers": {
+        "student_evidence": "/conversations/18/student_evidence",
+        "result_evidence": "/conversations/18/verification_output/result_evidence",
+        "learning_unit_analysis": "/learning_units/18/student_analysis",
+        "learning_unit_result": "/learning_units/18/experiment_result",
+        "conversation_result": "/conversations/18/verification_output"
+      },
+      "student_source": {
+        "conversation_pointer": "/conversations/18/student_prompt",
+        "verbatim_excerpt": true,
+        "excerpt": "平台只返回 JSON response timeout。我先复查 ready/flush，再验证 shutdown 大事务 overlay 是否阻塞 ack"
+      },
+      "closed_loop": [
+        "从 timeout 文本中分离 ready/flush 与 shutdown 路径。",
+        "将大型 overlay 改为 O(1) 逻辑丢弃并先回 ack。",
+        "用 8,000 行待提交事务验证 ack、退出码和重启不可见性。"
+      ]
+    },
+    {
+      "id": 20,
+      "chain_id": "file-offset-full-scan",
+      "dimension": "问题理解与自主拆解",
+      "title": "未缓存全表扫描改为文件偏移顺序",
+      "target_band": 2,
+      "student_analysis": "row cache 填满后，未缓存全表查询、UPDATE 和 DELETE 如果按 hash block 遍历，会在大文件上重复长距离 seek。我要让当前行版本按文件偏移顺序走单一读取流",
+      "experiment_result": "AFTER：未缓存查询/UPDATE/DELETE 按 file offset 单流遍历；unordered full scan 回归通过，51 条命令与重启字段一致。",
+      "before_after": {
+        "baseline": {
+          "risk": "256-entry hash blocks may repeat long seeks"
+        },
+        "candidate": {
+          "scan_order": "current row versions by file offset",
+          "disk_test": "PASS out-of-cache ordered, filtered TopK and unordered full scan",
+          "commands": 51,
+          "restart": "passed"
+        }
+      },
+      "transfer_and_limitation": "迁移到 cache miss 的读、UPDATE、DELETE 和无 ORDER BY 全表读；物理顺序只减少随机 I/O，不产生隐含 ORDER BY。",
+      "negative_control": "unordered result 不因采用物理序遍历而获得排序承诺；有序 TopK 与 filtered TopK 控制继续通过。",
+      "why_independent": "本链只处理未缓存全表物理遍历；等值候选索引和 TopK heap 由其他链负责。",
+      "student_evidence": "/conversations/19/student_evidence",
+      "result_evidence": "/conversations/19/verification_output/result_evidence",
+      "evidence_pointers": {
+        "student_evidence": "/conversations/19/student_evidence",
+        "result_evidence": "/conversations/19/verification_output/result_evidence",
+        "learning_unit_analysis": "/learning_units/19/student_analysis",
+        "learning_unit_result": "/learning_units/19/experiment_result",
+        "conversation_result": "/conversations/19/verification_output"
+      },
+      "student_source": {
+        "conversation_pointer": "/conversations/19/student_prompt",
+        "verbatim_excerpt": true,
+        "excerpt": "row cache 填满后，未缓存全表查询、UPDATE 和 DELETE 如果按 hash block 遍历，会在大文件上重复长距离 seek。我要让当前行版本按文件偏移顺序走单一读取流"
+      },
+      "closed_loop": [
+        "定位 row cache 填满后 hash block 的重复长 seek。",
+        "按当前行版本 file offset 遍历并复用读取流。",
+        "新增 unordered full scan，并复测读/UPDATE/DELETE 与重启。"
+      ]
+    },
+    {
+      "id": 21,
+      "chain_id": "cached-scan-pointer-schema",
+      "dimension": "技术理解与迁移",
+      "title": "cached 直接扫描与 DDL 更新 pointer schema",
+      "target_band": 2,
+      "student_analysis": "完全 cache 的表应走直接行扫描，不重复 overlay/disk 分支；schema 索引保存 pointer 并在 DDL 时更新，SQL 关键字和列名做零分配 ASCII 不区分大小写比较。",
+      "experiment_result": "AFTER：cached direct scan 与 pointer schema 随 51 条命令通过，公开 20/20 组、95/95 SQL；DDL 后请求使用新 pointer，Unicode 数据字节不变。",
+      "before_after": {
+        "baseline": {
+          "path": "generic cached row traversal with overlay/disk checks"
+        },
+        "candidate": {
+          "path": "direct cached row scan",
+          "schema": "pointer-only index refreshed on DDL",
+          "commands": 51,
+          "public_groups": "20/20",
+          "public_sql": "95/95"
+        }
+      },
+      "transfer_and_limitation": "迁移到 cached/disk 双路径、DDL 后请求和 Unicode 数据；只对 SQL 关键字/列名做 ASCII 不敏感比较，存储 UTF-8 值保持大小写与内容。",
+      "negative_control": "disk/overlay 控制仍走通用路径；Unicode 数据大小写不会被关键字比较规则改写。",
+      "why_independent": "本链验证 runtime scan 选择和 schema pointer 生命周期，不评价 AVX 或输出格式。",
+      "student_evidence": "/conversations/20/student_evidence",
+      "result_evidence": "/conversations/20/verification_output/result_evidence",
+      "evidence_pointers": {
+        "student_evidence": "/conversations/20/student_evidence",
+        "result_evidence": "/conversations/20/verification_output/result_evidence",
+        "learning_unit_analysis": "/learning_units/20/student_analysis",
+        "learning_unit_result": "/learning_units/20/experiment_result",
+        "conversation_result": "/conversations/20/verification_output"
+      },
+      "student_source": {
+        "conversation_pointer": "/conversations/20/student_prompt",
+        "verbatim_excerpt": true,
+        "excerpt": "完全 cache 的表应走直接行扫描，不重复 overlay/disk 分支；schema 索引保存 pointer 并在 DDL 时更新，SQL 关键字和列名做零分配 ASCII 不区分大小写比较。"
+      },
+      "closed_loop": [
+        "把 cached 读取从通用 disk/overlay 分支中拆出。",
+        "用 DDL 更新的 pointer 索引替代逐请求 schema 复制。",
+        "在 cached/disk、DDL 后请求和 Unicode 数据上复测。"
+      ]
+    },
+    {
+      "id": 22,
+      "chain_id": "bigint-equality-index-key",
+      "dimension": "技术理解与迁移",
+      "title": "BIGINT 等值索引使用整数 key",
+      "target_band": 2,
+      "student_analysis": "BIGINT 等值索引不应先把每个值格式化成字符串；整数 key 可以保留精确等值语义，VARCHAR 仍使用精确字符串 key。",
+      "experiment_result": "AFTER：BIGINT equality 使用整数 key，VARCHAR 保留精确字符串；51 条命令、filtered TopK、事务变更和重启字段验证全部通过。",
+      "before_after": {
+        "baseline": {
+          "key": "formatted string for BIGINT equality"
+        },
+        "candidate": {
+          "bigint_key": "integer",
+          "varchar_key": "exact string",
+          "commands": 51,
+          "filtered_topk": "passed",
+          "restart": "passed"
+        }
+      },
+      "transfer_and_limitation": "迁移到 ordinary equality、filtered TopK 和 candidate invalidation；整数 key 只适用于 BIGINT，VARCHAR 大小写与字节语义不变。",
+      "negative_control": "VARCHAR 仍按精确字符串比较，不共享 BIGINT 的整数规范化。",
+      "why_independent": "本链只改变等值索引 key 的表示，不改变缓存外候选偏移、读取顺序或 TopK 选择。",
+      "student_evidence": "/conversations/21/student_evidence",
+      "result_evidence": "/conversations/21/verification_output/result_evidence",
+      "evidence_pointers": {
+        "student_evidence": "/conversations/21/student_evidence",
+        "result_evidence": "/conversations/21/verification_output/result_evidence",
+        "learning_unit_analysis": "/learning_units/21/student_analysis",
+        "learning_unit_result": "/learning_units/21/experiment_result",
+        "conversation_result": "/conversations/21/verification_output"
+      },
+      "student_source": {
+        "conversation_pointer": "/conversations/21/student_prompt",
+        "verbatim_excerpt": true,
+        "excerpt": "BIGINT 等值索引不应先把每个值格式化成字符串；整数 key 可以保留精确等值语义，VARCHAR 仍使用精确字符串 key。"
+      },
+      "closed_loop": [
+        "识别 BIGINT equality 每次格式化成字符串的固定成本。",
+        "BIGINT 使用整数 key，VARCHAR 保留字符串 key。",
+        "迁移到 filtered TopK、事务变更和重启验证。"
+      ]
+    },
+    {
+      "id": 23,
+      "chain_id": "physical-row-order-incremental",
+      "dimension": "问题理解与自主拆解",
+      "title": "物理行序的增量维护",
+      "target_band": 2,
+      "student_analysis": "已构建的物理行序应在新增 committed offset 后增量延长，只有 stale ratio 超预算才全量重建。",
+      "experiment_result": "AFTER：新 committed offset 增量追加，stale 超预算才重建；51 条命令、64/1 MiB cache 各 308 个 exact queries、各 2 次重启（合计 616/4）通过。",
+      "before_after": {
+        "baseline": {
+          "maintenance": "metadata resort after each write"
+        },
+        "candidate": {
+          "append_after_durable_commit": true,
+          "bounded_stale_ratio_rebuild": true,
+          "commands": 51,
+          "cache_paths": 2,
+          "selection_exact_queries_per_cache_path": 308,
+          "selection_exact_queries_total": 616,
+          "restart_cycles_per_cache_path": 2,
+          "restart_cycles_total": 4
+        }
+      },
+      "transfer_and_limitation": "迁移到 interleaved writes/queries 和既有物理序后的新增行；该索引只影响磁盘页访问顺序，不改变无 ORDER BY 的输出定义。",
+      "negative_control": "stale ratio 未超预算时不全量重建；无 ORDER BY 查询不因物理序获得排序承诺。",
+      "why_independent": "本链验证物理序生命周期；全表读取顺序、等值候选 key 和 TopK heap 分别由其他链负责。",
+      "student_evidence": "/conversations/22/student_evidence",
+      "result_evidence": "/conversations/22/verification_output/result_evidence",
+      "evidence_pointers": {
+        "student_evidence": "/conversations/22/student_evidence",
+        "result_evidence": "/conversations/22/verification_output/result_evidence",
+        "learning_unit_analysis": "/learning_units/22/student_analysis",
+        "learning_unit_result": "/learning_units/22/experiment_result",
+        "conversation_result": "/conversations/22/verification_output"
+      },
+      "student_source": {
+        "conversation_pointer": "/conversations/22/student_prompt",
+        "verbatim_excerpt": true,
+        "excerpt": "已构建的物理行序应在新增 committed offset 后增量延长，只有 stale ratio 超预算才全量重建。"
+      },
+      "closed_loop": [
+        "识别每次写入后全量 metadata resort 的重复成本。",
+        "durable commit 后追加 offset，并以有界 stale ratio 控制重建。",
+        "覆盖 index-then-insert、interleaved query 和重启完整字段。"
+      ]
+    },
+    {
+      "id": 24,
+      "chain_id": "winner-only-topk-materialization",
+      "dimension": "实验与反馈迭代",
+      "title": "只物化真正进入 heap 的 winner",
+      "target_band": 2,
+      "student_analysis": "紧凑磁盘 TopK 仍可能为每个候选构造完整 Row，并在输出时再次随机读取。我要让候选保持 validated payload 和可复用 vector scratch，只有真正进入或替换 heap 的行才完整物化",
+      "experiment_result": "AFTER：低 cache query 0.3023659→0.2466731s，paired 1.2258x；高维仅 1.0404x，所有运行 exact ordering 与 Recall@10=1.0。",
+      "before_after": {
+        "low_cache_query_seconds": {
+          "baseline": 0.3023659,
+          "candidate": 0.2466731,
+          "paired_speedup": 1.2257757331464194
+        },
+        "highdim_query_seconds": {
+          "baseline": 0.0712913,
+          "candidate": 0.067845,
+          "paired_speedup": 1.04036955727413
+        }
+      },
+      "transfer_and_limitation": "迁移到无 WHERE、无 overlay、LIMIT+OFFSET≤256 和无缓存查询；多条件、overlay、cached 和大窗口继续走通用路径。",
+      "negative_control": "1,000×4096D 高维只得到 1.04x，不把低 cache 128D 的 1.23x 扩张到所有形态。",
+      "why_independent": "本链只改变候选何时完整物化；候选索引、显式 PK heap 和物理行序分别由其他链负责。",
+      "student_evidence": "/conversations/23/student_evidence",
+      "result_evidence": "/conversations/23/verification_output/result_evidence",
+      "evidence_pointers": {
+        "student_evidence": "/conversations/23/student_evidence",
+        "result_evidence": "/conversations/23/verification_output/result_evidence",
+        "learning_unit_analysis": "/learning_units/23/student_analysis",
+        "learning_unit_result": "/learning_units/23/experiment_result",
+        "conversation_result": "/conversations/23/verification_output"
+      },
+      "student_source": {
+        "conversation_pointer": "/conversations/23/student_prompt",
+        "verbatim_excerpt": true,
+        "excerpt": "紧凑磁盘 TopK 仍可能为每个候选构造完整 Row，并在输出时再次随机读取。我要让候选保持 validated payload 和可复用 vector scratch，只有真正进入或替换 heap 的行才完整物化"
+      },
+      "closed_loop": [
+        "保留 validated payload 与 vector scratch，不构造完整 Row。",
+        "只有进入或替换 heap 的候选才物化。",
+        "结果直接从 heap 输出，并复测 128D/4096D 与 exact ordering。"
       ]
     }
   ]
