@@ -54,9 +54,14 @@ jobs:
               g++ $flags -O2 tests/test_decimal_float.cpp -o build/test_decimal_float
               g++ $flags -O2 tests/test_topk_heap.cpp -o build/test_topk_heap
               g++ $flags -O2 tests/test_json_ascii_scan.cpp -o build/test_json_ascii_scan
+              g++ $flags -O2 tests/test_cpu_budget.cpp -o build/test_cpu_budget
+              g++ $flags -O2 tests/test_parser_fast_paths.cpp -o build/test_parser_fast_paths
               g++ $flags -O0 -DMVD_FORCE_SCALAR tests/test_durable_page_cache.cpp \
                 -Wl,--wrap=fsync -Wl,--wrap=sysconf -Wl,--wrap=posix_fadvise \
                 -o build/test_durable_page_cache
+              g++ $flags -O0 -DMVD_FORCE_SCALAR tests/test_table_load_pages.cpp \
+                -Wl,--wrap=fsync -Wl,--wrap=sysconf -Wl,--wrap=posix_fadvise \
+                -o build/test_table_load_pages
               for mode in normal scalar; do
                 extra=""
                 if [ "$mode" = scalar ]; then extra=-DMVD_FORCE_SCALAR; fi
@@ -90,8 +95,12 @@ jobs:
           build/test_decimal_float
           build/test_topk_heap
           build/test_json_ascii_scan
+          build/test_cpu_budget
+          build/test_parser_fast_paths
       - name: Verify durable page advice preserves sync and restart semantics
-        run: python3 -B tests/test_statement_allocation.py build/test_durable_page_cache
+        run: |
+          python3 -B tests/test_statement_allocation.py build/test_durable_page_cache
+          python3 -B tests/test_statement_allocation.py build/test_table_load_pages
       - name: Verify query ownership and bounded scalar selection allocations
         run: python3 -B tests/test_statement_allocation.py build/test_query_ownership
       - name: Verify bounded parameterized SELECT templates in normal and scalar modes

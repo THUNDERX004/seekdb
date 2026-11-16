@@ -130,6 +130,12 @@ class CachedTopKTests(unittest.TestCase):
             ("category='red'", lambda row: row.category == "red"),
             ("tag=8", lambda row: row.tag == 8),
             ("category='blue'", lambda row: row.category == "blue"),
+            ("tag=7 AND category='red'",
+             lambda row: row.tag == 7 and row.category == "red"),
+            ("tag>=7 AND category='blue' AND tag<8",
+             lambda row: 7 <= row.tag < 8 and row.category == "blue"),
+            ("category='blue' AND tag>=8",
+             lambda row: row.category == "blue" and row.tag >= 8),
             ("", None),
             ("tag=7", lambda row: row.tag == 7),
         ):
@@ -154,12 +160,19 @@ class CachedTopKTests(unittest.TestCase):
         scores = {row.primary: row.distance ** 2 for row in rows.values()}
         for where, predicate in (
             ("tag=999", lambda row: False),
+            ("tag=999 AND category='red'", lambda row: False),
             ("category='absent'", lambda row: False),
             ("tag=7 AND category='red'", lambda row: row.tag == 7 and row.category == "red"),
             ("id>=20 AND id<60", lambda row: 20 <= row.primary < 60),
+            ("id>=20 AND id<60 AND tag=8",
+             lambda row: 20 <= row.primary < 60 and row.tag == 8),
             ("id=31", lambda row: row.primary == 31),
         ):
             self.query(client, "t", (0,) * 128, rows.values(), scores, where, predicate)
+        self.query(client, "t", (0,) * 128, rows.values(), scores,
+                   "tag=7 AND category='red'",
+                   lambda row: row.tag == 7 and row.category == "red",
+                   limit=2, offset=1)
         self.query(client, "t", (0,) * 128, rows.values(), scores, limit=2, offset=1)
 
         changed = integer_row(41, 8, "blue", (9, 12), 15, "updated; 41")
@@ -242,6 +255,8 @@ class CachedTopKTests(unittest.TestCase):
                         ("", None),
                         ("tag=7", lambda row: row.tag == 7),
                         ("category='red'", lambda row: row.category == "red"),
+                        ("category='red' AND tag=7",
+                         lambda row: row.category == "red" and row.tag == 7),
                     ):
                         self.query(client, table, probe, fixture, scores, where, predicate,
                                    include_vector=False)
@@ -278,6 +293,8 @@ class CachedTopKTests(unittest.TestCase):
                     (1, "", None),
                     (3, "", None),
                     (3, "tag=7", lambda row: row.tag == 7),
+                    (1, "tag=7 AND category='red'",
+                     lambda row: row.tag == 7 and row.category == "red"),
                 ):
                     self.query(client, table, probe, fixture, scores, where, predicate,
                                limit=limit, include_vector=False)
@@ -307,11 +324,82 @@ class CachedTopKTests(unittest.TestCase):
                         (5, 2, "", None),
                         (1, 0, "tag=7", lambda row: row.tag == 7),
                         (4, 1, "category='blue'", lambda row: row.category == "blue"),
+                        (3, 1, "payload>='varied 3' AND tag=7 AND category='red'",
+                         lambda row: row.payload >= "varied 3" and row.tag == 7
+                         and row.category == "red"),
                         (20, 0, "", None),
                     ):
                         self.query(client, table, probe, fixture, scores,
                                    where, predicate, limit=limit, offset=offset,
                                    include_vector=False)
+        client.shutdown()
+
+    def test_repeated_conjunctions_follow_changes_overlays_and_probes(self):
+        from dataclasses import replace
+
+        # The red bucket crosses bitmap word boundaries; mixed PKs and a
+        # nonmatching tail make scan positions independent of result ordering.
+        fixture = [Row((i * 37) % 521 - 260, 7 + i % 2,
+                       "blue" if i % 13 == 0 else "red", f"payload {i % 4}",
+                       (float(i % 17 - 8), float(i % 11 - 5)) + (0.0,) * 126)
+                   for i in range(521)]
+        rows = {row.primary: row for row in fixture}
+        client = self.open_client()
+        self.create(client, "t", 128, fixture)
+
+        def snapshot(client, visible):
+            # Repeat identical filters with different probes/pagination, then
+            # change values, operators and filter order. Expected membership
+            # and ranks always come from Python rows and the lattice oracle.
+            for where, predicate in (
+                ("category='red' AND tag=7",
+                 lambda row: row.category == "red" and row.tag == 7),
+                ("category='red' AND tag=8",
+                 lambda row: row.category == "red" and row.tag == 8),
+                ("category='red' AND tag>=8",
+                 lambda row: row.category == "red" and row.tag >= 8),
+                ("payload>='payload 1' AND category='red' AND tag<8",
+                 lambda row: row.payload >= "payload 1" and row.category == "red"
+                 and row.tag < 8),
+                ("category='red' AND tag<0", lambda row: False),
+            ):
+                for step, probe in enumerate(((0.0,) * 128, (2.0, -1.0) + (0.0,) * 126)):
+                    unique = {row.vector: exact_squared(row.vector, probe)
+                              for row in visible.values()}
+                    scores = {row.primary: unique[row.vector] for row in visible.values()}
+                    self.query(client, "t", probe, visible.values(), scores,
+                               where, predicate, limit=7 + step, offset=step + 2,
+                               include_vector=False)
+
+        snapshot(client, rows)
+        self.sql(client, "BEGIN")
+        pending = rows.copy()
+        changed = replace(rows[fixture[3].primary], tag=7, category="red",
+                          payload="payload 9", vector=(0.0,) * 128)
+        self.sql(client, f"UPDATE t SET tag=7,category='red',payload='payload 9',"
+                 f"v={quoted(vector_sql(changed.vector))} WHERE id={changed.primary}", 1)
+        pending[changed.primary] = changed
+        deleted = fixture[4].primary
+        self.sql(client, f"DELETE FROM t WHERE id={deleted}", 1)
+        del pending[deleted]
+        inserted = replace(changed, primary=10001)
+        self.insert(client, "t", [inserted])
+        pending[inserted.primary] = inserted
+        snapshot(client, pending)
+        self.sql(client, "ROLLBACK")
+        snapshot(client, rows)
+        self.sql(client, f"UPDATE t SET tag=7,category='red',payload='payload 9',"
+                 f"v={quoted(vector_sql(changed.vector))} WHERE id={changed.primary}", 1)
+        rows[changed.primary] = changed
+        snapshot(client, rows)
+        self.sql(client, "DELETE FROM t WHERE tag=8")
+        rows = {primary: row for primary, row in rows.items() if row.tag != 8}
+        self.insert(client, "t", [inserted])
+        rows[inserted.primary] = inserted
+        snapshot(client, rows)
+        client.shutdown()
+        client = self.open_client()
+        snapshot(client, rows)
         client.shutdown()
 
 

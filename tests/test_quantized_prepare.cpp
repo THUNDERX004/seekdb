@@ -97,6 +97,37 @@ double referenceScale(const Rows &rows, size_t dimension) {
   return std::ldexp(1.0, 7 - exponent);
 }
 
+std::pair<long double, long double> referenceBounds(const Rows &rows, size_t dimension) {
+  long double minimum = std::numeric_limits<long double>::infinity();
+  long double maximum = -minimum;
+  for (const auto &row : rows) {
+    for (size_t axis = 0; axis < dimension; ++axis) {
+      const long double value = row.vector_data[axis];
+      requirePrepare(std::isfinite(value), "bounds oracle received a nonfinite value");
+      if (value < minimum) minimum = value;
+      if (value > maximum) maximum = value;
+    }
+  }
+  return {minimum, maximum};
+}
+
+// Selection is checked separately from encoding: code/residual checks below
+// always consume the actual published center and step.
+std::pair<double, double> referenceCenterStep(const Rows &rows, size_t dimension) {
+  const auto [minimum, maximum] = referenceBounds(rows, dimension);
+  const double original_step = 1.0 / referenceScale(rows, dimension);
+  const double center = static_cast<double>((minimum + maximum) / 2);
+  const long double radius = std::max(std::abs(minimum - center),
+                                      std::abs(maximum - center));
+  if (radius > 0) {
+    int exponent = 0;
+    std::frexp(radius, &exponent);
+    const double centered_step = std::ldexp(1.0, exponent - 7);
+    if (centered_step <= original_step / 2) return {center, centered_step};
+  }
+  return {0, original_step};
+}
+
 size_t storedRows(size_t count, bool blocked) {
   return blocked ? (count + 15) / 16 * 16 : count;
 }
@@ -114,34 +145,61 @@ struct Oracle {
   std::vector<uint8_t> codes;
   std::vector<uint32_t> norms;
   long double maximum_squared_error = 0;
+  long double maximum_rounded_squared_error = 0;
 };
 
 Oracle referenceEncode(const Rows &rows, size_t dimension, double scale,
-                       size_t stride, bool blocked) {
+                       size_t stride, bool blocked, double center = 0,
+                       const int8_t *observed = nullptr) {
   Oracle result;
   result.codes.assign(storedRows(rows.size(), blocked) * stride, blocked ? 128 : 0);
   result.norms.assign(storedRows(rows.size(), blocked), 0);
   for (size_t row = 0; row < rows.size(); ++row) {
     uint64_t norm = 0;
-    long double error = 0;
+    long double error = 0, rounded_error = 0;
     for (size_t axis = 0; axis < dimension; ++axis) {
       const float value = rows[row].vector_data[axis];
-      const double scaled = static_cast<double>(value) * scale;
+      const double scaled = (static_cast<double>(value) - center) * scale;
       requirePrepare(std::isfinite(scaled) && std::abs(scaled) < 128,
                      "fixture violates the strict scaled-coordinate contract");
       // Deliberately use std::round, not the SIMD add-half/truncate recipe.
-      const int code = static_cast<int>(std::clamp(std::round(scaled), -127.0, 127.0));
-      result.codes[codePosition(row, axis, stride, blocked)] =
+      int code = static_cast<int>(std::clamp(std::round(scaled), -127.0, 127.0));
+      const size_t position = codePosition(row, axis, stride, blocked);
+      if (observed != nullptr) {
+        const int actual = blocked ? int(std::bit_cast<uint8_t>(observed[position])) - 128
+                                   : int(observed[position]);
+        if (actual != code) {
+          // Center subtraction can produce the double immediately inside a
+          // half tie. The documented AVX2 add-half can then round away while
+          // std::round rounds toward zero. Accept only that adjacent choice,
+          // and measure the residual/norm of the code actually emitted.
+          const long double half = (static_cast<long double>(actual) + code) / 2;
+          const long double difference = std::abs(static_cast<long double>(scaled) - half);
+          const double ulp = std::nextafter(std::abs(scaled),
+              std::numeric_limits<double>::infinity()) - std::abs(scaled);
+          requirePrepare(center != 0 && actual >= -127 && actual <= 127 &&
+                             std::abs(actual) == std::abs(code) + 1 &&
+                             (actual < 0) == std::signbit(scaled) &&
+                             difference > 0 && difference <= ulp,
+                         "code disagrees with independent centered rounding oracle");
+        }
+        code = actual;
+      }
+      result.codes[position] =
           static_cast<uint8_t>(code + (blocked ? 128 : 0));
       norm += static_cast<uint64_t>(code * code);
-      const long double residual = static_cast<long double>(value) *
-          static_cast<long double>(scale) - static_cast<long double>(code);
+      const long double residual = (static_cast<long double>(value) -
+          static_cast<long double>(center)) * static_cast<long double>(scale) - code;
       error += residual * residual;
+      const long double rounded_residual = static_cast<long double>(scaled) - code;
+      rounded_error += rounded_residual * rounded_residual;
     }
     requirePrepare(norm <= std::numeric_limits<uint32_t>::max(),
                    "fixture norm exceeds uint32");
     result.norms[row] = static_cast<uint32_t>(norm);
     result.maximum_squared_error = std::max(result.maximum_squared_error, error);
+    result.maximum_rounded_squared_error = std::max(result.maximum_rounded_squared_error,
+                                                   rounded_error);
   }
   return result;
 }
@@ -152,8 +210,13 @@ std::string describe(const Fixture &fixture, const std::string &name, bool block
       (blocked ? " blocked" : " row-major");
 }
 
-void checkNative(const Fixture &fixture, double scale, const std::string &name) {
+void checkNative(const Fixture &fixture, double scale, const std::string &name,
+                 double center = 0) {
 #if MVD_QUANTIZED_PREPARE_AVX2
+  const auto bounds = mvd::quantized_prepare::bounds(fixture.rows, fixture.dimension);
+  const auto expected_bounds = referenceBounds(fixture.rows, fixture.dimension);
+  requirePrepare(bounds.first == expected_bounds.first && bounds.second == expected_bounds.second,
+                 name + ": min/max differs from the independent bounds oracle");
   const double maximum = mvd::quantized_prepare::maximum_absolute(
       fixture.rows, fixture.dimension);
   requirePrepare(std::bit_cast<uint64_t>(maximum) ==
@@ -164,8 +227,8 @@ void checkNative(const Fixture &fixture, double scale, const std::string &name) 
     // Extra row-major padding also checks that the encoder respects stride.
     const size_t stride = blocked ? (fixture.dimension + 3) / 4 * 4
                                   : fixture.dimension + 3;
-    const Oracle expected = referenceEncode(
-        fixture.rows, fixture.dimension, scale, stride, blocked);
+    Oracle expected = referenceEncode(
+        fixture.rows, fixture.dimension, scale, stride, blocked, center);
     constexpr size_t code_prefix = 67, code_suffix = 71;
     constexpr size_t norm_prefix = 5, norm_suffix = 7;
     constexpr uint8_t byte_guard = 0xa5;
@@ -184,7 +247,12 @@ void checkNative(const Fixture &fixture, double scale, const std::string &name) 
     }
     const double squared_error = mvd::quantized_prepare::encode(
         fixture.rows, fixture.dimension, scale, stride, blocked,
-        reinterpret_cast<int8_t *>(bytes.data() + code_prefix), norms.data() + norm_prefix);
+        reinterpret_cast<int8_t *>(bytes.data() + code_prefix), norms.data() + norm_prefix,
+        center);
+    if (center != 0) {
+      expected = referenceEncode(fixture.rows, fixture.dimension, scale, stride, blocked,
+                                 center, reinterpret_cast<const int8_t *>(bytes.data() + code_prefix));
+    }
     for (size_t index = 0; index < bytes.size(); ++index) {
       const uint8_t wanted = index >= code_prefix && index < code_prefix + expected.codes.size()
           ? expected.codes[index - code_prefix] : byte_guard;
@@ -206,11 +274,11 @@ void checkNative(const Fixture &fixture, double scale, const std::string &name) 
     // SIMD changes positive-sum association, so the raw double sum need not
     // equal the long-double sum. Test its accuracy here, then test the actual
     // caller's outward envelope below without recreating that implementation.
-    const long double allowance = expected.maximum_squared_error *
+    const long double allowance = expected.maximum_rounded_squared_error *
         (static_cast<long double>(fixture.dimension) + 16) * 8 *
         std::numeric_limits<double>::epsilon();
     requirePrepare(std::abs(static_cast<long double>(squared_error) -
-                            expected.maximum_squared_error) <= allowance,
+                            expected.maximum_rounded_squared_error) <= allowance,
                    label + ": raw residual differs from the long-double oracle");
   }
   fixture.checkGuards(name);
@@ -218,12 +286,52 @@ void checkNative(const Fixture &fixture, double scale, const std::string &name) 
   (void)fixture;
   (void)scale;
   (void)name;
+  (void)center;
   throw std::runtime_error("native checks requested in a scalar-only build");
 #endif
 }
 
+void checkPublishedRows(const Rows &rows, size_t dimension, const std::string &label) {
+  const size_t stride = rows.codes_blocked ? (dimension + 3) / 4 * 4 : dimension;
+  requirePrepare(rows.codes_attempted && rows.code_stride == stride &&
+                     std::isfinite(rows.code_step) && rows.code_step > 0 &&
+                     std::isfinite(rows.code_center) && rows.code_source == nullptr &&
+                     rows.code_first == 0 &&
+                     rows.codes.size() == storedRows(rows.size(), rows.codes_blocked) * stride &&
+                     rows.code_norms.size() == storedRows(rows.size(), rows.codes_blocked),
+                 label + ": incomplete published metadata");
+  const auto [center, step] = referenceCenterStep(rows, dimension);
+  requirePrepare(rows.code_center == center && rows.code_step == step,
+                 label + ": center must be the midpoint and recover at least one code bit");
+  const Oracle expected = referenceEncode(rows, dimension, 1.0 / rows.code_step,
+      rows.code_stride, rows.codes_blocked, rows.code_center, rows.codes.data());
+  requirePrepare(rows.code_norms == expected.norms, label + ": published norms differ");
+  for (size_t index = 0; index < expected.codes.size(); ++index) {
+    if (std::bit_cast<uint8_t>(rows.codes[index]) != expected.codes[index]) {
+      throw std::runtime_error(label + ": published code/padding mismatch at byte " +
+                               std::to_string(index));
+    }
+  }
+  const long double rounded_norm = std::sqrt(expected.maximum_rounded_squared_error);
+  requirePrepare(std::isfinite(rows.code_error) && rows.code_error >= rounded_norm,
+                 label + ": published residual envelope rounds inward");
+  const long double relative_slack = (static_cast<long double>(dimension) + 16) *
+      64 * std::numeric_limits<double>::epsilon();
+  requirePrepare(rows.code_error <= rounded_norm * (1 + relative_slack) +
+                     static_cast<long double>(std::numeric_limits<double>::denorm_min()),
+                 label + ": published residual envelope is spuriously loose");
+  // code_error bounds the rounded centered coordinates. Independently measure
+  // true residuals in long double too: |scaled|<128 bounds subtraction error
+  // by 2^-45 code units per axis. The query's extra whole unit covers both
+  // row and query translation norms, including a rounded-to-zero residual.
+  const long double translation = center == 0 ? 0 :
+      std::sqrt(static_cast<long double>(dimension)) * std::ldexp(1.0L, -45);
+  requirePrepare(2 * translation < 1 &&
+                     std::sqrt(expected.maximum_squared_error) <= rows.code_error + translation,
+                 label + ": true long-double residual escapes the translation guard");
+}
+
 void checkPublished(const Fixture &fixture, const std::string &name) {
-  const double scale = referenceScale(fixture.rows, fixture.dimension);
   for (bool blocked : {false, true}) {
     const std::string label = describe(fixture, name + " published", blocked);
     mvd::Table table(prepareDefinition(fixture.dimension), "unused-quantized-prepare.dat");
@@ -237,33 +345,12 @@ void checkPublished(const Fixture &fixture, const std::string &name) {
       rows.push_back({static_cast<int64_t>(row), static_cast<uint64_t>(row), nullptr,
                       fixture.rows[row % fixture.rows.size()].vector_data});
     }
-    const size_t stride = blocked ? (fixture.dimension + 3) / 4 * 4 : fixture.dimension;
-    const Oracle expected = referenceEncode(rows, fixture.dimension, scale, stride, blocked);
     const auto *directory = rows.data();
     requirePrepare(table.prepareQuantizedRows(rows, fixture.dimension, blocked),
                    label + ": caller refused a valid finite fixture");
-    requirePrepare(rows.codes_attempted && rows.data() == directory && rows.size() == count &&
-                       rows.code_stride == stride && rows.codes_blocked == blocked &&
-                       rows.code_step == 1.0 / scale && rows.code_source == nullptr &&
-                       rows.code_first == 0 && rows.codes.size() == expected.codes.size() &&
-                       rows.code_norms == expected.norms,
-                   label + ": published metadata/norms differ from scalar contract");
-    for (size_t index = 0; index < expected.codes.size(); ++index) {
-      if (std::bit_cast<uint8_t>(rows.codes[index]) != expected.codes[index]) {
-        throw std::runtime_error(label + ": published code/padding mismatch at byte " +
-                                 std::to_string(index));
-      }
-    }
-    const long double exact_norm = std::sqrt(expected.maximum_squared_error);
-    requirePrepare(std::isfinite(rows.code_error) &&
-                       static_cast<long double>(rows.code_error) >= exact_norm,
-                   label + ": published residual envelope rounds inward");
-    const long double relative_slack = (static_cast<long double>(fixture.dimension) + 16) *
-        64 * std::numeric_limits<double>::epsilon();
-    requirePrepare(static_cast<long double>(rows.code_error) <=
-                       exact_norm * (1 + relative_slack) +
-                           static_cast<long double>(std::numeric_limits<double>::denorm_min()),
-                   label + ": published residual envelope is spuriously loose");
+    requirePrepare(rows.data() == directory && rows.size() == count && rows.codes_blocked == blocked,
+                   label + ": published directory/layout changed");
+    checkPublishedRows(rows, fixture.dimension, label);
   }
   fixture.checkGuards(name);
 }
@@ -342,15 +429,166 @@ void checkMaximumLanes() {
       fixture.fill([](size_t, size_t) { return -1.0f; });
       for (size_t axis = 0; axis < dimension; ++axis) {
         const size_t row = axis % count;
-        fixture.at(row, axis) = axis % 2 ? -19.75f : 19.75f;
-        requirePrepare(mvd::quantized_prepare::maximum_absolute(fixture.rows, dimension) == 19.75,
-                       "unique maximum lost in a vector lane, row, or scalar tail");
+        for (float extremum : {-19.75f, 19.75f}) {
+          fixture.at(row, axis) = extremum;
+          const auto [minimum, maximum] = mvd::quantized_prepare::bounds(fixture.rows, dimension);
+          requirePrepare(minimum == (extremum < 0 ? -19.75 : -1) &&
+                             maximum == (extremum > 0 ? 19.75 : -1),
+                         "unique min/max lost in a vector lane, row, or scalar tail");
+          requirePrepare(mvd::quantized_prepare::maximum_absolute(fixture.rows, dimension) == 19.75,
+                         "unique maximum lost in a vector lane, row, or scalar tail");
+        }
         fixture.at(row, axis) = -1.0f;
       }
       fixture.checkGuards("maximum lanes");
     }
   }
 #endif
+}
+
+void checkCenterFixture(const Fixture &fixture, const std::string &name, bool native,
+                        double center, double step) {
+  requirePrepare(referenceCenterStep(fixture.rows, fixture.dimension) == std::pair{center, step},
+                 name + ": fixture did not realize the intended center/bit boundary");
+  if (native) checkNative(fixture, 1.0 / step, name, center);
+  checkPublished(fixture, name);
+}
+
+void checkCenters(bool native) {
+  const float largest = std::numeric_limits<float>::max();
+  const float previous = std::nextafter(largest, 0.0f);
+  const float tiny = std::numeric_limits<float>::denorm_min();
+  struct CenterCase {
+    const char *name;
+    float minimum, maximum;
+    double center, step;
+  };
+  const CenterCase cases[] = {
+      {"positive offset", 64, 65, 64.5, std::ldexp(1.0, -7)},
+      {"negative offset", -65, -64, -64.5, std::ldexp(1.0, -7)},
+      {"exactly one recovered bit", 1, 3, 2, std::ldexp(1.0, -6)},
+      {"mixed signs recover one bit", -31, 32, 0.5, 0.25},
+      {"smaller radius without a recovered bit", -8, 24, 0, 0.25},
+      {"symmetric mixed signs", -32, 32, 0, 0.5},
+      {"largest positive adjacent floats", previous, largest,
+       (static_cast<double>(previous) + largest) / 2, std::ldexp(1.0, 97)},
+      {"largest negative adjacent floats", -largest, -previous,
+       -(static_cast<double>(previous) + largest) / 2, std::ldexp(1.0, 97)},
+      {"largest opposite signs", -largest, largest, 0, std::ldexp(1.0, 121)},
+      {"zero to largest finite", 0, largest, static_cast<double>(largest) / 2,
+       std::ldexp(1.0, 120)},
+      {"positive subnormals", tiny, 3 * tiny, 2 * static_cast<double>(tiny),
+       std::ldexp(1.0, -155)},
+      {"negative subnormals", -3 * tiny, -tiny, -2 * static_cast<double>(tiny),
+       std::ldexp(1.0, -155)},
+      {"mixed subnormals without a recovered bit", -tiny, 3 * tiny, 0,
+       std::ldexp(1.0, -154)},
+      {"normal/subnormal boundary", std::bit_cast<float>(uint32_t{0x007ffffeU}),
+       std::bit_cast<float>(uint32_t{0x00800002U}), std::ldexp(1.0, -126),
+       std::ldexp(1.0, -154)}};
+  for (const auto &test : cases) {
+    Fixture fixture(17, 19);
+    fixture.fill([&](size_t row, size_t axis) {
+      const long double fraction = static_cast<long double>((row * 5 + axis * 3) % 11 + 1) / 12;
+      return static_cast<float>(test.minimum +
+          (static_cast<long double>(test.maximum) - test.minimum) * fraction);
+    });
+    // Both extrema occur at a scalar tail, in different rows.
+    fixture.at(0, fixture.dimension - 1) = test.minimum;
+    fixture.at(fixture.rows.size() - 1, fixture.dimension - 1) = test.maximum;
+    checkCenterFixture(fixture, test.name, native, test.center, test.step);
+  }
+  for (float value : {1.5f, -1.5f, largest, -largest, tiny, -tiny}) {
+    Fixture constant(17, 19);
+    constant.fill([&](size_t, size_t) { return value; });
+    checkCenterFixture(constant, "constant radius zero keeps center zero", native,
+                       0, 1.0 / referenceScale(constant.rows, constant.dimension));
+  }
+  for (size_t dimension : {16U, 17U, 19U, 23U, 31U, 33U}) {
+    for (float sign : {-1.0f, 1.0f}) {
+      Fixture tail(17, dimension);
+      tail.fill([&](size_t, size_t) { return sign * 64.5f; });
+      tail.at(0, dimension - 1) = sign * 64;
+      tail.at(16, dimension - 1) = sign * 65;
+      checkCenterFixture(tail, "center extrema only in final axis", native,
+                         sign * 64.5, std::ldexp(1.0, -7));
+    }
+  }
+  Fixture rounded(17, 19);
+  rounded.fill([](size_t row, size_t axis) {
+    const float values[] = {-1.984375f, 2.0f, std::ldexp(1.0f, -60),
+                            -std::ldexp(1.0f, -60), 0.0f};
+    return values[(row + axis) % 5];
+  });
+  checkCenterFixture(rounded, "centered adjacent double half ties", native,
+                     std::ldexp(1.0, -7), std::ldexp(1.0, -6));
+  Fixture translated(17, 19);
+  translated.fill([](size_t row, size_t axis) {
+    const float values[] = {0, 1, 2, std::ldexp(1.0f, -60)};
+    return values[(row + axis) % 4];
+  });
+  checkCenterFixture(translated, "translation residual rounded to zero in double", native,
+                     1, std::ldexp(1.0, -6));
+  if constexpr (std::numeric_limits<long double>::digits > std::numeric_limits<double>::digits) {
+    const Oracle expected = referenceEncode(translated.rows, translated.dimension, 64,
+                                            translated.dimension, false, 1);
+    requirePrepare(expected.maximum_rounded_squared_error == 0 && expected.maximum_squared_error > 0,
+                   "long-double oracle did not retain the translation residual");
+  }
+}
+
+void checkCenterLifetime() {
+  for (bool blocked : {false, true}) {
+    Fixture positive(257, 19), negative(257, 19);
+    positive.fill([](size_t row, size_t axis) { return 64.0f + float((row + axis) % 17) / 16; });
+    negative.fill([](size_t row, size_t axis) { return -32.0f + float((row + axis) % 17) / 8; });
+    mvd::Table table(prepareDefinition(19), "unused-quantized-prepare-lifetime.dat");
+    table.setCacheLimit(1024 * 1024);
+    requirePrepare(table.prepareQuantizedRows(positive.rows, 19, blocked) &&
+                       table.prepareQuantizedRows(negative.rows, 19, !blocked),
+                   "centered lifetime fixtures were not prepared");
+    const auto *positive_directory = positive.rows.data(), *negative_directory = negative.rows.data();
+    const auto *positive_codes = positive.rows.codes.data(), *negative_codes = negative.rows.codes.data();
+    const auto *positive_norms = positive.rows.code_norms.data(), *negative_norms = negative.rows.code_norms.data();
+    for (int reuse = 0; reuse < 8; ++reuse) {
+      requirePrepare(table.prepareQuantizedRows(positive.rows, 19, blocked) &&
+                         table.prepareQuantizedRows(negative.rows, 19, !blocked) &&
+                         positive.rows.code_center == 64.5 && positive.rows.code_step == 1.0 / 128 &&
+                         negative.rows.code_center == -31 && negative.rows.code_step == 1.0 / 64 &&
+                         positive.rows.codes.data() == positive_codes &&
+                         negative.rows.codes.data() == negative_codes &&
+                         positive.rows.code_norms.data() == positive_norms &&
+                         negative.rows.code_norms.data() == negative_norms,
+                     "cache reuse changed the published center, step, or storage");
+    }
+    positive.rows.swap(negative.rows);
+    requirePrepare(positive.rows.data() == negative_directory && negative.rows.data() == positive_directory &&
+                       positive.rows.codes.data() == negative_codes && negative.rows.codes.data() == positive_codes &&
+                       positive.rows.code_norms.data() == negative_norms && negative.rows.code_norms.data() == positive_norms &&
+                       positive.rows.code_center == -31 && positive.rows.code_step == 1.0 / 64 &&
+                       negative.rows.code_center == 64.5 && negative.rows.code_step == 1.0 / 128 &&
+                       positive.rows.codes_blocked == !blocked && negative.rows.codes_blocked == blocked,
+                   "swap separated center/step from its directory, codes, norms, or layout");
+    checkPublishedRows(positive.rows, 19, "negative cache after swap");
+    checkPublishedRows(negative.rows, 19, "positive cache after swap");
+    Rows parked;
+    positive.rows.swap(parked);
+    requirePrepare(positive.rows.empty() && positive.rows.codes.empty() && positive.rows.code_norms.empty() &&
+                       positive.rows.code_center == 0 && positive.rows.code_step == 0 &&
+                       positive.rows.code_error == 0 && positive.rows.code_stride == 0 &&
+                       !positive.rows.codes_attempted && !positive.rows.codes_blocked &&
+                       positive.rows.code_source == nullptr && positive.rows.code_first == 0,
+                   "swap with empty directory retained centered cache metadata");
+    checkPublishedRows(parked, 19, "centered cache retained by empty swap");
+    positive.rows.swap(parked);
+    requirePrepare(parked.code_center == 0 && parked.code_step == 0 && parked.empty(),
+                   "restoring a centered cache left stale metadata");
+    requirePrepare(table.prepareQuantizedRows(positive.rows, 19, !blocked),
+                   "swapped centered cache could not be reused");
+    checkPublishedRows(positive.rows, 19, "restored centered cache");
+    positive.checkGuards("positive center lifetime");
+    negative.checkGuards("negative center lifetime");
+  }
 }
 
 void checkCallerValidation() {
@@ -368,7 +606,7 @@ void checkCallerValidation() {
       requirePrepare(!table.prepareQuantizedRows(rows, fixture.dimension, blocked),
                      "caller accepted a null vector");
       requirePrepare(rows.codes_attempted && rows.codes.empty() && rows.code_norms.empty() &&
-                         rows.code_step == 0 && rows.code_error == 0 && rows.code_stride == 0 &&
+                         rows.code_step == 0 && rows.code_center == 0 && rows.code_error == 0 && rows.code_stride == 0 &&
                          !rows.codes_blocked && rows.code_source == nullptr && rows.code_first == 0,
                      "null vector published a partial preparation");
     }
@@ -380,7 +618,7 @@ void checkCallerValidation() {
     });
     requirePrepare(!table.prepareQuantizedRows(zero.rows, zero.dimension, blocked) &&
                        zero.rows.codes_attempted && zero.rows.codes.empty() &&
-                       zero.rows.code_norms.empty() && zero.rows.code_step == 0 &&
+                       zero.rows.code_norms.empty() && zero.rows.code_step == 0 && zero.rows.code_center == 0 &&
                        zero.rows.code_error == 0 && zero.rows.code_stride == 0,
                    "all-zero input did not retain the scalar fallback");
   }
@@ -449,9 +687,11 @@ int main() {
     Fixture ties(17, 769);
     fillHalfTies(ties);
     checkPublished(ties, "half ties");
+    checkCenters(native);
+    checkCenterLifetime();
     checkCallerValidation();
-    std::cout << "PASS quantized preparation: exact max/codes/norms, layouts/guards, "
-                 "all scales, long-double envelope, caller validation\n";
+    std::cout << "PASS quantized preparation: exact bounds/codes/norms, layouts/guards, "
+                 "all scales, centers/bit recovery/reuse/swap, long-double envelope, caller validation\n";
     return 0;
   } catch (const std::exception &error) {
     std::cerr << "FAIL quantized preparation: " << error.what() << '\n';

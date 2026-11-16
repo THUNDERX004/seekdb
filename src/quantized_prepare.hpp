@@ -6,6 +6,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <limits>
+#include <utility>
 
 #if !defined(MVD_FORCE_SCALAR) && (defined(__GNUC__) || defined(__clang__)) && \
     !defined(_MSC_VER) && (defined(__x86_64__) || defined(__i386__))
@@ -27,41 +29,57 @@ inline bool available() noexcept {
 
 #if MVD_QUANTIZED_PREPARE_AVX2
 
-// Inputs are finite binary32 values. Absolute value and maximum introduce no
-// rounding, and the result is widened to double only after the reduction.
+// Inputs are finite binary32 values. Min/max introduce no rounding, and the
+// extrema are widened to double only after the reduction.
 template <typename Rows>
-__attribute__((target("avx2"))) inline double maximum_absolute(
+__attribute__((target("avx2"))) inline std::pair<double, double> bounds(
     const Rows &rows, std::size_t dimension) noexcept {
-  __m256 maximum = _mm256_setzero_ps();
-  const __m256 sign = _mm256_set1_ps(-0.0f);
-  float tail_maximum = 0;
+  __m256 minimum = _mm256_set1_ps(std::numeric_limits<float>::infinity());
+  __m256 maximum = _mm256_set1_ps(-std::numeric_limits<float>::infinity());
+  float tail_minimum = std::numeric_limits<float>::infinity();
+  float tail_maximum = -std::numeric_limits<float>::infinity();
   for (const auto &row : rows) {
     std::size_t axis = 0;
     for (; axis + 8 <= dimension; axis += 8) {
       const __m256 value = _mm256_loadu_ps(row.vector_data + axis);
-      maximum = _mm256_max_ps(maximum, _mm256_andnot_ps(sign, value));
+      minimum = _mm256_min_ps(minimum, value);
+      maximum = _mm256_max_ps(maximum, value);
     }
     for (; axis < dimension; ++axis) {
-      tail_maximum = std::max(tail_maximum, std::abs(row.vector_data[axis]));
+      tail_minimum = std::min(tail_minimum, row.vector_data[axis]);
+      tail_maximum = std::max(tail_maximum, row.vector_data[axis]);
     }
   }
   alignas(32) float lanes[8];
+  _mm256_store_ps(lanes, minimum);
+  for (float value : lanes) tail_minimum = std::min(tail_minimum, value);
   _mm256_store_ps(lanes, maximum);
   for (float value : lanes) tail_maximum = std::max(tail_maximum, value);
-  return tail_maximum;
+  return {tail_minimum, tail_maximum};
 }
 
-// Scale is a power of two, so widening and multiplication remain exact even
-// for subnormal float32 coordinates. The strict |scaled| < 128 contract is
-// established by the caller's maximum/exponent calculation. Rounding ties
-// away from zero matches std::round; clamping preserves the signed code range.
+template <typename Rows>
+__attribute__((target("avx2"))) inline double maximum_absolute(
+    const Rows &rows, std::size_t dimension) noexcept {
+  if (rows.empty() || dimension == 0) return 0;
+  const auto [minimum, maximum] = bounds(rows, dimension);
+  return std::max(std::abs(minimum), std::abs(maximum));
+}
+
+// Scale is a power of two. The caller establishes finite centered coordinates
+// with |scaled| < 128. Widening/multiplication are exact; center subtraction
+// may round, so the caller also retains an outward translation-error guard.
+// Add-half/truncate and std::round can disagree only within a double ULP of a
+// half step; either encoding retains its measured residual error.
 // Only the order of positive residual-square additions changes. The caller
 // applies its conservative double-precision error envelope to this maximum.
 template <typename Rows>
 __attribute__((target("avx2"))) inline double encode(
     const Rows &rows, std::size_t dimension, double scale, std::size_t stride,
-    bool blocked, std::int8_t *codes, std::uint32_t *norms) noexcept {
+    bool blocked, std::int8_t *codes, std::uint32_t *norms,
+    double center = 0) noexcept {
   const __m256d multiplier = _mm256_set1_pd(scale);
+  const __m256d origin = _mm256_set1_pd(center);
   const __m256d sign = _mm256_set1_pd(-0.0);
   const __m256d half = _mm256_set1_pd(0.5);
   const __m128i lower = _mm_set1_epi32(-127);
@@ -77,7 +95,8 @@ __attribute__((target("avx2"))) inline double encode(
     std::size_t axis = 0;
     for (; axis + 4 <= dimension; axis += 4) {
       const __m256d scaled = _mm256_mul_pd(
-          _mm256_cvtps_pd(_mm_loadu_ps(row.vector_data + axis)), multiplier);
+          _mm256_sub_pd(_mm256_cvtps_pd(_mm_loadu_ps(row.vector_data + axis)),
+                        origin), multiplier);
       const __m256d adjustment = _mm256_or_pd(half, _mm256_and_pd(sign, scaled));
       const __m128i code = _mm_min_epi32(upper, _mm_max_epi32(lower,
           _mm256_cvttpd_epi32(_mm256_add_pd(scaled, adjustment))));
@@ -99,7 +118,8 @@ __attribute__((target("avx2"))) inline double encode(
     std::uint32_t norm = norm_lanes[0] + norm_lanes[1] +
                          norm_lanes[2] + norm_lanes[3];
     for (; axis < dimension; ++axis) {
-      const double scaled = static_cast<double>(row.vector_data[axis]) * scale;
+      const double scaled =
+          (static_cast<double>(row.vector_data[axis]) - center) * scale;
       const int code = std::clamp(static_cast<int>(
           scaled + std::copysign(0.5, scaled)), -127, 127);
       const std::size_t position = blocked

@@ -17,7 +17,7 @@ void check(const std::string &token, const std::optional<std::string> &expected)
   } catch (const mvd::DBError &) {
   }
   if (accepted != expected.has_value() ||
-      (accepted && (request.sql != *expected || request.id != "1" ||
+      (accepted && (request.sqlText() != *expected || request.id != "1" ||
                     request.op != "execute" || request.mode != "exact"))) {
     throw std::runtime_error("JSON ASCII boundary changed acceptance or decoded bytes");
   }

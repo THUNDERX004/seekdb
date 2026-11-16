@@ -1,0 +1,33 @@
+{
+  "schema": "exact-conjunction-qmask-summary-v1",
+  "status": "passed",
+  "official_score": null,
+  "baseline_commit": "ab231135474d9024ba529c31c7272520827d45b4",
+  "environment": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.43",
+  "parameters": {
+    "rows": 10000,
+    "dimensions": 128,
+    "runs": 3,
+    "timed_queries_per_group": 512,
+    "unique_probes": 16,
+    "seed": 20261116
+  },
+  "method": "JSON exact; fresh processes and data per run; alternating order; every timed response checked against integer squared-distance and primary-key oracle",
+  "warm_median_speedup_baseline_over_candidate": {
+    "unfiltered": 1.001152770717978,
+    "single_equality": 0.9797702980509491,
+    "conjunction_1pct": 1.0032568497514909,
+    "conjunction_10pct": 1.0085658753379314,
+    "conjunction_50pct": 1.1857132935104289,
+    "selective_bucket": 1.0760555012318895
+  },
+  "cold_first_50pct_conjunction": {
+    "baseline_first_query_ms": 2.471,
+    "candidate_first_query_ms": 3.075,
+    "baseline_warm_average_ms": 0.248,
+    "candidate_warm_average_ms": 0.220,
+    "warm_queries": 256,
+    "estimated_break_even_queries": 22,
+    "all_responses_oracle_checked": true
+  }
+}

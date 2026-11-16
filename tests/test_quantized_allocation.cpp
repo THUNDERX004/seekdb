@@ -103,7 +103,7 @@ void checkUnpublished(const mvd::Table::IndexedRows &rows) {
   require(rows.codes_attempted, "failed preparation was not remembered");
   require(rows.codes.empty() && rows.codes.capacity() == 0 &&
               rows.code_norms.empty() && rows.code_norms.capacity() == 0 &&
-              rows.code_step == 0 && rows.code_error == 0 &&
+              rows.code_step == 0 && rows.code_center == 0 && rows.code_error == 0 &&
               rows.code_stride == 0 && !rows.codes_blocked &&
               rows.code_source == nullptr && rows.code_first == 0,
           "failed preparation published a partial quantized cache");
@@ -127,7 +127,9 @@ void checkResidualBound(const mvd::Table::IndexedRows &rows) {
       } else {
         code = rows.codes[row * rows.code_stride + axis];
       }
-      const double scaled = static_cast<double>(rows[row].vector_data[axis]) / rows.code_step;
+      const double scaled =
+          (static_cast<double>(rows[row].vector_data[axis]) - rows.code_center) /
+          rows.code_step;
       norm += static_cast<uint32_t>(code * code);
       residual = std::hypot(residual, scaled - code);
     }
@@ -175,7 +177,7 @@ void checkSuccess(bool blocked) {
               fixture.rows.codes.size() == stored_rows * stride &&
               fixture.rows.code_norms.size() == stored_rows &&
               fixture.rows.code_stride == stride && fixture.rows.codes_blocked == blocked &&
-              fixture.rows.code_step > 0 && std::isfinite(fixture.rows.code_step) &&
+              fixture.rows.code_step == 1.0 / 32 && fixture.rows.code_center == 4 &&
               fixture.rows.code_source == nullptr && fixture.rows.code_first == 0,
           "successful preparation did not publish a complete cache");
   checkResidualBound(fixture.rows);
@@ -202,9 +204,10 @@ void checkSuccess(bool blocked) {
           reinterpret_cast<const uint8_t *>(codes + first * stride), query.data(),
           stride, norms + first, correction, scores);
       for (size_t row = 0; row < 16; ++row) {
-        // This fixture's scale is exactly 1/16, so the independent expected
-        // code is an integer multiple of 16. Padded rows represent zero.
-        const int code = first + row < row_count ? int((first + row) % 7 + 1) * 16 : 0;
+        // Extrema 1 and 7 center at 4, with a power-of-two step 1/32.
+        // Padded rows represent code zero, independent of the center.
+        const int code = first + row < row_count
+            ? (int((first + row) % 7 + 1) - 4) * 32 : 0;
         uint32_t expected = 0;
         for (size_t axis = 0; axis < dimension; ++axis) {
           const int delta = code - query[axis];
@@ -551,6 +554,60 @@ void checkPreservedFullDirectory(bool blocked) {
   std::cout << "PASS full-first predicate reuse, failure, budget and commit blocked="
             << blocked << '\n';
 }
+void checkPredicateMaskFailure() {
+  for (long long budget : {0LL, 1LL, 2LL}) {
+    auto definition = fixtureDefinition();
+    definition.columns.push_back({"s", mvd::ColumnType::VarChar, 128});
+    mvd::Table table(std::move(definition), "unused-predicate-mask.dat");
+    table.setCacheLimit(1024 * 1024);
+    Fixture fixture;
+    std::vector<mvd::Condition> conditions(2);
+    conditions[0].column = 2;
+    conditions[0].value.setText(std::string(80, 'x'));
+    conditions[1].column = 0;
+    conditions[1].op = mvd::CompareOp::Ge;
+    conditions[1].value.setInteger(10);
+    size_t matched = 0;
+    const auto select = [&](const mvd::Table::IndexedRow &row) {
+      ++matched;
+      return row.primary >= 10 && row.primary % 3 == 0;
+    };
+    allocation_calls = 0;
+    allocation_injected = false;
+    allocation_budget = budget;
+    const auto *mask = table.cachedDistanceMask(fixture.rows, conditions, select);
+    allocation_budget = -1;
+    require(mask == nullptr && allocation_injected && matched == 0 &&
+                allocation_calls == static_cast<size_t>(budget + 1),
+            "predicate-mask allocation failure did not fall back before publication");
+    fixture.checkDirectory();
+    mask = table.cachedDistanceMask(fixture.rows, conditions, select);
+    require(mask != nullptr && matched == row_count,
+            "predicate mask did not recover after optional allocation failure");
+    for (size_t i = 0; i < row_count; ++i) {
+      const bool included = ((*mask)[i / 64] >> (i % 64)) & 1;
+      require(included == (i >= 10 && i % 3 == 0),
+              "recovered predicate mask has incorrect membership");
+    }
+    matched = allocation_calls = 0;
+    allocation_injected = false;
+    allocation_budget = 0;
+    require(table.cachedDistanceMask(fixture.rows, conditions, select) == mask,
+            "published mask could not be reused");
+    allocation_budget = -1;
+    require(matched == 0 && allocation_calls == 0 && !allocation_injected,
+            "mask reuse allocated or reevaluated row predicates");
+    table.setCacheLimit(8);
+    require(table.cachedDistanceMask(fixture.rows, conditions, select) == nullptr &&
+                matched == 0, "mask ignored its cache budget after invalidation");
+    table.setCacheLimit(1024 * 1024);
+    mask = table.cachedDistanceMask(fixture.rows, conditions, select);
+    require(mask != nullptr && matched == row_count,
+            "cache rebalance did not invalidate and rebuild predicate membership");
+    fixture.checkDirectory();
+  }
+  std::cout << "PASS predicate mask allocation failure, reuse and bounded invalidation\n";
+}
 }  // namespace
 
 int main() {
@@ -564,6 +621,7 @@ int main() {
       checkPreservedFullDirectory(blocked);
     }
     checkPaddingBudget();
+    checkPredicateMaskFailure();
     return 0;
   } catch (const std::exception &error) {
     allocation_budget = -1;

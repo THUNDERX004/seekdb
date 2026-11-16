@@ -192,6 +192,49 @@ Counts enumerate(const mvd::fs::path &root, bool index_case) {
   }
   throw std::runtime_error("allocation enumeration never reached success");
 }
+
+void retryFailedCreate(const mvd::fs::path &root) {
+  const std::string statement = "CREATE TABLE t(id BIGINT PRIMARY KEY,s VARCHAR(64))";
+  size_t failures = 0;
+  for (long long budget = 0; budget < 2048; ++budget) {
+    const auto directory = root / ("CREATE_TABLE_RETRY-" + std::to_string(budget));
+    bool failed = false;
+    {
+      mvd::Database database(directory, false);
+      allocation_budget = budget;
+      try {
+        database.execute(statement);
+      } catch (const std::bad_alloc &) {
+        failed = true;
+      } catch (...) {
+        allocation_budget = -1;
+        throw;
+      }
+      allocation_budget = -1;
+      if (failed) {
+        ++failures;
+        // Retry on the SAME instance: reopening alone can hide an orphaned
+        // staged table or schema entry left by failed metadata allocation.
+        database.execute(statement);
+      }
+      database.execute("INSERT INTO t VALUES(1,'retry')");
+      Rows rows;
+      if (!selectTable(database, &rows) || rows != Rows{{"1", "retry"}}) {
+        throw std::runtime_error("CREATE retry did not publish a usable table");
+      }
+    }
+    mvd::Database recovered(directory, false);
+    Rows rows;
+    if (!selectTable(recovered, &rows) || rows != Rows{{"1", "retry"}}) {
+      throw std::runtime_error("CREATE retry did not survive restart");
+    }
+    if (!failed) {
+      std::cout << "SUMMARY CREATE_TABLE_RETRY failures=" << failures << std::endl;
+      return;
+    }
+  }
+  throw std::runtime_error("CREATE retry enumeration never reached success");
+}
 }  // namespace
 
 int main(int argc, char **argv) {
@@ -206,6 +249,7 @@ int main(int argc, char **argv) {
     }
     const Counts table = enumerate(root, false);
     const Counts index = enumerate(root, true);
+    retryFailedCreate(root);
     return table.violations + index.violations == 0 ? 0 : 1;
   } catch (const std::exception &error) {
     allocation_budget = -1;

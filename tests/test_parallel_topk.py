@@ -120,12 +120,17 @@ class ParallelTopKTests(unittest.TestCase):
               explicit_pk=False):
         if where == "cat='all'":
             candidates = [row for row in rows.values() if row.category == "all"]
+        elif where == "cat='all' AND payload >= 'row 50000'":
+            candidates = [row for row in rows.values()
+                          if row.category == "all" and row.payload >= "row 50000"]
         elif where == "tag=7":
             candidates = [row for row in rows.values() if row.tag == 7]
         else:
             self.assertEqual(where, "")
             candidates = list(rows.values())
-        self.assertGreaterEqual(len(candidates), PARALLEL_MINIMUM)
+        indexed_candidates = ([row for row in rows.values() if row.category == "all"]
+                              if where.startswith("cat='all'") else candidates)
+        self.assertGreaterEqual(len(indexed_candidates), PARALLEL_MINIMUM)
         # Few unique vectors keep the large fixture's exact lattice oracle
         # bounded. Python integers, including the huge-probe low bits, rank it.
         scores = {vector: exact_squared(vector, probe)
@@ -169,6 +174,24 @@ class ParallelTopKTests(unittest.TestCase):
             if wanted.is_integer() and wanted <= (1 << 53):
                 self.assertEqual(distance, wanted, diagnostic)
 
+    def test_centered_codes_merge_exact_ties_and_shared_bucket_slices(self):
+        source = [replace(row, vector=tuple(value + 32 for value in row.vector))
+                  for row in fixture()]
+        rows = {row.primary: row for row in source}
+        client = self.open_client()
+        self.sql(client, "CREATE TABLE t(cat VARCHAR(16),v VECTOR(64),"
+                 "id BIGINT PRIMARY KEY,tag BIGINT,payload VARCHAR(80))")
+        self.insert(client, source)
+        for probe, where, limit, offset in (
+                (ZERO, "", 17, 0),
+                (PROTOTYPES[3], "cat='all'", 7, 2),
+                (PROTOTYPES[5], "tag=7", 31, 16),
+                (TAIL_PROBE, "", 3, 0)):
+            shifted = tuple(value + 32 for value in probe)
+            self.check(client, rows, shifted, where=where,
+                       limit=limit, offset=offset, explicit_pk=True)
+        client.shutdown()
+
     def test_large_merge_boundaries_mutations_and_restart(self):
         source = fixture()
         rows = {row.primary: row for row in source}
@@ -193,6 +216,8 @@ class ParallelTopKTests(unittest.TestCase):
         self.check(client, rows, ZERO, limit=17)
         self.check(client, rows, ZERO, limit=1, offset=19, explicit_pk=True)
         self.check(client, rows, PROTOTYPES[3], where="cat='all'", limit=7, offset=2)
+        self.check(client, rows, PROTOTYPES[3],
+                   where="cat='all' AND payload >= 'row 50000'", limit=11, offset=3)
         self.check(client, rows, PROTOTYPES[5], where="tag=7", limit=31, offset=16)
         self.check(client, rows, TAIL_PROBE, limit=3)
         self.check(client, rows, HUGE_PROBE, limit=13, offset=7, explicit_pk=True)
@@ -240,7 +265,7 @@ class ParallelTopKTests(unittest.TestCase):
         self.check(client, rows, TAIL_PROBE, where="cat='all'", limit=11)
         self.check(client, rows, REINSERT_PROBE, limit=7)
         self.check(client, rows, ZERO, limit=19)
-        self.assertEqual(self.query_count, 16)
+        self.assertEqual(self.query_count, 17)
         client.shutdown()
 
 

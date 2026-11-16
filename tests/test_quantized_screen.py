@@ -412,6 +412,56 @@ class QuantizedScreenTests(unittest.TestCase):
         verify(rows, probes[0], selected=(0, 1), offset=0)
         client.shutdown()
 
+    def test_centered_codes_outside_probes_and_center_invalidation(self):
+        client = self.open_client()
+        dimension = 65
+        # Entirely positive rows use the previously unused negative code
+        # range. The final axis distinguishes equal prefixes and crosses a
+        # padded axis/block boundary. Uneven buckets share the same matrix.
+        vectors = [tuple(1000.0 + ((rank * 19 + axis * 7) % 64) / 64
+                         for axis in range(dimension - 1))
+                   + (1000.0 + rank / 64,) for rank in range(17)]
+        source = repeated_rows(vectors, count=2051, outsiders=259)
+        rows = {row.primary: row for row in source}
+        self.create(client, "centered", dimension, source)
+
+        def verify(expected):
+            expected = list(expected.values())
+            # The last two probes exceed the centered encoding interval.
+            # They must retain the exact raw-vector fallback and tie order.
+            for probe in (vectors[3], (1000.5,) * dimension,
+                          (0.0,) * dimension, (2000.0,) * dimension):
+                self.check_full_and_bucket(client, "centered", expected, probe,
+                                           limit=11, offset=3)
+                self.check(client, "centered", expected, probe,
+                           where="category='red'",
+                           predicate=lambda row: row.category == "red",
+                           limit=1, offset=19)
+
+        verify(rows)
+        changed = replace(source[0], vector=(-1000.0,) * dimension,
+                          payload="changed code center")
+        for commit in (False, True):
+            self.sql(client, "BEGIN")
+            self.sql(client, "UPDATE centered SET "
+                     f"v={quoted(vector_sql(changed.vector))},"
+                     f"payload={quoted(changed.payload)} WHERE id={changed.primary}", 1)
+            pending = {**rows, changed.primary: changed}
+            verify(pending)
+            self.sql(client, "COMMIT" if commit else "ROLLBACK")
+            if commit:
+                rows = pending
+            verify(rows)
+        # Deleting the negative extreme restores a centered interval. The old
+        # center/scale must not survive either publication or process restart.
+        self.sql(client, f"DELETE FROM centered WHERE id={changed.primary}", 1)
+        del rows[changed.primary]
+        verify(rows)
+        client.shutdown()
+        client = self.open_client()
+        verify(rows)
+        client.shutdown()
+
     def test_small_cache_budget_shared_views_and_eviction_fallback(self):
         client = self.open_client(cache_mb=1)
         dimension = 672
