@@ -4020,6 +4020,7 @@ class Table {
         auto existing = versions_.find(record.primary);
         if (existing != versions_.end()) {
           primary_order_dirty_ = true;
+          physical_order_stale_ = true;
         }
         if (existing != versions_.end() && existing->second.cached) {
           const size_t bytes = cachedRowBytes(existing->second.row);
@@ -4031,6 +4032,8 @@ class Table {
       auto existing = versions_.find(record.primary);
       if (existing == versions_.end()) {
         primary_order_dirty_ = true;
+      } else {
+        physical_order_stale_ = true;
       }
       if (existing != versions_.end() && existing->second.cached) {
         const size_t bytes = cachedRowBytes(existing->second.row);
@@ -4049,7 +4052,12 @@ class Table {
       }
       versions_[record.primary] = std::move(value);
       if (!physical_order_dirty_) {
-        physical_order_.emplace_back(record.offset, record.primary);
+        try {
+          physical_order_.emplace_back(record.offset, record.primary);
+        } catch (...) {
+          physical_order_dirty_ = true;
+          throw;
+        }
       }
       if (cache_bytes_ > cache_limit_bytes_) {
         disableCache();
@@ -4185,6 +4193,15 @@ class Table {
       std::sort(staged.begin(), staged.end());
       physical_order_.swap(staged);
       physical_order_dirty_ = false;
+      physical_order_stale_ = false;
+    } else if (physical_order_stale_) {
+      // Pure inserts keep the directory current. After replacements/deletes,
+      // compact once without allocating; later scans need no version lookup.
+      std::erase_if(physical_order_, [&](const auto &entry) {
+        const auto found = versions_.find(entry.second);
+        return found == versions_.end() || found->second.offset != entry.first;
+      });
+      physical_order_stale_ = false;
     }
     return physical_order_;
   }
@@ -4251,10 +4268,6 @@ class Table {
     std::vector<float> components;
     const bool verify_crc = verifyCrcForScan();
     for (const auto &[offset, primary] : physicalOrder()) {
-      const auto found = versions_.find(primary);
-      if (found == versions_.end() || found->second.offset != offset) {
-        continue;
-      }
       const DecodedRecord record =
           readRecordPayload(offset, input, &input_position, payload,
                             verify_crc);
@@ -4400,6 +4413,7 @@ class Table {
   mutable bool primary_order_dirty_ = true;
   mutable std::vector<std::pair<uint64_t, int64_t>> physical_order_;
   mutable bool physical_order_dirty_ = true;
+  mutable bool physical_order_stale_ = false;
   bool cache_enabled_ = true;
   size_t cache_bytes_ = 0;
   size_t cache_limit_bytes_ = cacheLimitBytes();
@@ -6033,7 +6047,9 @@ class Database {
         // Each range owns its heap and rejection boundaries. Cache layout and
         // query codes are immutable until both synchronous scans have joined.
         const auto scanRange = [&](size_t first_row, size_t last,
-                                    std::vector<Candidate> &heap) {
+                                    std::vector<Candidate> &heap,
+                                    quantized_seed::Scratch &seed_scratch) {
+          (void)seed_scratch;
           size_t i = first_row;
           uint32_t quantized_above = std::numeric_limits<uint32_t>::max();
           double reject_above = std::numeric_limits<double>::infinity();
@@ -6146,7 +6162,8 @@ class Database {
                       consumeQuantizedSurvivor((*cached_candidates)[row]);
                     },
                     [&] { return quantized_above; },
-                    (code_first + first_row) % quantized_block::kBlockRows)) {
+                    (code_first + first_row) % quantized_block::kBlockRows,
+                    &seed_scratch)) {
               i = last;
             }
             if (code_rows->codes_blocked) {
@@ -6303,8 +6320,9 @@ class Database {
             // same exact distance and primary-key ordering as the serial path.
             const size_t split = cached_candidates->size() / 2;
             parallel = parallel_scan_worker_.run_pair(
-                [&] { scanRange(0, split, heap); },
-                [&] { scanRange(split, cached_candidates->size(), other_heap); },
+                [&] { scanRange(0, split, heap, seed_scratch_[0]); },
+                [&] { scanRange(split, cached_candidates->size(), other_heap,
+                               seed_scratch_[1]); },
                 cached_candidates->size() >= 65536);
             if (parallel) {
               for (auto &candidate : other_heap) {
@@ -6319,7 +6337,8 @@ class Database {
           }
         }
 #endif
-        if (!parallel) scanRange(0, cached_candidates->size(), heap);
+        if (!parallel)
+          scanRange(0, cached_candidates->size(), heap, seed_scratch_[0]);
         return finishCandidates(heap);
       } else {
         heap.reserve(std::min<size_t>(capacity, 64));
@@ -7211,6 +7230,7 @@ class Database {
   std::unordered_map<std::string, std::unique_ptr<Table>> tables_;
   std::unordered_map<std::string, const TableDef *> definitions_;
   SelectTemplateCache select_templates_;
+  quantized_seed::Scratch seed_scratch_[2];
   ParallelScanWorker parallel_scan_worker_;
   std::unordered_map<uint32_t, std::map<int64_t, std::optional<Row>>> overlay_;
   std::unordered_map<uint32_t, std::map<int64_t, std::optional<Row>>>

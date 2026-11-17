@@ -51,7 +51,7 @@ class SeedTopKTests(unittest.TestCase):
                 client=JsonlClient([self.executable],Path(directory),timeout=60)
             try:
                 cases=[]
-                for dimension in (64,128):
+                for dimension in (64,128,256):
                     for pattern in ('normal','subnormal','swamped'):
                         table=f't{dimension}_{pattern}'
                         self.sql(client,f'CREATE TABLE {table}(id BIGINT PRIMARY KEY,tag BIGINT,category VARCHAR(8),v VECTOR({dimension}))')
@@ -145,7 +145,7 @@ class SeedTopKTests(unittest.TestCase):
                 client=JsonlClient([self.executable],Path(directory),timeout=60)
             cases=[]
             try:
-                for dimension in (64,128):
+                for dimension in (64,128,256):
                     table=f'equality_{dimension}'
                     self.sql(client,f'CREATE TABLE {table}(id BIGINT PRIMARY KEY,tag BIGINT,category VARCHAR(8),v VECTOR({dimension}))')
                     prototypes=[tuple(float32(((axis*13+rank*7)%97-48)*scale)

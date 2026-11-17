@@ -43,8 +43,13 @@ struct PhysicalOrderTest {
     return table.physical_order_;
   }
   static bool dirty(const Table &table) { return table.physical_order_dirty_; }
+  static bool stale(const Table &table) { return table.physical_order_stale_; }
   static const Directory &materialize(const Table &table) {
     return table.physicalOrder();
+  }
+  static void tighten(Table &table) {
+    Directory exact(table.physical_order_.begin(), table.physical_order_.end());
+    table.physical_order_.swap(exact);
   }
 };
 }  // namespace mvd
@@ -126,7 +131,8 @@ void checkUnmaterialized(const mvd::Table &table) {
 
 // Exercise the production append -> data sync -> WAL sync -> publication order.
 void commit(mvd::Table &table, const mvd::fs::path &directory, uint64_t txid,
-            const Revisions &revisions, ExpectedRows &expected) {
+            const Revisions &revisions, ExpectedRows &expected,
+            bool fail_directory_append = false) {
   Changes changes;
   for (const auto &[primary, revision] : revisions) {
     if (revision.has_value()) {
@@ -147,7 +153,23 @@ void commit(mvd::Table &table, const mvd::fs::path &directory, uint64_t txid,
     writer.append(mvd::encodeCommitRecord(txid, pending.size()));
     writer.sync();
   }
-  table.applyPending(pending);
+  if (fail_directory_append) {
+    // The disk-only fixture needs one allocation for the version hash node,
+    // followed by growth of its tightly sized physical directory.
+    require(!table.fullyCached() && pending.size() == 1 &&
+                Access::retained(table).size() == Access::retained(table).capacity(),
+            "directory growth fixture is not tightly sized");
+    allocation_injected = false;
+    allocation_budget = 1;
+    bool failed = false;
+    try { table.applyPending(pending); }
+    catch (const std::bad_alloc &) { failed = true; }
+    allocation_budget = -1;
+    require(failed && allocation_injected && Access::dirty(table),
+            "failed append left a trusted incomplete physical directory");
+  } else {
+    table.applyPending(pending);
+  }
   for (const auto &record : pending) {
     const auto &revision = revisions.at(record.primary);
     const uint16_t expected_op = !revision.has_value() ? 3 :
@@ -286,11 +308,37 @@ void checkLazyPhysicalOrder(const mvd::fs::path &directory) {
                     Access::retained(table).end(),
             "materialized-directory maintenance discarded its stale-entry path");
     checkDiskScan(table, expected);
+    require(!Access::stale(table) &&
+                Access::retained(table) == expectedOrder(expected),
+            "scan retained obsolete update/delete directory entries");
+    allocation_budget = 0;
+    Access::materialize(table);
+    require(allocation_budget == 0, "clean directory scan allocated storage");
+    allocation_budget = -1;
+    size_t distance_rows = 0;
+    table.forEachDiskDistanceBase(3,
+        [&](int64_t primary, const std::vector<float> &vector,
+            const std::vector<uint8_t> &) {
+          require(expected.contains(primary) && vector.size() == dimension,
+                  "distance scan returned an obsolete version");
+          for (size_t axis = 0; axis < dimension; ++axis)
+            require(vector[axis] == component(primary, expected.at(primary).revision, axis),
+                    "distance scan read a replaced payload");
+          ++distance_rows;
+          return true;
+        });
+    require(distance_rows == expected.size(), "distance scan lost a current row");
     commit(table, directory, next_txid++, {{23, 3}, {row_count + 1, 1}}, expected);
     require(!Access::dirty(table) &&
-                Access::retained(table).size() == previous_size + 3,
+                !Access::stale(table) &&
+                Access::retained(table).size() == previous_size + 1,
             "reinsert failed to extend the already materialized directory");
     checkDiskScan(table, expected);
+    Access::tighten(table);
+    commit(table, directory, next_txid++, {{row_count + 2, 1}}, expected, true);
+    checkDiskScan(table, expected);
+    require(Access::retained(table) == expectedOrder(expected),
+            "directory retry lost a version published before append failure");
   }
 
   const auto wal = mvd::scanCommitLog(directory / "mvd.wal");

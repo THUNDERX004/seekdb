@@ -4,13 +4,35 @@
 #include <algorithm>
 #include <array>
 #include <bit>
-#include <vector>
+#include <memory>
 
 namespace mvd::quantized_seed {
 using ScanKernel = void (*)(const std::uint8_t *,const std::int8_t *,std::size_t,
     const std::uint32_t *,std::int64_t,std::size_t,std::uint32_t *,
     std::uint32_t *,std::uint32_t *) noexcept;
 using MaskKernel = std::uint64_t (*)(const std::uint32_t *,std::uint32_t) noexcept;
+
+// One synchronous range owns each workspace. The kernels overwrite every
+// readable score, including padded tail lanes, before screening reads it.
+class Scratch {
+ public:
+  bool prepare(std::size_t rows) noexcept {
+    constexpr std::size_t max_rows=65600; // 65536 real rows plus block padding.
+    if (rows>max_rows) return false;
+    if (rows<=capacity_) return true;
+    try {
+      std::unique_ptr<std::uint32_t[]> staged(new std::uint32_t[rows]);
+      scores_.swap(staged);
+      capacity_=rows;
+      return true;
+    } catch (const std::bad_alloc &) { return false; }
+  }
+  std::uint32_t *data() noexcept { return scores_.get(); }
+
+ private:
+  std::unique_ptr<std::uint32_t[]> scores_;
+  std::size_t capacity_=0;
+};
 
 #if (defined(__GNUC__) || defined(__clang__)) && !defined(_MSC_VER) && \
     (defined(__x86_64__) || defined(__i386__))
@@ -21,7 +43,7 @@ inline void scan(const std::uint8_t *packed,const std::int8_t *query,
     std::size_t dimension,const std::uint32_t *norms,std::int64_t correction,
     std::size_t rows,std::uint32_t *scores,std::uint32_t *seed_scores,
     std::uint32_t *seed_rows) noexcept {
-  static_assert(Dimension==64 || Dimension==128);
+  static_assert(Dimension==64 || Dimension==128 || Dimension==256);
   assert(dimension==Dimension && rows>=64 && rows%64==0);
   (void)dimension;
   const __m512i adjustment=_mm512_set1_epi32(static_cast<std::int32_t>(correction));
@@ -110,6 +132,7 @@ inline ScanKernel scan_kernel(std::size_t dimension) noexcept {
   if (quantized_block::cpu_features().vnni512) {
     if (dimension==64) return &detail::scan<64>;
     if (dimension==128) return &detail::scan<128>;
+    if (dimension==256) return &detail::scan<256>;
   }
 #else
   (void)dimension;
@@ -141,16 +164,16 @@ bool visit(
     const std::uint32_t *norms,std::int64_t correction,std::size_t rows,
     std::size_t first_row,std::size_t capacity,const ConsumeSeed &consume_seed,
     const ConsumeSurvivor &consume_survivor,const Boundary &boundary,
-    std::size_t leading_rows=0) {
+    std::size_t leading_rows=0,Scratch *workspace=nullptr) {
   constexpr std::size_t max_scratch_rows=65536;
   if (rows<512 || rows>max_scratch_rows || capacity==0 || capacity>32 ||
       leading_rows>=quantized_block::kBlockRows) return false;
   const auto scan=scan_kernel(dimension);
   if (scan==nullptr) return false;
   const std::size_t extent=leading_rows+rows;
-  std::vector<std::uint32_t> scores;
-  try { scores.resize((extent+63)/64*64); }
-  catch (const std::bad_alloc &) { return false; }
+  Scratch local;
+  Scratch &scores=workspace==nullptr?local:*workspace;
+  if (!scores.prepare((extent+63)/64*64)) return false;
   std::uint32_t seed_scores[64],seed_rows[64];
   // Keep other buckets' leading lanes out of seed selection. The first partial
   // block and the final tail are still scored and screened below.
@@ -163,6 +186,11 @@ bool visit(
   for (std::size_t row=seed_first+scored;row<extent;row+=16) {
     tail(packed+row*dimension,query,dimension,norms+row,correction,scores.data()+row);
   }
+  // mask64 reads a complete group even when fewer than four tail blocks were
+  // scored. Initialize only those extra lanes; the real/padded blocks above
+  // were overwritten by kernels, so no full scratch clear is necessary.
+  std::fill(scores.data()+(extent+15)/16*16,
+            scores.data()+(extent+63)/64*64,std::uint32_t{0xffffffff});
   struct Seed { std::uint32_t score,row; };
   std::array<Seed,64> seeds;
   for (std::size_t j=0;j<64;++j)

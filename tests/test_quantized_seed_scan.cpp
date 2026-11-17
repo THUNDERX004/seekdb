@@ -23,6 +23,9 @@ void *operator new(size_t bytes) {
 }
 void operator delete(void *memory) noexcept { std::free(memory); }
 void operator delete(void *memory, size_t) noexcept { std::free(memory); }
+void *operator new[](size_t bytes) { return ::operator new(bytes); }
+void operator delete[](void *memory) noexcept { std::free(memory); }
+void operator delete[](void *memory, size_t) noexcept { std::free(memory); }
 
 static void require(bool value, const char *message) {
   if (!value) throw std::runtime_error(message);
@@ -101,6 +104,8 @@ struct BucketFixture {
 
 static void check_bucket_visit(const BucketFixture &fixture) {
   using namespace mvd::quantized_seed;
+  // Reuse across different bucket lengths, leading lanes, queries and widths.
+  static Scratch reused;
   const auto packed_before = fixture.packed;
   const auto norms_before = fixture.norms;
   const auto query_before = fixture.query;
@@ -159,14 +164,14 @@ static void check_bucket_visit(const BucketFixture &fixture) {
           above = *std::max_element(heap.begin(), heap.begin() + heap_size);
       }
     };
-    const auto run = [&](uint32_t initial, bool shrinking) {
+    const auto run = [&](uint32_t initial, bool shrinking, Scratch *scratch=nullptr) {
       reset(initial);
       const bool accepted = visit(fixture.codes(), fixture.query.data() + 1,
           fixture.dimension, fixture.row_norms(), fixture.correction,
           fixture.rows, fixture.first_row, capacity,
           [&](size_t index) { consume(index, true, shrinking); },
           [&](size_t index) { consume(index, false, shrinking); },
-          [&] { ++boundaries; return above; }, fixture.leading);
+          [&] { ++boundaries; return above; }, fixture.leading, scratch);
       require(accepted == eligible, "real-row eligibility gate differs");
       require(valid_indices && valid_seeds, "padding, seed origin or index translation differs");
       require(visits.front() == BucketFixture::guard &&
@@ -198,6 +203,15 @@ static void check_bucket_visit(const BucketFixture &fixture) {
                              middle == 0 ? 0 : middle - 1, middle})
       run(boundary, false);
     run(std::numeric_limits<uint32_t>::max(), true);
+    run(std::numeric_limits<uint32_t>::max(), true, &reused);
+    run(middle, false, &reused);
+    const size_t reused_failures = allocation_failures;
+    fail_bytes = (fixture.leading + fixture.rows + 63) / 64 * 64 * sizeof(uint32_t);
+    try { run(std::numeric_limits<uint32_t>::max(), true, &reused); }
+    catch (...) { fail_bytes = 0; throw; }
+    fail_bytes = 0;
+    require(allocation_failures == reused_failures,
+            "warm workspace unexpectedly allocated score storage");
 
     // All storage used by these callbacks is already allocated. Fail the
     // extent-sized scratch allocation and require a side-effect-free fallback.
@@ -231,6 +245,18 @@ static void check_bucket_visit(const BucketFixture &fixture) {
 
 int main() {
   using namespace mvd::quantized_seed;
+  Scratch workspace, separate;
+  require(workspace.prepare(512) && separate.prepare(512) &&
+              workspace.data() != separate.data(), "range scratch is shared");
+  auto *saved = workspace.data();
+  saved[0] = 12345;
+  fail_bytes = 1024 * sizeof(uint32_t);
+  const bool grew = workspace.prepare(1024);
+  fail_bytes = 0;
+  require(!grew && workspace.data() == saved && saved[0] == 12345 &&
+              workspace.prepare(256), "failed growth discarded existing scratch");
+  require(!workspace.prepare(65601) && workspace.data() == saved,
+          "scratch exceeded its fixed storage bound");
   require(scan_kernel(63) == nullptr && scan_kernel(65) == nullptr,
           "unsupported dimension admitted");
   if (scan_kernel(64) == nullptr) {
@@ -239,7 +265,7 @@ int main() {
   }
   std::mt19937 random(20261117);
   constexpr uint32_t guard = 0xdeadbeef;
-  for (size_t dimension : {64, 128}) {
+  for (size_t dimension : {64, 128, 256}) {
     for (size_t rows : {64, 192, 2240, 9984}) {
       for (int pattern : {0, 1, 2}) {
         std::vector<int8_t> vectors(rows * dimension), query(dimension + 1);
@@ -341,7 +367,7 @@ int main() {
   // In particular code_first=16 must not be mistaken for leading_rows=16.
   constexpr size_t code_offsets[] = {0, 16, 48};
   constexpr size_t index_origins[] = {0, 16, 1009};
-  for (size_t dimension : {64, 128}) {
+  for (size_t dimension : {64, 128, 256}) {
     for (size_t leading = 0; leading < 16; ++leading) {
       for (size_t rows : {511, 512, 513, 1023, 2049, 2500}) {
         for (int pattern : {0, 1, 2}) {
