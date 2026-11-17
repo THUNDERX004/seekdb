@@ -72,9 +72,10 @@ struct Fixture {
             "quantization invalidated the borrowed directory");
     for (std::size_t i = 0; i < row_count; ++i) {
       const auto &row = directory[i];
+      // This synthetic entry selected offset, even though vector_data is set.
       require(row.primary == static_cast<int64_t>(i) &&
                   row.offset == static_cast<uint64_t>(i) &&
-                  row.cached == nullptr && row.vector_data == vectors[i].data(),
+                  row.vector_data == vectors[i].data(),
               "quantization changed a borrowed directory entry");
       for (std::size_t axis = 0; axis < dimension; ++axis) {
         require(row.vector_data[axis] == static_cast<float>(i % 7 + 1),
@@ -416,11 +417,13 @@ void checkSharedDirectoryFailure(bool blocked) {
   const auto *directory = bucket->data();
   const auto saved = bucket->rows;
   const auto checkBorrowed = [&] {
-    require(bucket->data() == directory && bucket->size() == saved.size(),
+    require(table.fullyCached() && bucket->data() == directory &&
+                bucket->size() == saved.size(),
             "shared-directory preparation replaced the borrowed bucket");
     for (size_t i = 0; i < saved.size(); ++i) {
       const auto &row = (*bucket)[i];
-      require(row.primary == saved[i].primary && row.offset == saved[i].offset &&
+      // Table residency selects cached; offset is the inactive union member.
+      require(row.primary == saved[i].primary &&
                   row.cached == saved[i].cached && row.vector_data == saved[i].vector_data,
               "shared-directory preparation changed a borrowed row");
     }
@@ -737,6 +740,55 @@ void checkPredicateMaskFailure() {
   }
   std::cout << "PASS predicate mask allocation failure, reuse and bounded invalidation\n";
 }
+void checkIndexedPublicationFailure() {
+  auto definition = fixtureDefinition();
+  definition.oid = 1;
+  mvd::Table table(std::move(definition), "unused-compact-publication-failure.dat");
+  table.setCacheLimit(1024 * 1024);
+  const auto make = [](int64_t primary) {
+    mvd::Row row(2);
+    row[0].setInteger(primary);
+    row[1].setVector(std::vector<float>(dimension, float(primary + 1)));
+    return row;
+  };
+  auto first = make(0), second = make(1);
+  table.applyPending({{1, 0, 1, &first, 64}, {1, 1, 1, &second, 128}});
+  const auto *full = table.cachedDistanceCandidates(1, nullptr);
+  mvd::Condition condition;
+  condition.column = 0;
+  condition.op = mvd::CompareOp::Eq;
+  condition.value.setInteger(1);
+  const auto *bucket = table.cachedDistanceCandidates(1, &condition);
+  require(table.fullyCached() && full != nullptr && bucket != nullptr,
+          "publication-failure directories did not warm");
+  // A small directory marks the attempt without allocating any codes. This
+  // distinguishes a freshly rebuilt directory from one retained on failure.
+  require(!table.prepareQuantizedRows(*full, dimension) && full->codes_attempted,
+          "publication-failure marker was not prepared");
+  auto inserted = make(2);
+  const std::vector<mvd::PendingRecord> pending{{1, 2, 1, &inserted, 192}};
+  allocation_injected = false;
+  allocation_budget = 0;
+  bool failed = false;
+  try { table.applyPending(pending); }
+  catch (const std::bad_alloc &) { failed = true; }
+  allocation_budget = -1;
+  require(failed && allocation_injected && table.fullyCached() && table.rowCount() == 2,
+          "publication failure changed committed residency");
+  // Never inspect the old bucket after invalidation. Rebuild in cached mode;
+  // no offset member may be read from these recovered entries.
+  full = table.cachedDistanceCandidates(1, nullptr);
+  bucket = table.cachedDistanceCandidates(1, &condition);
+  require(full != nullptr && full->size() == 2 && !full->codes_attempted &&
+              bucket != nullptr && bucket->size() == 1 && (*bucket)[0].primary == 1,
+          "publication failure retained a directory or lost committed rows");
+  for (const auto &row : *full) {
+    require(row.cached != nullptr &&
+                table.view(row.primary, *row.cached)[0].integer() == row.primary,
+            "publication failure rebuilt a mixed or stale directory");
+  }
+  std::cout << "PASS indexed directory invalidation before publication failure\n";
+}
 }  // namespace
 
 int main() {
@@ -753,6 +805,7 @@ int main() {
     checkLargeCodeBudget();
     checkPaddingBudget();
     checkPredicateMaskFailure();
+    checkIndexedPublicationFailure();
     return 0;
   } catch (const std::exception &error) {
     allocation_budget = -1;

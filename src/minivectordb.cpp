@@ -241,7 +241,7 @@ bool equalAsciiIgnoreCase(std::string_view left, std::string_view right) {
 
 uint32_t crc32(const uint8_t *data, size_t size) {
   static constexpr auto tables = [] {
-    std::array<std::array<uint32_t, 256>, 8> values{};
+    std::array<std::array<uint32_t, 256>, 16> values{};
     for (uint32_t i = 0; i < values[0].size(); ++i) {
       uint32_t value = i;
       for (int bit = 0; bit < 8; ++bit) {
@@ -260,6 +260,27 @@ uint32_t crc32(const uint8_t *data, size_t size) {
   }();
   uint32_t crc = 0xffffffffU;
   size_t offset = 0;
+  // Sixteen bytes per recurrence keep the same IEEE polynomial while
+  // shortening the dependent CRC chain for row payloads. Loads are bounded.
+  while (size - offset >= 16) {
+    uint32_t low = 0;
+    if constexpr (std::endian::native == std::endian::little) {
+      std::memcpy(&low, data + offset, sizeof(low));
+    } else {
+      for (size_t byte = 0; byte < sizeof(low); ++byte)
+        low |= static_cast<uint32_t>(data[offset + byte]) << (byte * 8U);
+    }
+    low ^= crc;
+    crc = tables[15][low & 0xffU] ^ tables[14][(low >> 8U) & 0xffU] ^
+          tables[13][(low >> 16U) & 0xffU] ^ tables[12][low >> 24U] ^
+          tables[11][data[offset + 4]] ^ tables[10][data[offset + 5]] ^
+          tables[9][data[offset + 6]] ^ tables[8][data[offset + 7]] ^
+          tables[7][data[offset + 8]] ^ tables[6][data[offset + 9]] ^
+          tables[5][data[offset + 10]] ^ tables[4][data[offset + 11]] ^
+          tables[3][data[offset + 12]] ^ tables[2][data[offset + 13]] ^
+          tables[1][data[offset + 14]] ^ tables[0][data[offset + 15]];
+    offset += 16;
+  }
   while (size - offset >= sizeof(uint64_t)) {
     uint64_t word = 0;
     if constexpr (std::endian::native == std::endian::little) {
@@ -2836,6 +2857,8 @@ class Table {
 
   void load(const std::unordered_set<uint64_t> &committed,
             uint64_t &max_seen_txid) {
+    // Reloading can replace cached owners, including before a later exception.
+    clearEqualityIndex();
     const uint64_t file_bytes = fs::exists(data_path_) ? fs::file_size(data_path_) : 0;
     // Leave conservative headroom for compact row owners and alignment. Large
     // files retain normal kernel caching for the disk-scan fallback.
@@ -2919,9 +2942,26 @@ class Table {
 
   struct IndexedRow {
     int64_t primary = 0;
-    uint64_t offset = 0;
-    const CachedRow *cached = nullptr;
+    // Table-owned directories are homogeneous: cache_enabled_ selects cached,
+    // otherwise offset. Residency changes invalidate every directory first.
+    // vector_data is independent: a cached row can have no matching vector.
+    union {
+      uint64_t offset;
+      const CachedRow *cached;
+    };
     const float *vector_data = nullptr;
+
+    constexpr IndexedRow() noexcept : offset(0) {}
+    constexpr IndexedRow(int64_t primary_value, uint64_t offset_value,
+                         const CachedRow *cached_value,
+                         const float *vector_value) noexcept
+        : primary(primary_value), offset(offset_value),
+          vector_data(vector_value) {
+      if (cached_value != nullptr) {
+        // Built-in assignment starts this trivial union member's lifetime.
+        cached = cached_value;
+      }
+    }
   };
 
   RowView view(int64_t primary, const CachedRow &row) const noexcept {
@@ -3074,12 +3114,10 @@ class Table {
         }
         return appendTo(staged_integer, row[column].integer(), primary, version);
       };
-      // Validate before appending so an unusable directory falls back without
-      // a partial build or a new failure state.
+      // Only a fully cached table can publish this directory. Invalidation
+      // precedes residency changes; do not probe an inactive union member.
       const bool reuse_distance_rows = cache_enabled_ && cached_distance_ready_ &&
-          cached_distance_rows_.size() == versions_.size() &&
-          std::all_of(cached_distance_rows_.begin(), cached_distance_rows_.end(),
-                      [](const IndexedRow &row) noexcept { return row.cached != nullptr; });
+          cached_distance_rows_.size() == versions_.size();
       if (reuse_distance_rows) {
         for (const IndexedRow &indexed : cached_distance_rows_) {
           const RowView row = view(indexed.primary, *indexed.cached);
@@ -3822,7 +3860,7 @@ class Table {
       if (overlay != nullptr && overlay->contains(indexed.primary)) {
         continue;
       }
-      if (indexed.cached != nullptr) {
+      if (cache_enabled_) {
         if (!visitCached(callback, indexed.primary, *indexed.cached)) {
           return false;
         }
@@ -6042,6 +6080,10 @@ class Database {
           }
         }
 #endif
+        // Code preparation may bind and release a bucket's owned directory.
+        // Borrow its final immutable view only after that preparation finishes.
+        const auto *const cached_rows = cached_candidates->data();
+        const size_t cached_count = cached_candidates->size();
         // Each range owns its heap and rejection boundaries. Cache layout and
         // query codes are immutable until both synchronous scans have joined.
         const auto scanRange = [&](size_t first_row, size_t last,
@@ -6155,9 +6197,9 @@ class Database {
                     code_rows->code_norms.data() + (code_first + first_row) /
                         quantized_block::kBlockRows * quantized_block::kBlockRows,
                     query_correction, last - first_row, first_row, capacity,
-                    [&](size_t row) { consumeVector((*cached_candidates)[row]); },
+                    [&](size_t row) { consumeVector(cached_rows[row]); },
                     [&](size_t row) {
-                      consumeQuantizedSurvivor((*cached_candidates)[row]);
+                      consumeQuantizedSurvivor(cached_rows[row]);
                     },
                     [&] { return quantized_above; },
                     (code_first + first_row) % quantized_block::kBlockRows,
@@ -6194,7 +6236,7 @@ class Database {
                   survivors &= survivors - 1;
                   const size_t row_index = i + j;
                   if (cachedPredicateMatchesIndex(row_index)) {
-                    consumeQuantizedSurvivor((*cached_candidates)[row_index]);
+                    consumeQuantizedSurvivor(cached_rows[row_index]);
                   }
                 }
                 i += count;
@@ -6216,7 +6258,7 @@ class Database {
                   survivors &= survivors - 1;
                   const size_t row_index = i + j;
                   if (cachedPredicateMatchesIndex(row_index)) {
-                    consumeQuantizedSurvivor((*cached_candidates)[row_index]);
+                    consumeQuantizedSurvivor(cached_rows[row_index]);
                   }
                 }
               }
@@ -6263,13 +6305,13 @@ class Database {
                 while (members != 0) {
                   const size_t row = word * 64 + std::countr_zero(members);
                   members &= members - 1;
-                  appendMatchingRow((*cached_candidates)[row]);
+                  appendMatchingRow(cached_rows[row]);
                 }
               }
               i = last;
             } else {
               for (; i < last; ++i) {
-                const Table::IndexedRow &indexed = (*cached_candidates)[i];
+                const Table::IndexedRow &indexed = cached_rows[i];
                 if (cachedCandidateMatches(indexed)) appendMatchingRow(indexed);
               }
             }
@@ -6291,7 +6333,7 @@ class Database {
             }
           }
           for (; i < last; ++i) {
-            const Table::IndexedRow &indexed = (*cached_candidates)[i];
+            const Table::IndexedRow &indexed = cached_rows[i];
             if (indexed.vector_data == nullptr) {
               fail("VECTOR_DIMENSION_MISMATCH", "vector dimension mismatch");
             }
@@ -6303,8 +6345,8 @@ class Database {
         // Medium common-width TopK scans only submit to an active worker.
         // A parked worker keeps the serial scan until a burst is observed.
         if (quantized &&
-            (cached_candidates->size() >= 65536 ||
-             (cached_candidates->size() >= 8192 && capacity <= 32 &&
+            (cached_count >= 65536 ||
+             (cached_count >= 8192 && capacity <= 32 &&
               (prepared_probe.size() == 64 || prepared_probe.size() == 128))) &&
             capacity <= 256 &&
             cpu_budget::has_two_cpus()) {
@@ -6316,12 +6358,12 @@ class Database {
           if (other_heap.capacity() >= capacity) {
             // Every global TopK row belongs to a local TopK. Merge with the
             // same exact distance and primary-key ordering as the serial path.
-            const size_t split = cached_candidates->size() / 2;
+            const size_t split = cached_count / 2;
             parallel = parallel_scan_worker_.run_pair(
                 [&] { scanRange(0, split, heap, seed_scratch_[0]); },
-                [&] { scanRange(split, cached_candidates->size(), other_heap,
+                [&] { scanRange(split, cached_count, other_heap,
                                seed_scratch_[1]); },
-                cached_candidates->size() >= 65536);
+                cached_count >= 65536);
             if (parallel) {
               for (auto &candidate : other_heap) {
                 if (heap.size() < capacity) {
@@ -6336,7 +6378,7 @@ class Database {
         }
 #endif
         if (!parallel)
-          scanRange(0, cached_candidates->size(), heap, seed_scratch_[0]);
+          scanRange(0, cached_count, heap, seed_scratch_[0]);
         return finishCandidates(heap);
       } else {
         heap.reserve(std::min<size_t>(capacity, 64));
