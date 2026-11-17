@@ -222,6 +222,7 @@ void checkSuccess(bool blocked) {
   require(fixture.rows.codes.empty() && fixture.rows.code_norms.empty() &&
               fixture.rows.code_step == 0 && fixture.rows.code_error == 0 &&
               fixture.rows.code_stride == 0 && !fixture.rows.codes_blocked &&
+              fixture.rows.bounds_step == 0 && fixture.rows.bounds_center == 0 &&
               !fixture.rows.codes_attempted && fixture.rows.code_source == nullptr &&
               fixture.rows.code_first == 0, "cache invalidation retained layout metadata");
   require(empty.code_error == error && empty.codes.data() == codes &&
@@ -652,6 +653,36 @@ void checkPreservedFullDirectory(bool blocked) {
   std::cout << "PASS full-first predicate reuse, failure, budget and commit blocked="
             << blocked << '\n';
 }
+void checkProbeAdmission(bool blocked) {
+  mvd::Table table(fixtureDefinition(), "unused-probe-admission.dat");
+  table.setCacheLimit(1024 * 1024);
+  Fixture fixture;
+  const std::vector<double> outside(dimension, 1000), inside(dimension, 4);
+  for (int attempt = 0; attempt < 3; ++attempt) {
+    // Once the range is known, rejecting another probe must not inspect rows.
+    // A missing borrowed pointer makes a repeated bounds pass observable.
+    const float *saved = fixture.rows.rows[0].vector_data;
+    if (attempt != 0) fixture.rows.rows[0].vector_data = nullptr;
+    const size_t before = allocation_calls;
+    require(!table.prepareQuantizedRows(fixture.rows, dimension, blocked, outside) &&
+                !fixture.rows.codes_attempted && fixture.rows.codes.capacity() == 0 &&
+                fixture.rows.code_norms.capacity() == 0 && allocation_calls == before &&
+                fixture.rows.bounds_step == 1.0 / 32 && fixture.rows.bounds_center == 4,
+            "rejected probe revisited rows, allocated codes or disabled later admission");
+    fixture.rows.rows[0].vector_data = saved;
+    fixture.checkDirectory();
+  }
+  require(table.prepareQuantizedRows(fixture.rows, dimension, blocked, inside),
+          "later in-range probe could not prepare screening codes");
+  checkResidualBound(fixture.rows);
+  const auto *storage = fixture.rows.codes.data();
+  require(table.prepareQuantizedRows(fixture.rows, dimension, blocked, outside) &&
+              fixture.rows.codes.data() == storage,
+          "out-of-range probe discarded already useful codes");
+  std::cout << "PASS probe admission without allocation, retry and code reuse blocked="
+            << blocked << '\n';
+}
+
 void checkPredicateMaskFailure() {
   for (long long budget : {0LL, 1LL, 2LL}) {
     auto definition = fixtureDefinition();
@@ -717,6 +748,7 @@ int main() {
       checkResidualFixtures(blocked);
       checkSharedDirectoryFailure(blocked);
       checkPreservedFullDirectory(blocked);
+      checkProbeAdmission(blocked);
     }
     checkLargeCodeBudget();
     checkPaddingBudget();

@@ -37,6 +37,9 @@ struct PhysicalOrderTest {
   }
   static size_t disk(const Table &table) { return table.disk_distance_bytes_; }
   static void clear(Table &table) { table.clearDiskDistanceCodes(); }
+  static bool bounds(const Table &table, size_t column) {
+    return table.disk_bounds_column_ == column;
+  }
 };
 }
 
@@ -88,6 +91,32 @@ void commit(mvd::Table &table, const mvd::fs::path &directory, uint64_t txid,
   }
   table.applyPending(pending);
 }
+void checkEqualityReserve(const mvd::fs::path &directory) {
+  mvd::Table table(definition(), directory / "reserve.dat");
+  table.setCacheLimit(1024 * 1024);
+  std::map<int64_t, std::optional<mvd::Row>> changes;
+  // Keep bulk bucket capacities at 4096 and 2048 under the 256 KiB limit.
+  for (int64_t primary = 0; primary < 6000; ++primary) {
+    auto value = row(primary);
+    value[1].setInteger(primary == 5999 ? 1 : (primary < 4096 ? 0 : 2));
+    changes.emplace(primary, std::move(value));
+  }
+  commit(table, directory, 91, std::move(changes));
+  require(!table.fullyCached(), "reserve fixture remained fully cached");
+  require(table.diskDistanceCodes(2, 128) == nullptr,
+          "optional codes consumed the equality directory reserve");
+  mvd::Condition predicate;
+  predicate.column = 1;
+  predicate.op = mvd::CompareOp::Eq;
+  predicate.value.setInteger(1);
+  const auto *matching = table.equalityCandidates(predicate);
+  require(matching != nullptr && matching->size() == 1 &&
+              (*matching)[0].primary == 5999 &&
+              Access::retained(table) <= 1024 * 1024,
+          "code preparation disabled a selective equality directory");
+  std::cout << "PASS disk codes preserve equality directory budget\n";
+}
+
 void run(const mvd::fs::path &directory) {
   mvd::Table table(definition(), directory / "t1.dat");
   table.setCacheLimit(budget);
@@ -97,6 +126,42 @@ void run(const mvd::fs::path &directory) {
   }
   commit(table, directory, 1, std::move(changes));
   require(!table.fullyCached(), "fixture did not leave raw row cache");
+  // SQL-style admission must not prepare codes before the first exact scan.
+  // Partial/failed scans do not describe the entire committed table.
+  const std::vector<double> inside(128, 0), outside(128, 1000);
+  require(table.diskDistanceCodes(2, 128, inside) == nullptr &&
+              Access::disk(table) == 0, "cold probe eagerly prepared disk codes");
+  size_t scanned = 0;
+  require(!table.forEachDiskDistanceBase(2,
+      [&](int64_t, const std::vector<float> &, const std::vector<uint8_t> &) {
+        ++scanned;
+        return false;
+      }) && scanned == 1 && !Access::bounds(table, 2),
+      "partial scan published complete bounds");
+  bool raised = false;
+  try {
+    table.forEachDiskDistanceBase(2,
+        [](int64_t, const std::vector<float> &, const std::vector<uint8_t> &) -> bool {
+          throw std::runtime_error("scan callback failure");
+        });
+  } catch (const std::runtime_error &) { raised = true; }
+  require(raised && !Access::bounds(table, 2), "failed scan published bounds");
+  scanned = 0;
+  require(table.forEachDiskDistanceBase(2,
+      [&](int64_t, const std::vector<float> &, const std::vector<uint8_t> &) {
+        ++scanned;
+        return true;
+      }) && scanned == count && Access::bounds(table, 2),
+      "complete exact scan did not publish bounds");
+  for (int attempt = 0; attempt < 3; ++attempt) {
+    require(table.diskDistanceCodes(2, 128, outside) == nullptr &&
+                Access::disk(table) == 0 && Access::bounds(table, 2),
+            "out-of-range probe prepared codes or discarded reusable bounds");
+  }
+  require(table.diskDistanceCodes(2, 128, inside) != nullptr,
+          "in-range probe could not prepare after a rejected probe");
+  Access::clear(table);
+  require(!Access::bounds(table, 2), "cache clear retained old bounds");
   const auto *codes = table.diskDistanceCodes(2, 128);
   require(codes && codes->size() == count && codes->code_stride == 128,
           "disk cache was not prepared");
@@ -169,7 +234,8 @@ void run(const mvd::fs::path &directory) {
   table.setCacheLimit(budget);
   require(table.diskDistanceCodes(2, 128) != nullptr, "larger budget could not rebuild codes");
   commit(table, directory, 2, {{3, row(3, 9)}, {4, std::nullopt}, {600, row(600)}});
-  require(Access::disk(table) == 0, "commit left a stale disk matrix");
+  require(Access::disk(table) == 0 && !Access::bounds(table, 2),
+          "commit left stale disk codes or bounds");
   codes = table.diskDistanceCodes(2, 128);
   require(codes && codes->size() == count, "mutation rebuild lost rows");
   bool replacement_seen = false;
@@ -248,6 +314,7 @@ int main() {
       ));
   mvd::fs::create_directories(directory);
   try {
+    checkEqualityReserve(directory);
     run(directory);
     mvd::fs::remove_all(directory);
     return 0;

@@ -33,7 +33,7 @@ class ParallelScanWorker {
   }
 
   // false leaves both callables untouched: startup failed or a small scan
-  // should run serially while the worker is parked/warming. An accepted pair
+  // should run serially while the worker is cold/parked/warming. An accepted pair
   // invokes both exactly once. permit_parked=false uses this adaptive policy.
   // Await remote even if local throws. If both throw, local takes precedence.
   template <class First, class Second>
@@ -41,7 +41,8 @@ class ParallelScanWorker {
     bool recent=false;
     if (!permit_parked) {
       const auto now=std::chrono::steady_clock::now();
-      recent=now-last_small_submission_<std::chrono::microseconds(256);
+      recent=last_small_submission_!=std::chrono::steady_clock::time_point{} &&
+          now-last_small_submission_<std::chrono::microseconds(256);
       last_small_submission_=now;
       if (unprofitable_submissions_!=0) {
         --unprofitable_submissions_;
@@ -49,6 +50,8 @@ class ParallelScanWorker {
       }
     }
     if (!worker_.joinable()) {
+      // Small scans must establish a query burst before starting a worker.
+      if (!permit_parked && !recent) return false;
       try {
         worker_ = std::thread(&ParallelScanWorker::workerLoop, this);
       } catch (const std::system_error &) {
@@ -137,6 +140,8 @@ class ParallelScanWorker {
   }
 
  private:
+  friend struct ParallelScanWorkerTest;
+
   static void pause() noexcept {
 #if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__))
     __builtin_ia32_pause();

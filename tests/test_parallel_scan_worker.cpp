@@ -9,6 +9,18 @@
 #include <stdexcept>
 #include <type_traits>
 
+namespace mvd {
+struct ParallelScanWorkerTest {
+  static bool started(const ParallelScanWorker &worker) {
+    return worker.worker_.joinable();
+  }
+  static void make_last_small_submission_stale(ParallelScanWorker &worker) {
+    worker.last_small_submission_ =
+        std::chrono::steady_clock::now() - std::chrono::milliseconds(1);
+  }
+};
+}  // namespace mvd
+
 namespace allocation_probe {
 std::atomic<std::size_t> count{0};
 thread_local bool fail_next = false;
@@ -44,6 +56,34 @@ template <class First, class Second>
 void run(ParallelScanWorker &worker, First &&local, Second &&remote) {
   require(worker.run_pair(std::forward<First>(local), std::forward<Second>(remote)),
           "unexpected worker startup failure");
+}
+
+void cold_small_submissions_without_allocations() {
+  ParallelScanWorker worker;
+  int local = 0, remote = 0;
+  const auto submit_small = [&] {
+    return worker.run_pair([&] { ++local; }, [&] { ++remote; }, false);
+  };
+  const auto allocations = allocation_probe::count.load(std::memory_order_relaxed);
+  require(!submit_small(), "first cold small submission did not fall back");
+  require(local == 0 && remote == 0, "first cold small submission invoked a task");
+  require(!mvd::ParallelScanWorkerTest::started(worker),
+          "first cold small submission created a worker");
+  require(allocation_probe::count.load(std::memory_order_relaxed) == allocations,
+          "first cold small submission allocated");
+  for (int round = 0; round < 3; ++round) {
+    // Make the gap safely longer than 256us; scheduling delays only enlarge it.
+    mvd::ParallelScanWorkerTest::make_last_small_submission_stale(worker);
+    require(!submit_small(), "sparse small submission did not fall back");
+    require(!mvd::ParallelScanWorkerTest::started(worker),
+            "sparse small submission created a worker");
+  }
+  require(local == 0 && remote == 0, "sparse small submissions invoked a task");
+  require(allocation_probe::count.load(std::memory_order_relaxed) == allocations,
+          "sparse small submissions allocated");
+  run(worker, [&] { ++local; }, [&] { ++remote; });
+  require(mvd::ParallelScanWorkerTest::started(worker) && local == 1 && remote == 1,
+          "cold small submissions blocked normal startup or lost a task");
 }
 
 void startup_failure_and_retry() {
@@ -245,6 +285,7 @@ void idle_and_busy_destruction() {
 
 int main() {
   try {
+    cold_small_submissions_without_allocations();
     // Sleeping small scans invoke neither callable, then the same worker can
     // serve a later burst. Ordinary allowed submissions must still complete.
     {

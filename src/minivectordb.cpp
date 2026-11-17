@@ -2958,6 +2958,10 @@ class Table {
     mutable size_t code_stride = 0;
     mutable bool codes_blocked = false;
     mutable bool codes_attempted = false;
+    // Range preparation is useful even when a probe cannot use byte codes.
+    // Keep it with the immutable directory and its existing invalidation.
+    mutable double bounds_step = 0;
+    mutable double bounds_center = 0;
     // Equality directories borrow a contiguous range of the full directory's
     // codes. Both directories are invalidated together before any row changes.
     const IndexedRows *code_source = nullptr;
@@ -2984,6 +2988,8 @@ class Table {
       std::swap(code_stride, other.code_stride);
       std::swap(codes_blocked, other.codes_blocked);
       std::swap(codes_attempted, other.codes_attempted);
+      std::swap(bounds_step, other.bounds_step);
+      std::swap(bounds_center, other.bounds_center);
       std::swap(code_source, other.code_source);
       std::swap(code_first, other.code_first);
     }
@@ -3394,7 +3400,8 @@ class Table {
 
   const IndexedRows *quantizedDistanceRows(const IndexedRows &rows,
                                            size_t vector_column,
-                                           size_t dimension, bool blocked) {
+                                           size_t dimension, bool blocked,
+                                           std::span<const double> probe = {}) {
     if (!cache_enabled_ || dimension < 16 || dimension > 16384) {
       return nullptr;
     }
@@ -3406,7 +3413,7 @@ class Table {
       // Don't construct a full directory that cannot possibly have codes.
       // Large filtered subsets can still prepare their own bounded matrix.
       if (versions_.size() > maximum / (stride + sizeof(uint32_t))) {
-        return rows.size() >= 2048 && prepareQuantizedRows(rows, dimension, blocked)
+        return rows.size() >= 2048 && prepareQuantizedRows(rows, dimension, blocked, probe)
             ? &rows : nullptr;
       }
       try {
@@ -3421,17 +3428,18 @@ class Table {
         return nullptr;
       }
     }
-    if (prepareQuantizedRows(*source, dimension, blocked)) {
+    if (prepareQuantizedRows(*source, dimension, blocked, probe)) {
       return source;
     }
     return source != &rows && rows.size() >= 2048 &&
-            prepareQuantizedRows(rows, dimension, blocked)
+            prepareQuantizedRows(rows, dimension, blocked, probe)
         ? &rows : nullptr;
   }
 
   // Disk rows keep only bounded screening codes and their current offsets.
   // Original payloads remain authoritative and every survivor is reranked.
-  const IndexedRows *diskDistanceCodes(size_t vector_column, size_t dimension) {
+  const IndexedRows *diskDistanceCodes(size_t vector_column, size_t dimension,
+                                       std::span<const double> probe = {}) {
     if (cache_enabled_ || versions_.size() < 256 || dimension < 16 ||
         dimension > 16384) {
       return nullptr;
@@ -3443,27 +3451,37 @@ class Table {
     if (disk_distance_column_ == vector_column && disk_distance_attempted_) {
       return disk_distance_rows_.codes.empty() ? nullptr : &disk_distance_rows_;
     }
+    // A SQL query first performs its ordinary exact scan and records bounds.
+    // Do not add two full preparation reads to that first request. Direct
+    // preparation without a probe retains its eager, independently tested API.
+    const bool known_bounds = disk_bounds_column_ == vector_column;
+    if (!probe.empty() && !known_bounds) return nullptr;
+    const double saved_minimum = disk_bounds_minimum_;
+    const double saved_maximum = disk_bounds_maximum_;
     clearDiskDistanceCodes();
+    if (known_bounds) {
+      disk_bounds_column_ = vector_column;
+      disk_bounds_minimum_ = saved_minimum;
+      disk_bounds_maximum_ = saved_maximum;
+    }
     disk_distance_column_ = vector_column;
     disk_distance_attempted_ = true;
-    const size_t unused = cache_limit_bytes_ > cache_bytes_
-        ? cache_limit_bytes_ - cache_bytes_ : 0;
-    const size_t retained = equality_bytes_ + quantized_bytes_ +
-        cached_distance_rows_.capacity() * sizeof(IndexedRow);
-    constexpr size_t maximum = 64ULL * 1024ULL * 1024ULL;
-    const size_t available = std::min(maximum,
-        unused > retained ? unused - retained : 0);
+    const size_t available = diskCodeBudgetBytes();
     const size_t per_row = dimension + sizeof(uint32_t) + sizeof(IndexedRow);
     if (versions_.size() > available / per_row) {
       return nullptr;
     }
     try {
       IndexedRows staged;
-      staged.reserve(versions_.size());
       double minimum = std::numeric_limits<double>::infinity();
       double maximum_value = -std::numeric_limits<double>::infinity();
       bool finite = true;
-      forEachDiskDistanceBaseImpl(vector_column,
+      if (known_bounds) {
+        minimum = saved_minimum;
+        maximum_value = saved_maximum;
+      } else {
+        staged.reserve(versions_.size());
+        forEachDiskDistanceBaseImpl(vector_column,
           [&](int64_t primary, const std::vector<float> &vector,
               const std::vector<uint8_t> &) {
             for (float value : vector) {
@@ -3475,9 +3493,11 @@ class Table {
                               nullptr, nullptr});
             return true;
           });
+      }
       const double maximum_absolute = std::max(std::abs(minimum),
                                                std::abs(maximum_value));
-      if (!finite || maximum_absolute == 0 || staged.size() != versions_.size()) {
+      if (!finite || maximum_absolute == 0 ||
+          (!known_bounds && staged.size() != versions_.size())) {
         return nullptr;
       }
       int exponent = 0;
@@ -3495,6 +3515,23 @@ class Table {
         }
       }
       const double step = std::ldexp(1.0, exponent - 7);
+      if (!probe.empty() && !std::all_of(probe.begin(), probe.end(),
+          [&](double value) { return std::abs((value - center) / step) < 128; })) {
+        // A different later probe may use these bounds; this is not a failed
+        // allocation or an unusable table. Leave preparation retryable.
+        disk_distance_attempted_ = false;
+        return nullptr;
+      }
+      if (known_bounds) {
+        staged.reserve(versions_.size());
+        for (const auto &[offset, primary] : physicalOrder()) {
+          const auto found = versions_.find(primary);
+          if (found != versions_.end() && found->second.offset == offset) {
+            staged.push_back({primary, offset, nullptr, nullptr});
+          }
+        }
+        if (staged.size() != versions_.size()) return nullptr;
+      }
       staged.codes.resize(staged.size() * dimension);
       staged.code_norms.resize(staged.size());
       const size_t allocated = staged.capacity() * sizeof(IndexedRow) +
@@ -3607,9 +3644,19 @@ class Table {
   }
 
   bool prepareQuantizedRows(const IndexedRows &rows, size_t dimension,
-                            bool blocked = false) {
+                            bool blocked = false,
+                            std::span<const double> probe = {}) {
     if (rows.codes_attempted) {
       return !rows.codes.empty();
+    }
+    const auto accepts_probe = [&](double center, double step) {
+      return std::all_of(probe.begin(), probe.end(), [&](double value) {
+        return std::abs((value - center) / step) < 128;
+      });
+    };
+    if (rows.bounds_step > 0 &&
+        !accepts_probe(rows.bounds_center, rows.bounds_step)) {
+      return false;
     }
     rows.codes_attempted = true;
     if (!cache_enabled_ || rows.size() < 256 || dimension < 16 ||
@@ -3637,56 +3684,67 @@ class Table {
     if (stored_rows > available / (stride + sizeof(uint32_t))) {
       return false;
     }
-    for (const IndexedRow &row : rows) {
-      if (row.vector_data == nullptr) {
-        return false;
-      }
-    }
-    double minimum = std::numeric_limits<double>::infinity();
-    double maximum_value = -std::numeric_limits<double>::infinity();
 #if MVD_QUANTIZED_PREPARE_AVX2
     const bool vector_prepare = quantized_prepare::available();
-    if (vector_prepare) {
-      const auto extrema = quantized_prepare::bounds(rows, dimension);
-      minimum = extrema.first;
-      maximum_value = extrema.second;
-    } else
 #endif
-    {
+    double step = rows.bounds_step;
+    double center = rows.bounds_center;
+    if (step == 0) {
       for (const IndexedRow &row : rows) {
-        for (size_t axis = 0; axis < dimension; ++axis) {
-          const double value = row.vector_data[axis];
-          minimum = std::min(minimum, value);
-          maximum_value = std::max(maximum_value, value);
+        if (row.vector_data == nullptr) {
+          return false;
         }
       }
-    }
-    const double maximum_absolute = std::max(std::abs(minimum),
+      double minimum = std::numeric_limits<double>::infinity();
+      double maximum_value = -std::numeric_limits<double>::infinity();
+#if MVD_QUANTIZED_PREPARE_AVX2
+      if (vector_prepare) {
+        const auto extrema = quantized_prepare::bounds(rows, dimension);
+        minimum = extrema.first;
+        maximum_value = extrema.second;
+      } else
+#endif
+      {
+        for (const IndexedRow &row : rows) {
+          for (size_t axis = 0; axis < dimension; ++axis) {
+            const double value = row.vector_data[axis];
+            minimum = std::min(minimum, value);
+            maximum_value = std::max(maximum_value, value);
+          }
+        }
+      }
+      const double maximum_absolute = std::max(std::abs(minimum),
                                              std::abs(maximum_value));
-    if (maximum_absolute == 0) {
+      if (maximum_absolute == 0) {
+        return false;
+      }
+      int exponent;
+      std::frexp(maximum_absolute, &exponent);
+      // A common translation preserves L2. Use it only when it recovers at
+      // least one whole code bit; symmetric data keeps its existing encoding.
+      // Double holds the midpoint of finite binary32 extrema without overflow.
+      const double midpoint = (minimum + maximum_value) * 0.5;
+      const double radius = std::max(std::abs(minimum - midpoint),
+                                   std::abs(maximum_value - midpoint));
+      int centered_exponent = 0;
+      if (radius > 0) {
+        std::frexp(radius, &centered_exponent);
+        if (centered_exponent < exponent) {
+          center = midpoint;
+          exponent = centered_exponent;
+        }
+      }
+      // Power-of-two scaling is exact for all finite float32 inputs in double.
+      // Values fall strictly within (-128,128). Rounding plus clamping to127
+      // has an absolute error of at most one code unit per component.
+      step = std::ldexp(1.0, exponent - 7);
+      rows.bounds_step = step;
+      rows.bounds_center = center;
+    }
+    if (!accepts_probe(center, step)) {
+      rows.codes_attempted = false;
       return false;
     }
-    int exponent;
-    std::frexp(maximum_absolute, &exponent);
-    double center = 0;
-    // A common translation preserves L2. Use it only when it recovers at
-    // least one whole code bit; symmetric data keeps its existing encoding.
-    // Double holds the midpoint of finite binary32 extrema without overflow.
-    const double midpoint = (minimum + maximum_value) * 0.5;
-    const double radius = std::max(std::abs(minimum - midpoint),
-                                   std::abs(maximum_value - midpoint));
-    int centered_exponent = 0;
-    if (radius > 0) {
-      std::frexp(radius, &centered_exponent);
-      if (centered_exponent < exponent) {
-        center = midpoint;
-        exponent = centered_exponent;
-      }
-    }
-    // Power-of-two scaling is exact for all finite float32 inputs in double.
-    // Values fall strictly within (-128,128). Rounding plus clamping to127
-    // has an absolute error of at most one code unit per component.
-    const double step = std::ldexp(1.0, exponent - 7);
     std::vector<int8_t> codes;
     std::vector<uint32_t> norms;
     try {
@@ -4016,9 +4074,43 @@ class Table {
 
   template <typename Callback>
   bool forEachDiskDistanceBase(size_t vector_column,
-                               Callback &&callback) const {
-    return forEachDiskDistanceBaseImpl(
-        vector_column, std::forward<Callback>(callback));
+                               Callback &&callback) {
+    const size_t dimension = definition_.columns[vector_column].length;
+    const size_t per_row = dimension + sizeof(uint32_t) + sizeof(IndexedRow);
+    if (cache_enabled_ || disk_bounds_column_ == vector_column ||
+        versions_.size() < 256 || dimension < 16 || dimension > 16384 ||
+        versions_.size() > diskCodeBudgetBytes() / per_row || verifyCrcForScan()) {
+      return forEachDiskDistanceBaseImpl(
+          vector_column, std::forward<Callback>(callback));
+    }
+    double minimum = std::numeric_limits<double>::infinity();
+    double maximum = -std::numeric_limits<double>::infinity();
+    const bool scanned = forEachDiskDistanceBaseImpl(vector_column,
+        [&](int64_t primary, const std::vector<float> &vector,
+            const std::vector<uint8_t> &payload) {
+#if MVD_QUANTIZED_PREPARE_AVX2
+          if (quantized_prepare::available()) {
+            struct VectorRef { const float *vector_data; };
+            const auto bounds = quantized_prepare::bounds(
+                std::array<VectorRef, 1>{{{vector.data()}}}, dimension);
+            minimum = std::min(minimum, bounds.first);
+            maximum = std::max(maximum, bounds.second);
+          } else
+#endif
+          for (float value : vector) {
+            minimum = std::min(minimum, static_cast<double>(value));
+            maximum = std::max(maximum, static_cast<double>(value));
+          }
+          return callback(primary, vector, payload);
+        });
+    // Only complete base scans publish statistics; filtered, aborted or failed
+    // scans cannot describe the current committed table. Mutations clear them.
+    if (scanned && std::isfinite(minimum) && std::isfinite(maximum)) {
+      disk_bounds_column_ = vector_column;
+      disk_bounds_minimum_ = minimum;
+      disk_bounds_maximum_ = maximum;
+    }
+    return scanned;
   }
 
   template <typename Callback>
@@ -4323,6 +4415,9 @@ class Table {
   size_t disk_distance_column_ = std::numeric_limits<size_t>::max();
   bool disk_distance_attempted_ = false;
   size_t disk_distance_bytes_ = 0;
+  size_t disk_bounds_column_ = std::numeric_limits<size_t>::max();
+  double disk_bounds_minimum_ = 0;
+  double disk_bounds_maximum_ = 0;
   IndexedRows cached_distance_rows_;
   bool cached_distance_ready_ = false;
   std::unordered_map<int64_t, IndexedRows> integer_equality_index_;
@@ -4346,11 +4441,26 @@ class Table {
     return std::clamp(cache_limit_bytes_ / 16, minimum, maximum);
   }
 
+  size_t diskCodeBudgetBytes() const noexcept {
+    // Codes must not consume the last bytes needed for an equality directory.
+    // Small per-table budgets reserve at most one quarter for that directory.
+    const size_t equality_reserve = std::min(
+        equalityMetadataLimitBytes(), cache_limit_bytes_ / 4);
+    const size_t retained = std::max(equality_bytes_, equality_reserve) +
+        quantized_bytes_ + cached_distance_rows_.capacity() * sizeof(IndexedRow);
+    const size_t unused = cache_limit_bytes_ > cache_bytes_
+        ? cache_limit_bytes_ - cache_bytes_ : 0;
+    return std::min<size_t>(64ULL * 1024ULL * 1024ULL,
+        unused > retained ? unused - retained : 0);
+  }
+
   void clearDiskDistanceCodes() noexcept {
     IndexedRows{}.swap(disk_distance_rows_);
     disk_distance_column_ = std::numeric_limits<size_t>::max();
     disk_distance_attempted_ = false;
     disk_distance_bytes_ = 0;
+    disk_bounds_column_ = std::numeric_limits<size_t>::max();
+    disk_bounds_minimum_ = disk_bounds_maximum_ = 0;
   }
 
   void clearEqualityIndex(bool preserve_distance = false) noexcept {
@@ -5549,7 +5659,7 @@ class Database {
         }
         if (disk_codes_worthwhile && __builtin_cpu_supports("avx2")) {
           const Table::IndexedRows *codes = table.diskDistanceCodes(
-              distance_spec.column, prepared_probe.size());
+              distance_spec.column, prepared_probe.size(), prepared_probe);
           if (codes != nullptr) {
             const double scale = 1.0 / codes->code_step;
             bool encoded = std::all_of(prepared_probe.begin(), prepared_probe.end(),
@@ -5872,7 +5982,7 @@ class Database {
           code_rows = table.quantizedDistanceRows(*cached_candidates,
               distance_spec.column, prepared_probe.size(),
               block_kernel != nullptr && prepared_probe.size() >= 64 &&
-                  table.rowCount() >= 2048);
+                  table.rowCount() >= 2048, prepared_probe);
         }
         size_t code_first = 0;
         int64_t query_correction = 0;
