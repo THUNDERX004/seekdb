@@ -41,14 +41,14 @@ extern "C" int __wrap_posix_fadvise(int descriptor, off_t begin,
   const bool valid = fstat(descriptor, &file) == 0;
   audit::invalid |= !valid || file.st_ino != audit::inode ||
       advice != POSIX_FADV_DONTNEED || audit::page <= 0 || begin < 0 ||
-      length <= 0 || length > 4 * 1024 * 1024 ||
-      static_cast<uint64_t>(begin) != audit::released;
+      length <= 0 || begin != 0 ||
+      static_cast<uint64_t>(length) <= audit::released;
   if (valid && audit::page > 0 && begin >= 0 && length > 0) {
     audit::invalid |= begin % audit::page != 0 || length % audit::page != 0 ||
         static_cast<uint64_t>(begin + length) > audit::readable ||
         begin + length > file.st_size;
   }
-  if (audit::error == 0) audit::released += static_cast<uint64_t>(length);
+  if (audit::error == 0) audit::released = static_cast<uint64_t>(length);
   errno = EBUSY;
   return audit::error;
 }
@@ -87,11 +87,12 @@ void checkReader(const mvd::fs::path &root) {
   const auto path = root / "reader.dat";
   const std::string expected(12 * 1024 * 1024 + 8193, 'x');
   { std::ofstream file(path, std::ios::binary); file << expected; }
-  for (int mode = 0; mode != 5; ++mode) {
+  for (int mode = 0; mode != 6; ++mode) {
     start(path);
     if (mode == 2) audit::error = ENOSYS;
     if (mode == 3) audit::page = 0;
     if (mode == 4) audit::page = 65537;
+    if (mode == 5) audit::page = 65536;
     {
       mvd::TableLoadReader reader(path, mode != 1);
       require(static_cast<bool>(reader), "cannot open reader");
@@ -108,14 +109,24 @@ void checkReader(const mvd::fs::path &root) {
         errno = audit::preserved_errno;
         reader.releaseConsumed(consumed);
         require(errno == audit::preserved_errno, "advice changed errno");
+        if (mode == 0 || mode == 5) {
+          // Small rows must not accumulate several MiB of duplicate file pages
+          // before any hint. This budget is independent of the chosen batch.
+          require(consumed - audit::released <= 1024 * 1024,
+                  "recovery retained an excessive consumed-page window");
+        }
       }
       errno = audit::preserved_errno;
       reader.releaseConsumed(consumed, true);
       require(errno == audit::preserved_errno, "final advice changed errno");
+      const size_t calls = audit::calls;
+      reader.releaseConsumed(consumed, true);
+      require(audit::calls == calls && errno == audit::preserved_errno,
+              "repeated finalization retried advice or changed errno");
       require(!reader.read(buffer.data(), 1), "reader did not detect EOF");
     }
     stop();
-    if (mode == 0) {
+    if (mode == 0 || mode == 5) {
       require(audit::calls > 1 && audit::released ==
                   expected.size() / audit::page * audit::page,
               "reader did not release exactly the consumed complete pages");

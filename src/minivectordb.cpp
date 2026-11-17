@@ -2562,22 +2562,20 @@ class TableLoadReader {
       return;
     }
     const uint64_t end = consumed - consumed % page_size_;
-    // Large readahead folios cannot be evicted by a hint covering only a
-    // fraction of them. Batch consumed pages while keeping a bounded window.
-    constexpr uint64_t maximum_chunk = 4ULL * 1024ULL * 1024ULL;
+    // Include the consumed prefix so a readahead folio crossing an earlier
+    // hint boundary can be released once it is wholly consumed. A small window
+    // bounds the duplicate file cache while decoded rows accumulate in memory.
+    constexpr uint64_t maximum_chunk = 256ULL * 1024ULL;
     const uint64_t chunk = maximum_chunk - maximum_chunk % page_size_;
-    if (!finished && end - released_ < chunk) return;
+    if (end <= released_ || (!finished && end - released_ < chunk)) return;
     const int saved_errno = errno;
-    while (released_ < end) {
-      const uint64_t length = std::min(chunk, end - released_);
-      // These are already-consumed read-only pages. No write or durability
-      // barrier belongs here; the existing CRC and recovery rules still run.
-      if (posix_fadvise(descriptor_, static_cast<off_t>(released_),
-                        static_cast<off_t>(length), POSIX_FADV_DONTNEED) != 0) {
-        descriptor_ = -1;
-        break;
-      }
-      released_ += length;
+    // These are already-consumed read-only pages; no write or durability
+    // barrier belongs here. Unsupported advice only disables this hint.
+    if (posix_fadvise(descriptor_, 0, static_cast<off_t>(end),
+                      POSIX_FADV_DONTNEED) != 0) {
+      descriptor_ = -1;
+    } else {
+      released_ = end;
     }
     errno = saved_errno;
 #else
