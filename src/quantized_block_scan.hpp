@@ -402,6 +402,57 @@ inline std::uint64_t mask64_vnni512(
   return mask0 | (mask1 << 16) | (mask2 << 32) | (mask3 << 48);
 }
 
+// Fixed common widths let the compiler schedule the independent row blocks
+// without a loop branch or runtime stride arithmetic. All scores stay int32.
+template <std::size_t Dimension>
+__attribute__((target("avx512f,avx512bw,avx512vnni")))
+inline std::uint64_t mask64_vnni512_fixed(
+    const std::uint8_t *packed, const std::int8_t *query,
+    std::size_t runtime_dimension, const void *row_norms,
+    std::int64_t correction, std::uint32_t above) noexcept {
+  static_assert(Dimension == 64 || Dimension == 128);
+  (void)runtime_dimension;
+  constexpr std::size_t padded_dimension = Dimension;
+  assert(runtime_dimension == Dimension);
+  assert(valid_padded_dimension(padded_dimension));
+  assert(packed != nullptr && query != nullptr && row_norms != nullptr);
+  const std::size_t stride = packed_bytes(padded_dimension);
+  __m512i dot0 = _mm512_setzero_si512();
+  __m512i dot1 = _mm512_setzero_si512();
+  __m512i dot2 = _mm512_setzero_si512();
+  __m512i dot3 = _mm512_setzero_si512();
+  // Reuse each query broadcast for four blocks. These four independent
+  // accumulators hide dpbusd latency without horizontal row reductions.
+#pragma GCC unroll 32
+  for (std::size_t axis = 0; axis < padded_dimension; axis += 4) {
+    std::int32_t word = 0;
+    std::memcpy(&word, query + axis, sizeof(word));
+    const __m512i q = _mm512_set1_epi32(word);
+    const auto *group = packed + axis * kBlockRows;
+    dot0 = _mm512_dpbusd_epi32(dot0, _mm512_loadu_si512(group), q);
+    dot1 = _mm512_dpbusd_epi32(dot1, _mm512_loadu_si512(group + stride), q);
+    dot2 = _mm512_dpbusd_epi32(dot2, _mm512_loadu_si512(group + 2 * stride), q);
+    dot3 = _mm512_dpbusd_epi32(dot3, _mm512_loadu_si512(group + 3 * stride), q);
+  }
+  const auto *norm_bytes = static_cast<const std::uint8_t *>(row_norms);
+  const __m512i adjustment =
+      _mm512_set1_epi32(static_cast<std::int32_t>(correction));
+  const __m512i boundary = _mm512_set1_epi32(static_cast<std::int32_t>(above));
+  const __m512i base0 = _mm512_add_epi32(_mm512_loadu_si512(norm_bytes), adjustment);
+  const __m512i base1 = _mm512_add_epi32(_mm512_loadu_si512(norm_bytes + 64), adjustment);
+  const __m512i base2 = _mm512_add_epi32(_mm512_loadu_si512(norm_bytes + 128), adjustment);
+  const __m512i base3 = _mm512_add_epi32(_mm512_loadu_si512(norm_bytes + 192), adjustment);
+  const std::uint64_t mask0 = _mm512_cmple_epu32_mask(
+      _mm512_sub_epi32(base0, _mm512_add_epi32(dot0, dot0)), boundary);
+  const std::uint64_t mask1 = _mm512_cmple_epu32_mask(
+      _mm512_sub_epi32(base1, _mm512_add_epi32(dot1, dot1)), boundary);
+  const std::uint64_t mask2 = _mm512_cmple_epu32_mask(
+      _mm512_sub_epi32(base2, _mm512_add_epi32(dot2, dot2)), boundary);
+  const std::uint64_t mask3 = _mm512_cmple_epu32_mask(
+      _mm512_sub_epi32(base3, _mm512_add_epi32(dot3, dot3)), boundary);
+  return mask0 | (mask1 << 16) | (mask2 << 32) | (mask3 << 48);
+}
+
 #endif
 
 }  // namespace detail
@@ -463,10 +514,15 @@ inline MaskKernel mask_kernel_for(KernelKind kind) noexcept {
   return nullptr;
 }
 
-inline MaskKernel mask64_kernel_for(KernelKind kind) noexcept {
+// A nonzero dimension is the caller's unpadded vector width. Only exact
+// matches specialize; the selected kernel must receive its padded width.
+inline MaskKernel mask64_kernel_for(KernelKind kind, std::size_t dimension = 0) noexcept {
+  (void)dimension;
   if (kind == KernelKind::scalar) return &mask64_scalar;
 #if MVD_QUANTIZED_BLOCK_X86_TARGETS
   if (kind == KernelKind::vnni512 && cpu_features().vnni512) {
+    if (dimension == 64) return &detail::mask64_vnni512_fixed<64>;
+    if (dimension == 128) return &detail::mask64_vnni512_fixed<128>;
     return &detail::mask64_vnni512;
   }
 #endif

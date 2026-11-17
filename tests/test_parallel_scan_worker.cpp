@@ -245,6 +245,60 @@ void idle_and_busy_destruction() {
 
 int main() {
   try {
+    // Sleeping small scans invoke neither callable, then the same worker can
+    // serve a later burst. Ordinary allowed submissions must still complete.
+    {
+      mvd::ParallelScanWorker worker;
+      int local=0,remote=0;
+      require(!worker.run_pair([&]{++local;},[&]{++remote;},false),
+              "cold small scan did not fall back");
+      require(local==0 && remote==0,"cold fallback invoked a callable");
+      for(int i=0;i<32;++i) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        const int before_local=local,before_remote=remote;
+        const bool ran=worker.run_pair([&]{++local;},[&]{++remote;},false);
+        require(local==before_local+int(ran) && remote==before_remote+int(ran),
+                "parked fallback invoked only part of a pair");
+        bool completed=false;
+        for(int retry=0;retry<1000 && !completed;++retry) {
+          completed=worker.run_pair([&]{++local;},[&]{++remote;});
+          if(!completed) std::this_thread::yield();
+        }
+        require(completed && local==remote,"rearmed worker lost a task");
+      }
+    }
+    // Destroy after rearming, and race short admissions against parking.
+    // Only an accepted pair may touch either task's borrowed state.
+    for (int round=0;round<64;++round) {
+      mvd::ParallelScanWorker worker;
+      int local=0,remote=0;
+      require(!worker.run_pair([&]{++local;},[&]{++remote;},false),
+              "cold admission should fall back");
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      for(int attempt=0;attempt<8;++attempt) {
+        const int before_local=local,before_remote=remote;
+        const bool ran=worker.run_pair([&]{++local;},[&]{++remote;},false);
+        require(local==before_local+int(ran) && remote==before_remote+int(ran),
+                "adaptive admission partially published a task");
+        if(attempt%2) std::this_thread::sleep_for(std::chrono::microseconds(120));
+      }
+    }
+    {
+      mvd::ParallelScanWorker worker;
+      bool accepted=false;
+      for(int attempt=0;attempt<10000 && !accepted;++attempt) {
+        accepted=worker.run_pair([]{},[]{
+          std::this_thread::sleep_for(std::chrono::milliseconds(8));
+        },false);
+        if(!accepted) std::this_thread::yield();
+      }
+      require(accepted,"could not establish a measured task pair");
+      int local=0,remote=0;
+      require(!worker.run_pair([&]{++local;},[&]{++remote;},false) && local==0 && remote==0,
+              "costly small handoff did not leave later tasks untouched");
+      run(worker,[&]{++local;},[&]{++remote;});
+      require(local==1 && remote==1,"small-scan cooldown blocked a large task");
+    }
     startup_failure_and_retry();
     repeated_same_worker_without_allocations();
     exceptions_and_reuse();

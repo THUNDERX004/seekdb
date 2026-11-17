@@ -49,8 +49,10 @@ def main():
               "test_selection_retention.py", "test_large_results.py",
               "test_json_protocol.py", "test_official_json_public.py",
               "test_primary_ranges.py", "test_cached_topk.py",
-              "test_string_fast_paths.py", "test_quantized_screen.py",
-              "test_topk_output.py", "test_request_insert_paths.py")
+              "test_string_fast_paths.py", "test_quantized_screen.py", "test_seed_topk.py", "test_adaptive_topk.py",
+              "test_topk_output.py", "test_request_insert_paths.py", "test_insert_bindings.py",
+              "test_disk_quantized_screen.py", "test_disk_filter_screen.py",
+              "test_large_quantized_budget.py")
     commands = []
     for label in ("normal", "scalar"):
         commands.extend((f"{label}/{suite}",

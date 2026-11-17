@@ -17,6 +17,9 @@ from jsonl_client import same_json
 from test_json_protocol import ExecutableCase, sql_string
 
 
+ASCII_RUN_LENGTHS = (0, 7, 8, 31, 32, 33, 4096)
+
+
 def json_string(text):
     return json.dumps(text, ensure_ascii=False).encode("utf-8")
 
@@ -154,6 +157,114 @@ class StringFastPaths(ExecutableCase):
         self.assertTrue(same_json(response.get("id"), value))
         self.affected(response, 1)
         self.assert_contents(client, [[1, value]])
+        client.shutdown()
+
+    def test_json_escape_then_ascii_runs_preserve_decoded_suffixes(self):
+        client = self.client()
+        self.create(client)
+        suffixes = [
+            ("quote", br'\"', '"'),
+            # JSON decodes two SQL backslashes; SQL stores one backslash.
+            ("backslash", br"\\\\", "\\"),
+            ("slash", br"\/", "/"),
+            ("controls", br"\b\f\n\r\t\u0000\u001f", "\b\f\n\r\t\x00\x1f"),
+            ("unicode", br"\u00e9\u4e2d\ud83c\udf0a", "é中🌊"),
+            ("raw-utf8", b"\xc3\xa9\xe4\xb8\xad\xf0\x9f\x8c\x8a", "é中🌊"),
+            ("mixed", br"\u00e9" + b"\xf0\x9f\x8c\x8a" + br"\u4e2d", "é🌊中"),
+        ]
+        wanted = []
+        for length in ASCII_RUN_LENGTHS:
+            run = ("Ab09_ " * (length // 6 + 1))[:length]
+            for label, encoded, decoded in suffixes:
+                with self.subTest(length=length, suffix=label):
+                    index = len(wanted)
+                    # Escape the opening SQL quote before the long ASCII run.
+                    sql = (f"INSERT INTO strings VALUES({index},".encode("ascii")
+                           + br"\u0027" + run.encode("ascii") + encoded
+                           + b"tail" + br"\u0027)")
+                    # Another resumed run ends exactly at the JSON closing quote.
+                    sql += b" --" + br"\u0020" + run.encode("ascii")
+                    ident = f"{length}:{label}"
+                    payload = (b'{"id":' + json_string(ident)
+                               + b',"op":"execute","sql":"' + sql + b'"}')
+                    response = self.raw(client, payload)
+                    self.assertTrue(same_json(response.get("id"), ident))
+                    self.affected(response, 1)
+                    wanted.append([index, run + decoded + "tail"])
+        self.assert_contents(client, wanted)
+        client.shutdown()
+
+    def test_json_slow_runs_accept_double_quoted_vectors(self):
+        client = self.client()
+        self.success(client.execute(
+            "CREATE TABLE vectors(id BIGINT PRIMARY KEY,v VECTOR(4))"
+        ))
+        index = 0
+        for length in ASCII_RUN_LENGTHS:
+            vector = "[" + " " * length + "-0.,+1.25,3E+2,0.125]"
+            for unicode_quotes in (False, True):
+                with self.subTest(length=length, unicode_quotes=unicode_quotes):
+                    sql = json_string(f'INSERT INTO vectors VALUES({index},"{vector}")')
+                    if unicode_quotes:
+                        sql = sql.replace(br'\"', br"\u0022")
+                    payload = (b'{"id":' + str(index).encode("ascii")
+                               + b',"op":"execute","sql":' + sql + b"}")
+                    response = self.raw(client, payload)
+                    self.assertTrue(same_json(response.get("id"), index))
+                    self.affected(response, 1)
+                    response = self.success(client.execute(
+                        f"SELECT v FROM vectors WHERE id={index}"
+                    ))
+                    self.assertEqual(response.get("columns"), ["v"])
+                    self.assertEqual(len(response["rows"]), 1)
+                    actual = response["rows"][0][0]
+                    self.assertIs(type(actual), list)
+                    self.assertEqual(len(actual), 4)
+                    for component, expected in zip(actual, [0, 1.25, 300, 0.125]):
+                        self.numeric(component, expected)
+                    index += 1
+        client.shutdown()
+
+    def test_json_slow_runs_preserve_metadata_error_precedence_and_recover(self):
+        client = self.client()
+        self.create(client)
+        self.affected(client.execute("INSERT INTO strings VALUES(0,'keep')"), 1)
+        base = (b'{"id":7,"op":"execute","sql":'
+                + json_string("INSERT INTO strings VALUES(1,'would-leak')")
+                + b',"metadata":"' + br"\u00e9")
+        # Keep malformed UTF-8 as literal bytes, never Unicode-encode fixtures.
+        # Metadata has no SQL string validation that could mask a JSON regression.
+        cases = [
+            ("escaped-then-raw-leading", b"\x80" + b'"}',
+             "INVALID_UTF8", "invalid UTF-8 leading byte"),
+            ("raw-then-escaped-continuation", b"\xc2" + br"\u0080" + b'"}',
+             "INVALID_UTF8", "invalid UTF-8 continuation byte"),
+            ("raw-truncated-at-quote", b"\xe2\x82" + b'"}',
+             "INVALID_UTF8", "truncated UTF-8 sequence"),
+            ("raw-before-bad-escape", b"\x80" + br"\x" + b'"}',
+             "INVALID_REQUEST", "invalid JSON escape"),
+            ("raw-before-eof", b"\x80",
+             "INVALID_REQUEST", "unterminated JSON string"),
+            ("ascii-run-before-eof", b"",
+             "INVALID_REQUEST", "unterminated JSON string"),
+            ("truncated-escape", b"\\",
+             "INVALID_REQUEST", "truncated JSON escape"),
+            ("truncated-surrogate", br"\ud800\udc0",
+             "INVALID_REQUEST", "truncated Unicode escape"),
+            ("invalid-surrogate", br"\ud800\u0041" + b'"}',
+             "INVALID_REQUEST", "invalid low Unicode surrogate"),
+        ]
+        for length in ASCII_RUN_LENGTHS:
+            for label, suffix, code, message in cases:
+                with self.subTest(length=length, suffix=label):
+                    response = self.raw(client, base + b"a" * length + suffix)
+                    self.failure(response)
+                    self.assertTrue(same_json(response.get("id"), 7))
+                    self.assertEqual(response["error"], {"code": code, "message": message})
+                    self.assert_contents(client, [[0, "keep"]])
+        # A successful write to the same primary key proves full session recovery.
+        self.affected(client.execute("INSERT INTO strings VALUES(1,'recovered')"), 1)
+        self.assert_contents(client, [[0, "keep"], [1, "recovered"]])
         client.shutdown()
 
     def test_json_duplicate_decoded_keys_are_rejected_before_execution(self):

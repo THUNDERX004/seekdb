@@ -287,16 +287,24 @@ void correctness(std::array<Entry, 5> &entries) {
 }
 
 // Exercise the wide mask directly: the score kernels above cover one block,
-// while the scan hot path consumes four distinct blocks and eight dot chains.
+// while the scan hot path consumes four distinct blocks and four dot chains.
 void check_mask64() {
-  const std::array<qb::MaskKernel, 2> entries{{
-      qb::mask64_kernel_for(qb::KernelKind::scalar),
-      qb::mask64_kernel_for(qb::KernelKind::vnni512)}};
   std::mt19937 random(0x8ACC0064U);
   std::size_t masks = 0;
   for (const std::size_t dimension : {16U, 17U, 20U, 24U, 28U, 31U, 32U,
-                                      127U, 128U, 129U, 512U, 16384U}) {
+                                      63U, 64U, 65U, 127U, 128U, 129U, 512U, 16384U}) {
     const std::size_t padded = qb::padded_dimension(dimension);
+    const auto generic = qb::mask64_kernel_for(qb::KernelKind::vnni512);
+    const auto selected = qb::mask64_kernel_for(qb::KernelKind::vnni512, dimension);
+    const std::array<qb::MaskKernel, 3> entries{{
+        qb::mask64_kernel_for(qb::KernelKind::scalar), generic, selected}};
+    if (dimension == 64 || dimension == 128) {
+      require((generic == nullptr && selected == nullptr) ||
+                  (generic != nullptr && selected != nullptr && selected != generic),
+              "common dimension did not select a CPU-gated fixed kernel");
+    } else {
+      require(selected == generic, "other dimension did not retain generic kernel");
+    }
     for (unsigned pattern = 0; pattern < 3; ++pattern) {
       GuardedBytes packed(64 * padded, (dimension + pattern) % 64);
       GuardedBytes query_bytes(padded, 3);

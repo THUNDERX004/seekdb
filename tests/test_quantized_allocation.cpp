@@ -271,6 +271,104 @@ void checkResidualFixtures(bool blocked) {
   std::cout << "PASS independent quantized residual bounds blocked=" << blocked << '\n';
 }
 
+void checkLargeCodeBudget() {
+  // A shared immutable vector keeps the fixture small. The code matrix alone
+  // crosses 16 MiB, just as a fully cached larger table's directory does.
+  constexpr size_t large_dimension = 8193;
+  constexpr size_t large_rows = 2049;
+  constexpr size_t mib = 1024 * 1024;
+  std::vector<float> vector(large_dimension);
+  for (size_t axis = 0; axis < large_dimension; ++axis) {
+    vector[axis] = static_cast<float>(int(axis % 127) - 63) / 64;
+  }
+  const auto fixture = [&] {
+    mvd::Table::IndexedRows rows;
+    rows.reserve(large_rows);
+    for (size_t row = 0; row < large_rows; ++row) {
+      rows.push_back({static_cast<int64_t>(row), row, nullptr, vector.data()});
+    }
+    return rows;
+  };
+  const auto definition = [] {
+    auto value = fixtureDefinition();
+    value.columns[1].length = large_dimension;
+    return value;
+  };
+  // Preserve the old bounded behavior when the table has a smaller budget.
+  {
+    mvd::Table table(definition(), "unused-large-code-budget.dat");
+    table.setCacheLimit(64 * mib);
+    auto rows = fixture();
+    allocation_calls = 0;
+    require(!table.prepareQuantizedRows(rows, large_dimension, true),
+            "small budget admitted a code matrix above its allowance");
+    require(allocation_calls == 0, "oversized matrix allocated before budget check");
+    checkUnpublished(rows);
+  }
+  // Optional allocation failures above the former ceiling must still leave
+  // the borrowed row directory intact and fall back to the exact scan.
+  for (long long fail_after : {0LL, 1LL}) {
+    mvd::Table table(definition(), "unused-large-code-budget.dat");
+    table.setCacheLimit(96 * mib);
+    auto rows = fixture();
+    const auto *directory = rows.data();
+    allocation_calls = 0;
+    allocation_injected = false;
+    allocation_budget = fail_after;
+    const bool ready = table.prepareQuantizedRows(rows, large_dimension, true);
+    allocation_budget = -1;
+    require(!ready && allocation_injected &&
+                allocation_calls == static_cast<size_t>(fail_after + 1),
+            "large optional allocation did not fall back cleanly");
+    checkUnpublished(rows);
+    require(rows.data() == directory && rows.size() == large_rows &&
+                rows[large_rows - 1].vector_data == vector.data(),
+            "large allocation failure invalidated a borrowed row");
+  }
+  for (bool blocked : {false, true}) {
+    mvd::Table table(definition(), "unused-large-code-budget.dat");
+    table.setCacheLimit(96 * mib);
+    auto rows = fixture();
+    const auto *directory = rows.data();
+    require(table.prepareQuantizedRows(rows, large_dimension, blocked),
+            "larger cache budget still rejected a matrix above 16 MiB");
+    require(rows.codes.size() + rows.code_norms.size() * sizeof(uint32_t) > 16 * mib &&
+                rows.codes.capacity() + rows.code_norms.capacity() * sizeof(uint32_t) <= 24 * mib,
+            "large matrix did not stay within its assigned allowance");
+    require(rows.data() == directory && rows.size() == large_rows &&
+                rows[large_rows - 1].vector_data == vector.data(),
+            "large code preparation invalidated a borrowed row");
+    const auto *codes = rows.codes.data();
+    const auto *norms = rows.code_norms.data();
+    allocation_calls = 0;
+    require(table.prepareQuantizedRows(rows, large_dimension, blocked) &&
+                allocation_calls == 0 && rows.codes.data() == codes &&
+                rows.code_norms.data() == norms,
+            "large published code matrix was not reused");
+    double error = 0;
+    uint32_t norm = 0;
+    for (size_t axis = 0; axis < large_dimension; ++axis) {
+      const int code = blocked
+          ? static_cast<int>(static_cast<uint8_t>(codes[(axis / 4) * 64 + axis % 4])) - 128
+          : static_cast<int>(codes[axis]);
+      const double residual = (static_cast<double>(vector[axis]) - rows.code_center) /
+          rows.code_step - code;
+      error += residual * residual;
+      norm += static_cast<uint32_t>(code * code);
+    }
+    require(norm == norms[0] && norm == norms[large_rows - 1] &&
+                rows.code_error >= std::sqrt(error),
+            "large matrix norm/residual metadata differs from the vector");
+    if (blocked) {
+      const size_t stride = mvd::quantized_block::padded_dimension(large_dimension);
+      require(rows.code_stride == stride && rows.code_norms.size() == 2064 &&
+                  norms[large_rows] == 0,
+              "large blocked matrix lost tail padding");
+    }
+  }
+  std::cout << "PASS adaptive large code budget, allocation fallback and reuse\n";
+}
+
 void checkPaddingBudget() {
   mvd::Table table(fixtureDefinition(), "unused-quantized-allocation.dat");
   table.setCacheLimit(6000);  // 5397 row-major bytes fit; 6528 padded bytes do not.
@@ -620,6 +718,7 @@ int main() {
       checkSharedDirectoryFailure(blocked);
       checkPreservedFullDirectory(blocked);
     }
+    checkLargeCodeBudget();
     checkPaddingBudget();
     checkPredicateMaskFailure();
     return 0;

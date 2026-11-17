@@ -222,8 +222,18 @@ void checkNative(const Fixture &fixture, double scale, const std::string &name,
   requirePrepare(std::bit_cast<uint64_t>(maximum) ==
                      std::bit_cast<uint64_t>(referenceMaximum(fixture.rows, fixture.dimension)),
                  name + ": maximum absolute value is not exact (including +0)");
+  using Encode = double (*)(const Rows &, size_t, double, size_t, bool,
+                            int8_t *, uint32_t *, double) noexcept;
+  struct Variant { const char *name; Encode encode; };
+  const Variant variants[] = {
+      {"AVX2", &mvd::quantized_prepare::encode_avx2<Rows>},
+      {"dispatch", &mvd::quantized_prepare::encode<Rows>},
+      {"AVX512", mvd::quantized_prepare::avx512_available()
+          ? &mvd::quantized_prepare::encode_avx512<Rows> : nullptr}};
+  for (const auto &variant : variants) {
+    if (variant.encode == nullptr) continue;
   for (bool blocked : {false, true}) {
-    const std::string label = describe(fixture, name, blocked);
+    const std::string label = describe(fixture, name + " " + variant.name, blocked);
     // Extra row-major padding also checks that the encoder respects stride.
     const size_t stride = blocked ? (fixture.dimension + 3) / 4 * 4
                                   : fixture.dimension + 3;
@@ -245,7 +255,7 @@ void checkNative(const Fixture &fixture, double scale, const std::string &name,
         bytes[code_prefix + offset] = static_cast<uint8_t>(expected.codes[offset] ^ 0xffU);
       }
     }
-    const double squared_error = mvd::quantized_prepare::encode(
+    const double squared_error = variant.encode(
         fixture.rows, fixture.dimension, scale, stride, blocked,
         reinterpret_cast<int8_t *>(bytes.data() + code_prefix), norms.data() + norm_prefix,
         center);
@@ -280,6 +290,7 @@ void checkNative(const Fixture &fixture, double scale, const std::string &name,
     requirePrepare(std::abs(static_cast<long double>(squared_error) -
                             expected.maximum_rounded_squared_error) <= allowance,
                    label + ": raw residual differs from the long-double oracle");
+  }
   }
   fixture.checkGuards(name);
 #else
@@ -630,6 +641,9 @@ int main() {
   try {
 #if MVD_QUANTIZED_PREPARE_AVX2
     __builtin_cpu_init();
+    std::cout << (mvd::quantized_prepare::avx512_available()
+        ? "Direct AVX512 encoder enabled\n"
+        : "SKIP direct AVX512 encoder: CPU/OS state unavailable\n");
 #endif
     const bool native = mvd::quantized_prepare::available();
     if (!native) {
@@ -638,8 +652,9 @@ int main() {
     constexpr std::array<size_t, 4> counts{{1, 15, 16, 17}};
     if (native) {
       checkMaximumLanes();
-      constexpr std::array<size_t, 17> dimensions{{
-          16, 17, 19, 31, 33, 63, 65, 127, 129, 255, 257, 1023, 1025, 4095, 4097, 16383, 16384}};
+      constexpr std::array<size_t, 22> dimensions{{
+          7, 8, 9, 16, 17, 19, 31, 33, 63, 64, 65, 127, 128, 129, 255, 257,
+          1023, 1025, 4095, 4097, 16383, 16384}};
       for (size_t dimension : dimensions) {
         for (size_t count : counts) {
           for (Pattern pattern : {Pattern::RandomBits, Pattern::Subnormal, Pattern::Extremes}) {

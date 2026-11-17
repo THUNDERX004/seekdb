@@ -374,6 +374,57 @@ void checkStatementOwnership() {
               "direct/quoted/escaped INSERT vector bits changed");
   }
 }
+
+void checkUnquotedArrays() {
+  mvd::TableDef table;
+  table.name = "t";
+  table.columns = {{"id", mvd::ColumnType::BigInt, 0},
+                   {"v", mvd::ColumnType::Vector, 4}};
+  table.vector_column = 1;
+  const std::unordered_map<std::string, const mvd::TableDef *> tables{{"t", &table}};
+  // The lexer must retain SQL comment semantics, including comments made only
+  // of punctuation and comments straddling a SIMD block boundary.
+  std::vector<std::string> arrays{
+      "[+1., -0, 3e-2,4]", "[1,/* ] ' [ */2,3,4]",
+      "[1,# ] ' [\n2,3,4]", "[1,-- ] ' [\n2,3,4]",
+      "[1,--\n2,3,4]", "[1,2,3,4--\n]"};
+  for (size_t offset = 0; offset < 65; ++offset)
+    arrays.push_back("[" + std::string(offset, ' ') + "1,--\n2,3,4]");
+  for (const auto &array : arrays) {
+    const std::string sql = "INSERT INTO t VALUES(1," + array + "),(2,[5,6,7,8])";
+    mvd::Parser parser(sql, tables);
+    const auto parsed = std::get<mvd::InsertStatement>(parser.parse());
+    require(parsed.rows.size() == 2 && parsed.rows[0][1].vector().size() == 4 &&
+                parsed.rows[1][1].vector() == std::vector<float>({5,6,7,8}),
+            "unquoted vector swallowed tuple delimiters or lost comment semantics");
+    const std::vector<float> expected = array == arrays.front()
+        ? std::vector<float>{1, -0.0f, 0.03f, 4} : std::vector<float>{1,2,3,4};
+    for (size_t i = 0; i < expected.size(); ++i)
+      require(std::bit_cast<uint32_t>(parsed.rows[0][1].vector()[i]) ==
+                  std::bit_cast<uint32_t>(expected[i]), "unquoted vector bits changed");
+  }
+  for (const std::string array : {"[1,2,3]", "[1,,3,4]", "[1e+,2,3,4]",
+           "[1,2,3,4", "[1,2,3,4;]", "[1,2,[3],4]", "[1,2,'3',4]"}) {
+    bool failed = false;
+    try {
+      const std::string sql = "INSERT INTO t VALUES(1," + array + ")";
+      mvd::Parser parser(sql, tables);
+      (void)parser.parse();
+    } catch (const mvd::DBError &) { failed = true; }
+    require(failed, "malformed unquoted vector was accepted");
+  }
+  for (const std::string sql : {
+           "INSERT INTO unknown VALUES(NULL,[1e+,2,3,4])",
+           "INSERT INTO t VALUES(NULL,[1e+,2,3,4])",
+           "INSERT INTO t VALUES(1,[1e999,2,3,4e+])"}) {
+    std::string code;
+    try {
+      mvd::Parser parser(sql, tables);
+      (void)parser.parse();
+    } catch (const mvd::DBError &error) { code = error.code(); }
+    require(code == "SQL_SYNTAX", "unquoted array changed lexical error precedence");
+  }
+}
 }  // namespace
 
 int main() {
@@ -381,6 +432,7 @@ int main() {
     checkStringBoundaries();
     checkNumericBoundaries();
     checkStatementOwnership();
+    checkUnquotedArrays();
     std::cout << "PASS " << strings_checked << " quoted strings and "
               << vectors_checked << " vector literals: scalar equivalence, "
                  "float32 bits, errors, word boundaries and ownership\n";

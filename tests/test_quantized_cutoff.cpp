@@ -150,9 +150,22 @@ int main() {
     for (const std::size_t dimension : {16U, 17U, 19U, 31U, 63U, 64U, 65U,
                                        127U, 128U, 129U, 255U, 512U,
                                        1023U, 4095U, 16384U}) {
+#ifndef MVD_FORCE_SCALAR
+      // The default resolver tests only the generic kernel. Also resolve as
+      // the executor does, using the actual (not rounded) dimension.
+      const auto wide = qb::mask64_kernel_for(qb::KernelKind::vnni512, dimension);
+      if (wide != nullptr) kernels.push_back({"dimension-selected VNNI", wide, 64});
+#endif
       for (unsigned pattern = 0; pattern < 9; ++pattern) {
         fixture(kernels, random, dimension, pattern, pattern % 2 ? 1 : 3);
       }
+#ifndef MVD_FORCE_SCALAR
+      if (wide != nullptr) {
+        std::cout << "PASS dimension=" << dimension << ": " << kernels.back().masks
+                  << " selected wide masks and shared slices\n";
+        kernels.pop_back();
+      }
+#endif
     }
     for (const auto &entry : kernels) {
       std::cout << "PASS " << entry.name << entry.width << ": " << entry.masks

@@ -125,18 +125,20 @@ class Float32Literals(unittest.TestCase):
         self.expect("SELECT v FROM t WHERE id=1", ["[1,-0.200000003,3]"])
 
     def test_insert_rounds_exact_decimal_directly_to_float32(self):
-        self.expect("CREATE TABLE t(id BIGINT PRIMARY KEY,v VECTOR(1))", ["OK"])
         literals = boundary_literals()
-        values = ",".join(f"({index},'[{text}]')" for index, text in enumerate(literals))
-        self.expect("INSERT INTO t VALUES " + values, [f"OK {len(literals)}"])
-        rows = self.session.execute("SELECT id,v FROM t ORDER BY id")
-        self.assertEqual(len(rows), len(literals))
-        for index, (text, row) in enumerate(zip(literals, rows)):
-            with self.subTest(literal=text):
-                primary, vector = row.split("\t")
-                self.assertEqual(int(primary), index)
-                self.assertEqual(canonical_bits(result_bits(vector)),
-                                 canonical_bits(nearest_bits(text)), text)
+        for name, quote in (("quoted", "'"), ("unquoted", "")):
+            self.expect(f"CREATE TABLE {name}(id BIGINT PRIMARY KEY,v VECTOR(1))", ["OK"])
+            values = ",".join(f"({index},{quote}[{text}]{quote})"
+                              for index, text in enumerate(literals))
+            self.expect(f"INSERT INTO {name} VALUES " + values, [f"OK {len(literals)}"])
+            rows = self.session.execute(f"SELECT id,v FROM {name} ORDER BY id")
+            self.assertEqual(len(rows), len(literals))
+            for index, (text, row) in enumerate(zip(literals, rows)):
+                with self.subTest(form=name, literal=text):
+                    primary, vector = row.split("\t")
+                    self.assertEqual(int(primary), index)
+                    self.assertEqual(canonical_bits(result_bits(vector)),
+                                     canonical_bits(nearest_bits(text)), text)
 
     def test_literal_rounding_changes_stored_topk_membership(self):
         self.expect("CREATE TABLE t(id BIGINT PRIMARY KEY,v VECTOR(1))", ["OK"])
